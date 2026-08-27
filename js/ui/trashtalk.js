@@ -1,9 +1,12 @@
 // The league trash-talk board: posts, reactions and the feed.
 import { store } from '../core/state.js';
-import { CONFIG } from '../core/data.js';
 import { db } from '../core/firebase.js';
 import { slugifyTeam } from '../core/league.js';
 import { escapeHtml, timeAgo } from './dom.js';
+
+const REACTION_EMOJIS = ['🔥', '💀', '😂'];
+// Matches the maxlength on #trashTalkInput in index.html.
+const MAX_MESSAGE_LENGTH = 280;
 
 export async function postTrashTalk(message){
   if(!store.state.account.teamName){ return { ok: false, error: 'Go to Account, enter a Team Name, and press Save Profile before posting.' }; }
@@ -13,7 +16,7 @@ export async function postTrashTalk(message){
   const payload = {
     teamName: store.state.account.teamName,
     week: store.currentWeek,
-    message: trimmed.slice(0, 280),
+    message: trimmed.slice(0, MAX_MESSAGE_LENGTH),
     postedAt: new Date().toISOString()
   };
   try{
@@ -25,9 +28,6 @@ export async function postTrashTalk(message){
   }
 }
 
-
-// Read at call time, not module-eval time -- CONFIG is populated by loadAppData().
-const reactionEmojis = () => CONFIG.reactionEmojis;
 
 export async function toggleReaction(postKey, emoji, alreadyReacted){
   const ref = db.collection('leagues').doc(store.state.account.leagueSlug).collection('trashtalk').doc(postKey);
@@ -87,7 +87,7 @@ export async function renderTrashTalkFeed(){
 
       const reactionRow = document.createElement('div');
       reactionRow.className = 'tt-reaction-row';
-      reactionEmojis().forEach(emoji => {
+      REACTION_EMOJIS.forEach(emoji => {
         const reactedBy = (p.reactions && p.reactions[emoji]) || [];
         const iReacted = store.state.account.teamName && reactedBy.includes(store.state.account.teamName);
         const btn = document.createElement('button');

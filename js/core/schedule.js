@@ -15,11 +15,10 @@ export function getActiveWeekByDate(){
   return TOTAL_WEEKS;
 }
 
-// Verified 2026 regular-season matchups, Weeks 1-5 (official schedule release).
-// away/home/kickoff(UTC ISO)/isMNF. Seeded immediately so the board is populated
-// even before a live ESPN sync completes.
-
-/** Fills in any week that has no games yet, without clobbering existing picks. */
+/**
+ * Fills in any week that has no games yet, without clobbering existing picks.
+ * Runs on entry so the board is populated before any admin spreads load.
+ */
 export function seedDefaultSchedule(){
   Object.keys(DEFAULT_SCHEDULE).forEach(wk => {
     const week = getWeek(parseInt(wk));

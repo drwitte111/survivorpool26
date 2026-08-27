@@ -7,6 +7,10 @@ import { getSurvivorStatus } from '../core/survivor.js';
 import { fetchLeagueTeams, slugifyTeam, loadGlobalSpreads, syncToLeague } from '../core/league.js';
 import { escapeHtml, ordinal, rankBadge, placeNickname, timeAgo } from './dom.js';
 
+// Staying alive in Survivor is worth a flat bonus on the Total column.
+// Being eliminated never costs points -- it just means no bonus.
+const SURVIVOR_BONUS = 50;
+
 export function computeAchievements(teams){
   const badges = {};
   teams.forEach(t => { badges[t.teamName] = []; });
@@ -81,7 +85,7 @@ export function buildStandingsRow(teamName, pts, rank, total, survivorAlive, isW
     const survivorHtml = survivorAlive
       ? '<span class="survivor-col alive">Alive</span>'
       : '<span class="survivor-col out">\u274c</span>';
-    const bonus = survivorAlive ? 50 : 0;
+    const bonus = survivorAlive ? SURVIVOR_BONUS : 0;
     const grandTotal = pts + bonus;
     extraCols = `
     <div class="survivor-cell">${survivorHtml}</div>
@@ -246,7 +250,7 @@ export async function renderStandingsPage(){
 
   if(ui.standingsFilter === 'overall'){
     document.getElementById('weekRecapCard').innerHTML = '';
-    teams.forEach(t => { t._grandTotal = (t.total || 0) + (t.survivorAlive ? 50 : 0); });
+    teams.forEach(t => { t._grandTotal = (t.total || 0) + (t.survivorAlive ? SURVIVOR_BONUS : 0); });
     teams.sort((a, b) => b._grandTotal - a._grandTotal);
     const achievements = computeAchievements(teams);
     const colHeader = document.createElement('div');
