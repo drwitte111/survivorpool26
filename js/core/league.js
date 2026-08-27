@@ -13,9 +13,10 @@ import { db, saveUserState } from './firebase.js';
 import { store, getWeek, peekWeek } from './state.js';
 import { saveState } from './persist.js';
 import { TOTAL_WEEKS } from './data.js';
-import { isWeekLocked, isSuperBowlPickLocked } from './locks.js';
+import { isGameLocked, isSuperBowlPickLocked } from './locks.js';
 import { weekScore } from './scoring.js';
 import { getSurvivorStatus } from './survivor.js';
+import { teamAbbrEquals } from './teams.js';
 
 export function slugifyTeam(name){
   return (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'team';
@@ -227,7 +228,12 @@ export async function syncToLeague(){
     }
     const survivor = getSurvivorStatus();
     const curWeek = peekWeek(store.currentWeek);
-    const currentLock = isWeekLocked(curWeek) ? (curWeek.lockTeam || null) : null;
+    // Your Survivor pick stays hidden from the league until the team you locked
+    // has actually kicked off -- no tipping your hand while it's still changeable.
+    const lockGame = curWeek.lockTeam
+      ? curWeek.games.find(g => teamAbbrEquals(g.away, curWeek.lockTeam) || teamAbbrEquals(g.home, curWeek.lockTeam))
+      : null;
+    const currentLock = (lockGame && isGameLocked(lockGame)) ? curWeek.lockTeam : null;
     const payload = {
       teamName: store.state.account.teamName,
       yourName: store.state.account.yourName || '',

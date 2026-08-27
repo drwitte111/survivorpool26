@@ -5,13 +5,17 @@ import { TEAM_LIST } from '../core/data.js';
 import { getTeamAbbr, getTeamColors, teamLogoUrl, teamAbbrEquals } from '../core/teams.js';
 import { saveState } from '../core/persist.js';
 import {
-  isWeekLocked, isWeekOpen, isWeekComplete, getMissingItems, weekUnlockTime, lockTimeFor,
+  isGameLocked, isWeekFullyLocked, openGames, nextLockTime,
+  isWeekOpen, isWeekComplete, getMissingItems, weekUnlockTime,
 } from '../core/locks.js';
 import {
   maxPointsFor, usedConfidenceValues, weekScore, seasonScore,
   getMvpPick, isPerfectWeek, computeHotStreak,
 } from '../core/scoring.js';
-import { getLockStatusForWeek, getUsedLockTeams, getSurvivorStatus } from '../core/survivor.js';
+import {
+  getLockStatusForWeek, getUsedLockTeams, getSurvivorStatus,
+  getSurvivorChoices, survivorPickError,
+} from '../core/survivor.js';
 import { saveGlobalSpreads, saveGlobalResults, ensureSpreadsLoaded } from '../core/league.js';
 import { escapeHtml, isoToLocalInput, localInputToIso, burstConfetti } from './dom.js';
 import { render, setSyncStatus } from './router.js';
@@ -154,8 +158,9 @@ export function renderLockPanel(){
   panel.innerHTML = '';
   const week = getWeek(store.currentWeek);
   const notOpenYet = !isWeekOpen(store.currentWeek);
-  const kickoffLocked = isWeekLocked(week);
-  const locked = notOpenYet || kickoffLocked;
+  const choices = getSurvivorChoices(store.currentWeek);
+  // Stays open all week; closes only once your team has played or nothing is left.
+  const locked = notOpenYet || choices.committed || !choices.anyOpen;
 
   const survivor = getSurvivorStatus();
   const eliminatedBeforeThisWeek = !survivor.alive && survivor.eliminatedWeek < store.currentWeek;
@@ -195,15 +200,22 @@ export function renderLockPanel(){
   select.className = 'lock-team-select';
   select.disabled = locked;
   const blankOpt = document.createElement('option');
-  blankOpt.value = ''; blankOpt.textContent = 'Select a team playing this week...';
+  blankOpt.value = ''; blankOpt.textContent = 'Select a team that hasn’t played yet...';
   select.appendChild(blankOpt);
-  week.games.forEach(g => {
+  choices.games.forEach(({ game: g, locked: gameLocked, teams }) => {
+    // Teams that already kicked off aren't choices any more -- but keep the group
+    // visible if it holds the pick you're now committed to.
+    const holdsCurrentPick = teams.some(t => t.name === week.lockTeam);
+    if(gameLocked && !holdsCurrentPick) return;
+
     const group = document.createElement('optgroup');
-    group.label = `${g.away} @ ${g.home}`;
-    [g.away, g.home].forEach(name => {
+    group.label = `${g.away} @ ${g.home}` + (gameLocked ? ' — kicked off' : '');
+    teams.forEach(({ name, usedWeek }) => {
       const opt = document.createElement('option');
-      opt.value = name; opt.textContent = name;
-      if(week.lockTeam === name) opt.selected = true;
+      opt.value = name;
+      opt.textContent = name + (usedWeek ? ` — used Wk ${usedWeek}` : '');
+      if(usedWeek || gameLocked) opt.disabled = true;
+      if(week.lockTeam === name){ opt.selected = true; opt.disabled = false; }
       group.appendChild(opt);
     });
     select.appendChild(group);
@@ -484,8 +496,9 @@ export function renderGames(){
   const panel = document.getElementById('gamesPanel');
   panel.innerHTML = '';
   const notOpenYet = !isWeekOpen(store.currentWeek);
-  const kickoffLocked = isWeekLocked(week);
-  const locked = notOpenYet || kickoffLocked;
+  const fullyLocked = isWeekFullyLocked(week);
+  // Week-level gate: only true when nothing is editable any more.
+  const locked = notOpenYet || fullyLocked;
 
   const label = document.createElement('div');
   label.className = 'section-label';
@@ -495,12 +508,12 @@ export function renderGames(){
       const editBtn = document.createElement('button');
       editBtn.className = 'sync-btn small';
       editBtn.textContent = ui.spreadEditMode ? 'Cancel Editing' : 'Update Spreads';
-      editBtn.disabled = kickoffLocked;
-      editBtn.title = kickoffLocked
-        ? 'Picks are locked for this week \u2014 spreads can\u2019t be changed anymore so no one gets caught out.'
+      editBtn.disabled = fullyLocked;
+      editBtn.title = fullyLocked
+        ? 'Every game has kicked off \u2014 spreads can\u2019t be changed anymore so no one gets caught out.'
         : 'Set the spread and kickoff time for each game';
       editBtn.onclick = () => {
-        if(kickoffLocked) return;
+        if(fullyLocked) return;
         ui.spreadEditMode = !ui.spreadEditMode;
         render();
       };
@@ -521,7 +534,9 @@ export function renderGames(){
     clearAllBtn.className = 'sync-btn small';
     clearAllBtn.textContent = 'Clear All';
     clearAllBtn.disabled = locked;
-    clearAllBtn.title = locked ? 'Picks are locked for this week and can\'t be cleared' : 'Clear all picks, points, and your Survivor lock for this week';
+    clearAllBtn.title = locked
+      ? 'Every game has kicked off — nothing left to clear'
+      : 'Clear picks and points for every game that hasn’t kicked off yet';
     let armed = false;
     let armTimer = null;
     clearAllBtn.onclick = () => {
@@ -538,23 +553,24 @@ export function renderGames(){
         return;
       }
       clearTimeout(armTimer);
-      week.games.forEach(g => {
+      openGames(week).forEach(g => {
         g.pick = null;
         g.confidence = null;
         if(g.isMNF) g.tiebreakGuess = null;
       });
-      week.lockTeam = null;
+      // Only drop the Survivor lock if that team hasn't played yet.
+      if(!getSurvivorChoices(store.currentWeek).committed) week.lockTeam = null;
       saveState(); render();
     };
     label.appendChild(clearAllBtn);
   }
   panel.appendChild(label);
 
-  if(store.state.account.isLeagueAdmin && ui.spreadEditMode && !kickoffLocked && week.games.length){
+  if(store.state.account.isLeagueAdmin && ui.spreadEditMode && !fullyLocked && week.games.length){
     renderSpreadEditor(panel, week);
     return;
   }
-  if(ui.spreadEditMode && kickoffLocked) ui.spreadEditMode = false;
+  if(ui.spreadEditMode && fullyLocked) ui.spreadEditMode = false;
 
   if(store.state.account.isLeagueAdmin && ui.resultsEditMode && week.games.length){
     renderResultsEditor(panel, week);
@@ -580,13 +596,17 @@ export function renderGames(){
     }
     row.className = 'game-row' + (game.actualWinner ? ' graded ' + gradedClass : '');
 
+    // Each matchup closes at its own kickoff, independent of the rest of the slate.
+    const gameLocked = notOpenYet || isGameLocked(game);
+    if(gameLocked) row.classList.add('locked-game');
+
     // Left: matchup + team selection
-    row.appendChild(teamButtonRow(game, 'pick', locked));
+    row.appendChild(teamButtonRow(game, 'pick', gameLocked));
 
     // Middle: confidence select
     const sel = document.createElement('select');
     sel.className = 'conf-select';
-    sel.disabled = locked;
+    sel.disabled = gameLocked;
     const noneOpt = document.createElement('option');
     noneOpt.value = ''; noneOpt.textContent = '—';
     sel.appendChild(noneOpt);
@@ -606,9 +626,9 @@ export function renderGames(){
     actions.className = 'row-actions';
     const del = document.createElement('button');
     del.className = 'del-btn'; del.textContent = '✕'; del.title = 'Reset team pick and points for this matchup';
-    del.disabled = locked;
+    del.disabled = gameLocked;
     del.onclick = () => {
-      if(locked) return;
+      if(gameLocked) return;
       game.pick = null;
       game.confidence = null;
       saveState(); render();
@@ -622,7 +642,10 @@ export function renderGames(){
   // ---- Submit / lock footer ----
   const footer = document.createElement('div');
   footer.className = 'submit-footer';
-  const lt = lockTimeFor(week);
+  const nextLock = nextLockTime(week);
+  const stillOpen = openGames(week).length;
+  const lockedCount = week.games.length - stillOpen;
+  const fmtLock = (d) => d.toLocaleString('en-US', { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' });
   if(notOpenYet){
     const unlockAt = weekUnlockTime(store.currentWeek);
     const banner = document.createElement('div');
@@ -632,9 +655,7 @@ export function renderGames(){
   } else if(locked){
     const banner = document.createElement('div');
     banner.className = 'lock-banner';
-    banner.innerHTML = week.submitted
-      ? `🔒 <b>Picks submitted</b> — Week ${store.currentWeek} is locked.`
-      : `🔒 <b>Picks locked</b> — kickoff window has passed for Week ${store.currentWeek}.`;
+    banner.innerHTML = `🔒 <b>Week ${store.currentWeek} is locked</b> — every game has kicked off.`;
     footer.appendChild(banner);
   } else if(ui.showIncompleteWarning){
     const missing = getMissingItems(week);
@@ -651,10 +672,18 @@ export function renderGames(){
     };
     footer.appendChild(goBackBtn);
   } else {
+    // Submitting marks the lineup done for the standings; it never freezes the
+    // week. Anything that hasn't kicked off stays editable either way.
+    if(week.submitted){
+      const done = document.createElement('div');
+      done.className = 'lock-banner submitted-note';
+      done.innerHTML = `✅ <b>Lineup submitted</b> — you can still change any game that hasn’t kicked off.`;
+      footer.appendChild(done);
+    }
     const submitBtn = document.createElement('button');
     const complete = isWeekComplete(week);
     submitBtn.className = 'submit-btn' + (complete ? ' complete' : '');
-    submitBtn.textContent = 'Submit Picks';
+    submitBtn.textContent = week.submitted ? 'Update Lineup' : 'Submit Picks';
     let armed = false;
     let armTimer = null;
     submitBtn.onclick = () => {
@@ -669,21 +698,25 @@ export function renderGames(){
         submitBtn.classList.add('confirm-armed');
         armTimer = setTimeout(() => {
           armed = false;
-          submitBtn.textContent = 'Submit Picks';
+          submitBtn.textContent = week.submitted ? 'Update Lineup' : 'Submit Picks';
           submitBtn.classList.remove('confirm-armed');
         }, 3000);
         return;
       }
       clearTimeout(armTimer);
+      const firstTime = !week.submitted;
       week.submitted = true;
       saveState(); render();
-      burstConfetti(70);
+      if(firstTime) burstConfetti(70);
     };
     footer.appendChild(submitBtn);
-    if(lt){
+    if(nextLock){
       const note = document.createElement('div');
       note.className = 'lock-note';
-      note.textContent = 'Locks automatically ' + lt.toLocaleString('en-US', { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' (10 min before kickoff)';
+      const scope = lockedCount
+        ? `${lockedCount} of ${week.games.length} games already locked · next`
+        : 'First game locks';
+      note.textContent = `${scope} ${fmtLock(nextLock)} — each game locks at its own kickoff`;
       footer.appendChild(note);
     }
   }

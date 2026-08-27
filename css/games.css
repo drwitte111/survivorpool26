@@ -198,3 +198,18 @@
 .lock-banner b{ color: var(--amber); }
 .lock-banner.opens-soon{ background: rgba(82,183,136,0.08); border-color: var(--correct); }
 .lock-banner.opens-soon b{ color: var(--correct); }
+
+/* ---------- Per-game locking ---------- */
+/* A matchup that has already kicked off: still readable, clearly not editable. */
+.game-row.locked-game{ opacity: 0.62; }
+.game-row.locked-game .team-btn{ cursor: default; }
+.game-row.locked-game .matchup::after{
+  content: '🔒';
+  position: absolute; top: 10px; right: 12px;
+  font-size: 11px; opacity: 0.75; pointer-events: none;
+}
+.game-row.locked-game .matchup{ position: relative; }
+
+/* "Lineup submitted" note -- informational, not a lock. */
+.lock-banner.submitted-note{ background: rgba(82,183,136,0.08); border-color: var(--correct); }
+.lock-banner.submitted-note b{ color: var(--correct); }

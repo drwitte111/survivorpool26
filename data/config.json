@@ -1,6 +1,6 @@
 {
   "totalWeeks": 18,
-  "pickLockMinutesBeforeKickoff": 10,
+  "pickLockMinutesBeforeKickoff": 0,
   "weekUnlockHoursBeforeStart": 24,
   "firebase": {
     "apiKey": "AIzaSyDbT7xh23HeSbZIUZZp0DNhGs0ExaPA4ig",

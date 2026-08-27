@@ -16,14 +16,16 @@
     "body": [
       "<ul>",
       "<li>Each week opens for picks the <b>Tuesday at 6:00 AM</b> following the previous week's Monday Night Football (Week 1 is always open).</li>",
-      "<li>Picks lock automatically <b>10 minutes before that week's first kickoff</b>, or the moment you hit Submit Picks — whichever comes first.</li>",
+      "<li><b>Every game locks at its own kickoff</b> — not all at once. Miss Thursday night and you simply score zero on that one; the rest of the week stays open.</li>",
+      "<li><b>Submitting doesn't freeze anything.</b> It just marks your lineup as done for the standings. You can keep changing any game that hasn't kicked off.</li>",
       "</ul>"
     ]
   },
   {
     "heading": "Survivor 🔒",
     "body": [
-      "<p>Each week, lock in one team you think will win straight-up — separate from your confidence picks. You can only use each team as a lock <b>once per season</b>. Lose with your lock and you're eliminated from Survivor for the rest of the year (your confidence picks keep going either way).</p>"
+      "<p>Each week, lock in one team you think will win straight-up — separate from your confidence picks. You can only use each team as a lock <b>once per season</b>. Lose with your lock and you're eliminated from Survivor for the rest of the year (your confidence picks keep going either way).</p>",
+      "<p>Your lock stays open <b>all week</b>, but you can only choose from teams that <b>haven't played yet</b>. Once the team you locked kicks off, you're committed for that week — no watching them fall behind and swapping out.</p>"
     ]
   },
   {
