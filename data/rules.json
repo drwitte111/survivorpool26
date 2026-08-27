@@ -1,0 +1,51 @@
+[
+  {
+    "heading": "Confidence Points",
+    "body": [
+      "<p>Each week, rank every game by how confident you are. If a week has N games, you assign the numbers 1 through N — no repeats — with N going to your most confident pick. Get the pick right and you earn that many points; get it wrong and you earn zero.</p>"
+    ]
+  },
+  {
+    "heading": "Tiebreaker",
+    "body": [
+      "<p>The Monday Night Football game each week doubles as your tiebreaker: guess the two teams' combined final score. Closest guess wins the tiebreak once the game goes final.</p>"
+    ]
+  },
+  {
+    "heading": "Picks Lock",
+    "body": [
+      "<ul>",
+      "<li>Each week opens for picks the <b>Tuesday at 6:00 AM</b> following the previous week's Monday Night Football (Week 1 is always open).</li>",
+      "<li>Picks lock automatically <b>10 minutes before that week's first kickoff</b>, or the moment you hit Submit Picks — whichever comes first.</li>",
+      "</ul>"
+    ]
+  },
+  {
+    "heading": "Survivor 🔒",
+    "body": [
+      "<p>Each week, lock in one team you think will win straight-up — separate from your confidence picks. You can only use each team as a lock <b>once per season</b>. Lose with your lock and you're eliminated from Survivor for the rest of the year (your confidence picks keep going either way).</p>"
+    ]
+  },
+  {
+    "heading": "Standings &amp; Scoring",
+    "body": [
+      "<ul>",
+      "<li><b>Points</b> — your season total from correct confidence picks.</li>",
+      "<li><b>Survivor</b> — Alive or eliminated (❌), tracked independently of your points.</li>",
+      "<li><b>Total</b> — your points, <b>plus 50 bonus points if you're still alive in Survivor</b>. Being eliminated never costs you points — it just means no bonus.</li>",
+      "</ul>"
+    ]
+  },
+  {
+    "heading": "Weekly Awards",
+    "body": [
+      "<p>Whoever scores the most points in a given week gets crowned 👑 <b>King of the Week</b>. Whoever scores the least gets the 🚽 — no further explanation needed.</p>"
+    ]
+  },
+  {
+    "heading": "Trash Talk",
+    "body": [
+      "<p>Head to the Trash Talk board under the Menu to call your shot, clown a bad beat, or defend your picks. Everyone in the league sees every post.</p>"
+    ]
+  }
+]

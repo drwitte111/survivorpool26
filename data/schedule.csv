@@ -1,0 +1,273 @@
+week,away,home,kickoff_utc,is_mnf
+1,New England Patriots,Seattle Seahawks,2026-09-10T00:20:00Z,false
+1,San Francisco 49ers,Los Angeles Rams,2026-09-11T00:35:00Z,false
+1,Chicago Bears,Carolina Panthers,2026-09-13T17:00:00Z,false
+1,Baltimore Ravens,Indianapolis Colts,2026-09-13T17:00:00Z,false
+1,Atlanta Falcons,Pittsburgh Steelers,2026-09-13T17:00:00Z,false
+1,Cleveland Browns,Jacksonville Jaguars,2026-09-13T17:00:00Z,false
+1,Tampa Bay Buccaneers,Cincinnati Bengals,2026-09-13T17:00:00Z,false
+1,New York Jets,Tennessee Titans,2026-09-13T17:00:00Z,false
+1,New Orleans Saints,Detroit Lions,2026-09-13T17:00:00Z,false
+1,Buffalo Bills,Houston Texans,2026-09-13T17:00:00Z,false
+1,Arizona Cardinals,Los Angeles Chargers,2026-09-13T20:25:00Z,false
+1,Green Bay Packers,Minnesota Vikings,2026-09-13T20:25:00Z,false
+1,Miami Dolphins,Las Vegas Raiders,2026-09-13T20:25:00Z,false
+1,Washington Commanders,Philadelphia Eagles,2026-09-13T20:25:00Z,false
+1,Dallas Cowboys,New York Giants,2026-09-14T00:20:00Z,false
+1,Denver Broncos,Kansas City Chiefs,2026-09-15T00:15:00Z,true
+2,Detroit Lions,Buffalo Bills,2026-09-18T00:15:00Z,false
+2,Carolina Panthers,Atlanta Falcons,2026-09-20T17:00:00Z,false
+2,New Orleans Saints,Baltimore Ravens,2026-09-20T17:00:00Z,false
+2,Minnesota Vikings,Chicago Bears,2026-09-20T17:00:00Z,false
+2,Cincinnati Bengals,Houston Texans,2026-09-20T17:00:00Z,false
+2,Pittsburgh Steelers,New England Patriots,2026-09-20T17:00:00Z,false
+2,Green Bay Packers,New York Jets,2026-09-20T17:00:00Z,false
+2,Cleveland Browns,Tampa Bay Buccaneers,2026-09-20T17:00:00Z,false
+2,Philadelphia Eagles,Tennessee Titans,2026-09-20T17:00:00Z,false
+2,Jacksonville Jaguars,Denver Broncos,2026-09-20T20:05:00Z,false
+2,Las Vegas Raiders,Los Angeles Chargers,2026-09-20T20:05:00Z,false
+2,Seattle Seahawks,Arizona Cardinals,2026-09-20T20:25:00Z,false
+2,Washington Commanders,Dallas Cowboys,2026-09-20T20:25:00Z,false
+2,Miami Dolphins,San Francisco 49ers,2026-09-20T20:25:00Z,false
+2,Indianapolis Colts,Kansas City Chiefs,2026-09-21T00:20:00Z,false
+2,New York Giants,Los Angeles Rams,2026-09-22T00:15:00Z,true
+3,Atlanta Falcons,Green Bay Packers,2026-09-25T00:15:00Z,false
+3,Los Angeles Chargers,Buffalo Bills,2026-09-27T17:00:00Z,false
+3,Carolina Panthers,Cleveland Browns,2026-09-27T17:00:00Z,false
+3,New York Jets,Detroit Lions,2026-09-27T17:00:00Z,false
+3,Seattle Seahawks,Washington Commanders,2026-09-27T17:00:00Z,false
+3,Houston Texans,Indianapolis Colts,2026-09-27T17:00:00Z,false
+3,New England Patriots,Jacksonville Jaguars,2026-09-27T17:00:00Z,false
+3,Kansas City Chiefs,Miami Dolphins,2026-09-27T17:00:00Z,false
+3,Tennessee Titans,New York Giants,2026-09-27T17:00:00Z,false
+3,Cincinnati Bengals,Pittsburgh Steelers,2026-09-27T17:00:00Z,false
+3,Arizona Cardinals,San Francisco 49ers,2026-09-27T20:05:00Z,false
+3,Minnesota Vikings,Tampa Bay Buccaneers,2026-09-27T20:05:00Z,false
+3,Baltimore Ravens,Dallas Cowboys,2026-09-27T20:25:00Z,false
+3,Las Vegas Raiders,New Orleans Saints,2026-09-27T20:25:00Z,false
+3,Los Angeles Rams,Denver Broncos,2026-09-28T00:20:00Z,false
+3,Philadelphia Eagles,Chicago Bears,2026-09-29T00:15:00Z,true
+4,Pittsburgh Steelers,Cleveland Browns,2026-10-02T00:15:00Z,false
+4,Indianapolis Colts,Washington Commanders,2026-10-04T13:30:00Z,false
+4,Tennessee Titans,Baltimore Ravens,2026-10-04T17:00:00Z,false
+4,New England Patriots,Buffalo Bills,2026-10-04T17:00:00Z,false
+4,New York Jets,Chicago Bears,2026-10-04T17:00:00Z,false
+4,Jacksonville Jaguars,Cincinnati Bengals,2026-10-04T17:00:00Z,false
+4,Dallas Cowboys,Houston Texans,2026-10-04T17:00:00Z,false
+4,Arizona Cardinals,New York Giants,2026-10-04T17:00:00Z,false
+4,Los Angeles Rams,Philadelphia Eagles,2026-10-04T17:00:00Z,false
+4,Green Bay Packers,Tampa Bay Buccaneers,2026-10-04T17:00:00Z,false
+4,Miami Dolphins,Minnesota Vikings,2026-10-04T20:05:00Z,false
+4,Kansas City Chiefs,Las Vegas Raiders,2026-10-04T20:25:00Z,false
+4,Los Angeles Chargers,Seattle Seahawks,2026-10-04T20:25:00Z,false
+4,Denver Broncos,San Francisco 49ers,2026-10-04T20:25:00Z,false
+4,Detroit Lions,Carolina Panthers,2026-10-05T00:20:00Z,false
+4,Atlanta Falcons,New Orleans Saints,2026-10-06T00:15:00Z,true
+5,Tampa Bay Buccaneers,Dallas Cowboys,2026-10-09T00:15:00Z,false
+5,Philadelphia Eagles,Jacksonville Jaguars,2026-10-11T13:30:00Z,false
+5,Cincinnati Bengals,Miami Dolphins,2026-10-11T17:00:00Z,false
+5,Las Vegas Raiders,New England Patriots,2026-10-11T17:00:00Z,false
+5,Minnesota Vikings,New Orleans Saints,2026-10-11T17:00:00Z,false
+5,Cleveland Browns,New York Jets,2026-10-11T17:00:00Z,false
+5,Indianapolis Colts,Pittsburgh Steelers,2026-10-11T17:00:00Z,false
+5,Houston Texans,Tennessee Titans,2026-10-11T17:00:00Z,false
+5,New York Giants,Washington Commanders,2026-10-11T17:00:00Z,false
+5,Denver Broncos,Los Angeles Chargers,2026-10-11T20:05:00Z,false
+5,Detroit Lions,Arizona Cardinals,2026-10-11T20:25:00Z,false
+5,Chicago Bears,Green Bay Packers,2026-10-11T20:25:00Z,false
+5,San Francisco 49ers,Seattle Seahawks,2026-10-11T20:25:00Z,false
+5,Baltimore Ravens,Atlanta Falcons,2026-10-12T00:20:00Z,false
+5,Buffalo Bills,Los Angeles Rams,2026-10-13T00:15:00Z,true
+6,Seattle Seahawks,Denver Broncos,2026-10-16T00:15:00Z,false
+6,Houston Texans,Jacksonville Jaguars,2026-10-18T13:30:00Z,false
+6,Chicago Bears,Atlanta Falcons,2026-10-18T17:00:00Z,false
+6,Baltimore Ravens,Cleveland Browns,2026-10-18T17:00:00Z,false
+6,Tennessee Titans,Indianapolis Colts,2026-10-18T17:00:00Z,false
+6,New York Jets,New England Patriots,2026-10-18T17:00:00Z,false
+6,New Orleans Saints,New York Giants,2026-10-18T17:00:00Z,false
+6,Carolina Panthers,Philadelphia Eagles,2026-10-18T17:00:00Z,false
+6,Pittsburgh Steelers,Tampa Bay Buccaneers,2026-10-18T17:00:00Z,false
+6,Arizona Cardinals,Los Angeles Rams,2026-10-18T20:05:00Z,false
+6,Los Angeles Chargers,Kansas City Chiefs,2026-10-18T20:25:00Z,false
+6,Buffalo Bills,Las Vegas Raiders,2026-10-18T20:25:00Z,false
+6,Dallas Cowboys,Green Bay Packers,2026-10-19T00:20:00Z,false
+6,Washington Commanders,San Francisco 49ers,2026-10-20T00:15:00Z,true
+7,New England Patriots,Chicago Bears,2026-10-23T00:15:00Z,false
+7,Pittsburgh Steelers,New Orleans Saints,2026-10-25T13:30:00Z,false
+7,San Francisco 49ers,Atlanta Falcons,2026-10-25T17:00:00Z,false
+7,Cincinnati Bengals,Baltimore Ravens,2026-10-25T17:00:00Z,false
+7,Tampa Bay Buccaneers,Carolina Panthers,2026-10-25T17:00:00Z,false
+7,New York Giants,Houston Texans,2026-10-25T17:00:00Z,false
+7,Indianapolis Colts,Minnesota Vikings,2026-10-25T17:00:00Z,false
+7,Miami Dolphins,New York Jets,2026-10-25T17:00:00Z,false
+7,Cleveland Browns,Tennessee Titans,2026-10-25T17:00:00Z,false
+7,Denver Broncos,Arizona Cardinals,2026-10-25T20:05:00Z,false
+7,Green Bay Packers,Detroit Lions,2026-10-25T20:25:00Z,false
+7,Los Angeles Rams,Las Vegas Raiders,2026-10-25T20:25:00Z,false
+7,Kansas City Chiefs,Seattle Seahawks,2026-10-26T00:20:00Z,false
+7,Dallas Cowboys,Philadelphia Eagles,2026-10-27T00:15:00Z,true
+8,Carolina Panthers,Green Bay Packers,2026-10-30T00:15:00Z,false
+8,Baltimore Ravens,Buffalo Bills,2026-11-01T18:00:00Z,false
+8,Tennessee Titans,Cincinnati Bengals,2026-11-01T18:00:00Z,false
+8,Arizona Cardinals,Dallas Cowboys,2026-11-01T18:00:00Z,false
+8,Minnesota Vikings,Detroit Lions,2026-11-01T18:00:00Z,false
+8,Indianapolis Colts,Jacksonville Jaguars,2026-11-01T18:00:00Z,false
+8,Las Vegas Raiders,New York Jets,2026-11-01T18:00:00Z,false
+8,Cleveland Browns,Pittsburgh Steelers,2026-11-01T18:00:00Z,false
+8,Atlanta Falcons,Tampa Bay Buccaneers,2026-11-01T18:00:00Z,false
+8,Los Angeles Chargers,Los Angeles Rams,2026-11-01T21:05:00Z,false
+8,Kansas City Chiefs,Denver Broncos,2026-11-01T21:25:00Z,false
+8,New England Patriots,Miami Dolphins,2026-11-01T21:25:00Z,false
+8,Philadelphia Eagles,Washington Commanders,2026-11-02T01:20:00Z,false
+8,Chicago Bears,Seattle Seahawks,2026-11-03T01:15:00Z,true
+9,Jacksonville Jaguars,Baltimore Ravens,2026-11-06T01:15:00Z,false
+9,Cincinnati Bengals,Atlanta Falcons,2026-11-08T14:30:00Z,false
+9,Denver Broncos,Carolina Panthers,2026-11-08T18:00:00Z,false
+9,Dallas Cowboys,Indianapolis Colts,2026-11-08T18:00:00Z,false
+9,New York Jets,Kansas City Chiefs,2026-11-08T18:00:00Z,false
+9,Detroit Lions,Miami Dolphins,2026-11-08T18:00:00Z,false
+9,Cleveland Browns,New Orleans Saints,2026-11-08T18:00:00Z,false
+9,New York Giants,Philadelphia Eagles,2026-11-08T18:00:00Z,false
+9,Los Angeles Rams,Washington Commanders,2026-11-08T18:00:00Z,false
+9,Houston Texans,Los Angeles Chargers,2026-11-08T21:05:00Z,false
+9,Las Vegas Raiders,San Francisco 49ers,2026-11-08T21:05:00Z,false
+9,Green Bay Packers,New England Patriots,2026-11-08T21:25:00Z,false
+9,Arizona Cardinals,Seattle Seahawks,2026-11-08T21:25:00Z,false
+9,Tampa Bay Buccaneers,Chicago Bears,2026-11-09T01:20:00Z,false
+9,Buffalo Bills,Minnesota Vikings,2026-11-10T01:15:00Z,true
+10,Washington Commanders,New York Giants,2026-11-13T01:15:00Z,false
+10,New England Patriots,Detroit Lions,2026-11-15T14:30:00Z,false
+10,Kansas City Chiefs,Atlanta Falcons,2026-11-15T18:00:00Z,false
+10,Houston Texans,Cleveland Browns,2026-11-15T18:00:00Z,false
+10,Minnesota Vikings,Green Bay Packers,2026-11-15T18:00:00Z,false
+10,Miami Dolphins,Indianapolis Colts,2026-11-15T18:00:00Z,false
+10,Carolina Panthers,New Orleans Saints,2026-11-15T18:00:00Z,false
+10,Buffalo Bills,New York Jets,2026-11-15T18:00:00Z,false
+10,Jacksonville Jaguars,Tennessee Titans,2026-11-15T18:00:00Z,false
+10,Los Angeles Rams,Arizona Cardinals,2026-11-15T21:05:00Z,false
+10,Seattle Seahawks,Las Vegas Raiders,2026-11-15T21:05:00Z,false
+10,San Francisco 49ers,Dallas Cowboys,2026-11-15T21:25:00Z,false
+10,Pittsburgh Steelers,Cincinnati Bengals,2026-11-16T01:20:00Z,false
+10,Los Angeles Chargers,Baltimore Ravens,2026-11-17T01:15:00Z,true
+11,Indianapolis Colts,Houston Texans,2026-11-20T01:15:00Z,false
+11,Miami Dolphins,Buffalo Bills,2026-11-22T18:00:00Z,false
+11,Baltimore Ravens,Carolina Panthers,2026-11-22T18:00:00Z,false
+11,New Orleans Saints,Chicago Bears,2026-11-22T18:00:00Z,false
+11,Tennessee Titans,Dallas Cowboys,2026-11-22T18:00:00Z,false
+11,Tampa Bay Buccaneers,Detroit Lions,2026-11-22T18:00:00Z,false
+11,Arizona Cardinals,Kansas City Chiefs,2026-11-22T18:00:00Z,false
+11,Jacksonville Jaguars,New York Giants,2026-11-22T18:00:00Z,false
+11,New York Jets,Los Angeles Chargers,2026-11-22T21:05:00Z,false
+11,Las Vegas Raiders,Denver Broncos,2026-11-22T21:25:00Z,false
+11,Pittsburgh Steelers,Philadelphia Eagles,2026-11-22T21:25:00Z,false
+11,Minnesota Vikings,San Francisco 49ers,2026-11-23T01:20:00Z,false
+11,Cincinnati Bengals,Washington Commanders,2026-11-24T01:15:00Z,true
+12,Green Bay Packers,Los Angeles Rams,2026-11-26T01:00:00Z,false
+12,Chicago Bears,Detroit Lions,2026-11-26T18:00:00Z,false
+12,Philadelphia Eagles,Dallas Cowboys,2026-11-26T21:30:00Z,false
+12,Kansas City Chiefs,Buffalo Bills,2026-11-27T01:20:00Z,false
+12,Denver Broncos,Pittsburgh Steelers,2026-11-27T20:00:00Z,false
+12,New Orleans Saints,Cincinnati Bengals,2026-11-29T18:00:00Z,false
+12,Las Vegas Raiders,Cleveland Browns,2026-11-29T18:00:00Z,false
+12,Baltimore Ravens,Houston Texans,2026-11-29T18:00:00Z,false
+12,New York Giants,Indianapolis Colts,2026-11-29T18:00:00Z,false
+12,New York Jets,Miami Dolphins,2026-11-29T18:00:00Z,false
+12,Atlanta Falcons,Minnesota Vikings,2026-11-29T18:00:00Z,false
+12,Tennessee Titans,Jacksonville Jaguars,2026-11-29T21:05:00Z,false
+12,Washington Commanders,Arizona Cardinals,2026-11-29T21:25:00Z,false
+12,Seattle Seahawks,San Francisco 49ers,2026-11-29T21:25:00Z,false
+12,New England Patriots,Los Angeles Chargers,2026-11-30T01:20:00Z,false
+12,Carolina Panthers,Tampa Bay Buccaneers,2026-12-01T01:15:00Z,true
+13,Kansas City Chiefs,Los Angeles Rams,2026-12-04T01:15:00Z,false
+13,Detroit Lions,Atlanta Falcons,2026-12-06T18:00:00Z,false
+13,Jacksonville Jaguars,Chicago Bears,2026-12-06T18:00:00Z,false
+13,Cincinnati Bengals,Cleveland Browns,2026-12-06T18:00:00Z,false
+13,Green Bay Packers,New Orleans Saints,2026-12-06T18:00:00Z,false
+13,San Francisco 49ers,New York Giants,2026-12-06T18:00:00Z,false
+13,Los Angeles Chargers,Tampa Bay Buccaneers,2026-12-06T18:00:00Z,false
+13,Washington Commanders,Tennessee Titans,2026-12-06T18:00:00Z,false
+13,Philadelphia Eagles,Arizona Cardinals,2026-12-06T21:05:00Z,false
+13,Miami Dolphins,Denver Broncos,2026-12-06T21:05:00Z,false
+13,Carolina Panthers,Minnesota Vikings,2026-12-06T21:25:00Z,false
+13,Buffalo Bills,New England Patriots,2026-12-06T21:25:00Z,false
+13,Houston Texans,Pittsburgh Steelers,2026-12-07T01:20:00Z,false
+13,Dallas Cowboys,Seattle Seahawks,2026-12-08T01:15:00Z,true
+14,Minnesota Vikings,New England Patriots,2026-12-11T01:15:00Z,false
+14,Tampa Bay Buccaneers,Baltimore Ravens,2026-12-13T18:00:00Z,false
+14,New Orleans Saints,Carolina Panthers,2026-12-13T18:00:00Z,false
+14,Atlanta Falcons,Cleveland Browns,2026-12-13T18:00:00Z,false
+14,Tennessee Titans,Detroit Lions,2026-12-13T18:00:00Z,false
+14,Chicago Bears,Miami Dolphins,2026-12-13T18:00:00Z,false
+14,Denver Broncos,New York Jets,2026-12-13T18:00:00Z,false
+14,Indianapolis Colts,Philadelphia Eagles,2026-12-13T18:00:00Z,false
+14,Houston Texans,Washington Commanders,2026-12-13T18:00:00Z,false
+14,Los Angeles Chargers,Las Vegas Raiders,2026-12-13T21:05:00Z,false
+14,Kansas City Chiefs,Cincinnati Bengals,2026-12-13T21:25:00Z,false
+14,New York Giants,Seattle Seahawks,2026-12-13T21:25:00Z,false
+14,Los Angeles Rams,San Francisco 49ers,2026-12-13T21:25:00Z,false
+14,Buffalo Bills,Green Bay Packers,2026-12-14T01:20:00Z,false
+14,Pittsburgh Steelers,Jacksonville Jaguars,2026-12-15T01:15:00Z,true
+15,San Francisco 49ers,Los Angeles Chargers,2026-12-18T01:15:00Z,false
+15,Seattle Seahawks,Philadelphia Eagles,2026-12-19T22:00:00Z,false
+15,Chicago Bears,Buffalo Bills,2026-12-20T01:20:00Z,false
+15,Cincinnati Bengals,Carolina Panthers,2026-12-20T18:00:00Z,false
+15,Miami Dolphins,Green Bay Packers,2026-12-20T18:00:00Z,false
+15,Jacksonville Jaguars,Houston Texans,2026-12-20T18:00:00Z,false
+15,Cleveland Browns,New York Giants,2026-12-20T18:00:00Z,false
+15,Baltimore Ravens,Pittsburgh Steelers,2026-12-20T18:00:00Z,false
+15,New Orleans Saints,Tampa Bay Buccaneers,2026-12-20T18:00:00Z,false
+15,Indianapolis Colts,Tennessee Titans,2026-12-20T18:00:00Z,false
+15,Atlanta Falcons,Washington Commanders,2026-12-20T18:00:00Z,false
+15,New York Jets,Arizona Cardinals,2026-12-20T21:05:00Z,false
+15,Dallas Cowboys,Los Angeles Rams,2026-12-20T21:25:00Z,false
+15,Denver Broncos,Las Vegas Raiders,2026-12-20T21:25:00Z,false
+15,Detroit Lions,Minnesota Vikings,2026-12-21T01:20:00Z,false
+15,New England Patriots,Kansas City Chiefs,2026-12-22T01:15:00Z,true
+16,Houston Texans,Philadelphia Eagles,2026-12-25T01:15:00Z,false
+16,Green Bay Packers,Chicago Bears,2026-12-25T18:00:00Z,false
+16,Buffalo Bills,Denver Broncos,2026-12-25T21:30:00Z,false
+16,Los Angeles Rams,Seattle Seahawks,2026-12-26T01:15:00Z,false
+16,Tampa Bay Buccaneers,Atlanta Falcons,2026-12-26T18:00:00Z,false
+16,Cincinnati Bengals,Indianapolis Colts,2026-12-26T18:00:00Z,false
+16,Washington Commanders,Minnesota Vikings,2026-12-26T18:00:00Z,false
+16,Carolina Panthers,Pittsburgh Steelers,2026-12-26T18:00:00Z,false
+16,Cleveland Browns,Baltimore Ravens,2026-12-27T18:00:00Z,false
+16,Los Angeles Chargers,Miami Dolphins,2026-12-27T18:00:00Z,false
+16,Arizona Cardinals,New Orleans Saints,2026-12-27T18:00:00Z,false
+16,New England Patriots,New York Jets,2026-12-27T18:00:00Z,false
+16,Tennessee Titans,Las Vegas Raiders,2026-12-27T21:05:00Z,false
+16,San Francisco 49ers,Kansas City Chiefs,2026-12-27T21:25:00Z,false
+16,Jacksonville Jaguars,Dallas Cowboys,2026-12-28T01:20:00Z,false
+16,New York Giants,Detroit Lions,2026-12-29T01:15:00Z,true
+17,Baltimore Ravens,Cincinnati Bengals,2027-01-01T01:15:00Z,false
+17,Washington Commanders,Jacksonville Jaguars,2027-01-02T18:00:00Z,false
+17,Kansas City Chiefs,Los Angeles Chargers,2027-01-02T18:00:00Z,false
+17,Denver Broncos,New England Patriots,2027-01-02T18:00:00Z,false
+17,Los Angeles Rams,Tampa Bay Buccaneers,2027-01-02T18:00:00Z,false
+17,New Orleans Saints,Atlanta Falcons,2027-01-03T18:00:00Z,false
+17,Seattle Seahawks,Carolina Panthers,2027-01-03T18:00:00Z,false
+17,Indianapolis Colts,Cleveland Browns,2027-01-03T18:00:00Z,false
+17,New York Giants,Dallas Cowboys,2027-01-03T18:00:00Z,false
+17,Buffalo Bills,Miami Dolphins,2027-01-03T18:00:00Z,false
+17,Minnesota Vikings,New York Jets,2027-01-03T18:00:00Z,false
+17,Pittsburgh Steelers,Tennessee Titans,2027-01-03T18:00:00Z,false
+17,Las Vegas Raiders,Arizona Cardinals,2027-01-03T21:05:00Z,false
+17,Detroit Lions,Chicago Bears,2027-01-03T21:25:00Z,false
+17,Philadelphia Eagles,San Francisco 49ers,2027-01-04T01:20:00Z,false
+17,Houston Texans,Green Bay Packers,2027-01-05T01:15:00Z,true
+18,San Francisco 49ers,Arizona Cardinals,2027-01-10T18:00:00Z,false
+18,Pittsburgh Steelers,Baltimore Ravens,2027-01-10T18:00:00Z,false
+18,New York Jets,Buffalo Bills,2027-01-10T18:00:00Z,false
+18,Atlanta Falcons,Carolina Panthers,2027-01-10T18:00:00Z,false
+18,Cleveland Browns,Cincinnati Bengals,2027-01-10T18:00:00Z,false
+18,Los Angeles Chargers,Denver Broncos,2027-01-10T18:00:00Z,false
+18,Detroit Lions,Green Bay Packers,2027-01-10T18:00:00Z,false
+18,Tennessee Titans,Houston Texans,2027-01-10T18:00:00Z,false
+18,Jacksonville Jaguars,Indianapolis Colts,2027-01-10T18:00:00Z,false
+18,Las Vegas Raiders,Kansas City Chiefs,2027-01-10T18:00:00Z,false
+18,Seattle Seahawks,Los Angeles Rams,2027-01-10T18:00:00Z,false
+18,Chicago Bears,Minnesota Vikings,2027-01-10T18:00:00Z,false
+18,Miami Dolphins,New England Patriots,2027-01-10T18:00:00Z,false
+18,Tampa Bay Buccaneers,New Orleans Saints,2027-01-10T18:00:00Z,false
+18,Philadelphia Eagles,New York Giants,2027-01-10T18:00:00Z,false
+18,Dallas Cowboys,Washington Commanders,2027-01-10T21:25:00Z,true

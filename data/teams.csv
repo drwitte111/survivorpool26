@@ -1,0 +1,33 @@
+key,name,espn_abbr,nfl_code,primary_color,secondary_color
+cardinals,Arizona Cardinals,ari,AZ,#97233F,#000000
+falcons,Atlanta Falcons,atl,ATL,#A71930,#000000
+ravens,Baltimore Ravens,bal,BAL,#241773,#000000
+bills,Buffalo Bills,buf,BUF,#00338D,#C60C30
+panthers,Carolina Panthers,car,CAR,#0085CA,#101820
+bears,Chicago Bears,chi,CHI,#0B162A,#C83803
+bengals,Cincinnati Bengals,cin,CIN,#FB4F14,#000000
+browns,Cleveland Browns,cle,CLE,#311D00,#FF3C00
+cowboys,Dallas Cowboys,dal,DAL,#041E42,#869397
+broncos,Denver Broncos,den,DEN,#FB4F14,#002244
+lions,Detroit Lions,det,DET,#0076B6,#B0B7BC
+packers,Green Bay Packers,gb,GB,#203731,#FFB612
+texans,Houston Texans,hou,HOU,#03202F,#A71930
+colts,Indianapolis Colts,ind,IND,#002C5F,#A2AAAD
+jaguars,Jacksonville Jaguars,jax,JAX,#101820,#D7A22A
+chiefs,Kansas City Chiefs,kc,KC,#E31837,#FFB81C
+raiders,Las Vegas Raiders,lv,LV,#000000,#A5ACAF
+chargers,Los Angeles Chargers,lac,LAC,#0080C6,#FFC20E
+rams,Los Angeles Rams,lar,LA,#003594,#FFA300
+dolphins,Miami Dolphins,mia,MIA,#008E97,#FC4C02
+vikings,Minnesota Vikings,min,MIN,#4F2683,#FFC62F
+patriots,New England Patriots,ne,NE,#002244,#C60C30
+saints,New Orleans Saints,no,NO,#D3BC8D,#101820
+giants,New York Giants,nyg,NYG,#0B2265,#A71930
+jets,New York Jets,nyj,NYJ,#125740,#000000
+eagles,Philadelphia Eagles,phi,PHI,#004C54,#A5ACAF
+steelers,Pittsburgh Steelers,pit,PIT,#FFB612,#101820
+49ers,San Francisco 49ers,sf,SF,#AA0000,#B3995D
+seahawks,Seattle Seahawks,sea,SEA,#002244,#69BE28
+buccaneers,Tampa Bay Buccaneers,tb,TB,#D50A0A,#34302B
+titans,Tennessee Titans,ten,TEN,#0C2340,#4B92DB
+commanders,Washington Commanders,wsh,WAS,#5A1414,#FFB612

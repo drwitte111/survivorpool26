@@ -1,0 +1,137 @@
+/* ---------- Sync, spread & results editors ---------- */
+/* ---------- ESPN sync ---------- */
+.sync-btn{
+  background: rgba(var(--night-rgb),0.82); border: 1px solid var(--amber-dim); color: var(--chalk);
+  font-family:'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.5px;
+  padding: 8px 12px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.sync-btn:hover{ border-color: var(--amber); color: var(--chalk); background: rgba(var(--night-rgb),0.95); }
+.sync-btn:disabled{ opacity: 0.6; cursor: wait; }
+.sync-btn.confirm-armed{
+  background: var(--incorrect); border-color: var(--incorrect); color: var(--chalk); font-weight:700;
+  animation: pulseLive 1s ease-in-out infinite;
+}
+.sync-btn.small{ font-size: 11px; padding: 6px 10px; }
+.sync-dot{ width:6px; height:6px; border-radius:50%; background: var(--correct); flex:0 0 auto; }
+.sync-dot.stale{ background: var(--chalk-dim); }
+.sync-status{
+  font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim);
+  margin-top: 6px;
+}
+.kickoff{
+  font-family:'Bungee', 'Oswald', sans-serif; font-size: 16px; font-weight:700; color: #FFFFFF;
+  letter-spacing: 0.5px;
+  -webkit-text-stroke: 1.5px #000000;
+  paint-order: stroke fill;
+  text-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    0 2px 4px rgba(0,0,0,0.5);
+  flex-basis: 100%; margin-top: 8px;
+}
+.spread-editor{ padding-top: 4px; }
+.spread-editor-intro{
+  font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--chalk-dim);
+  margin-bottom: 14px; line-height: 1.5;
+}
+.spread-edit-row{
+  background: var(--night-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 10px;
+}
+.spread-edit-matchup{
+  font-family:'Oswald', sans-serif; font-weight:700; color: var(--chalk); font-size: 14px; margin-bottom: 10px;
+}
+.spread-edit-fields{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.spread-edit-fields label{
+  display:flex; flex-direction:column; gap: 4px;
+  font-family:'JetBrains Mono', monospace; font-size: 10px; letter-spacing:0.5px; text-transform:uppercase;
+  color: var(--chalk-dim);
+}
+.spread-edit-fields input{
+  background: var(--night); border: 1px solid var(--line); color: var(--chalk);
+  font-family:'Oswald', sans-serif; font-size: 13px; padding: 7px 8px; border-radius: 6px;
+}
+.spread-edit-fields input:focus{ outline:none; border-color: var(--amber); }
+.spread-editor-actions{ margin-top: 14px; }
+.results-winner-row{ display:flex; gap: 10px; }
+.results-winner-btn{
+  flex: 1; background: var(--night); border: 2px solid var(--line); color: var(--chalk-dim);
+  font-family:'Oswald', sans-serif; font-weight:700; font-size: 13px; padding: 10px; border-radius: 8px; cursor:pointer;
+  transition: all .12s ease;
+}
+.results-winner-btn.selected{
+  background: var(--correct); border-color: var(--correct); color: var(--night);
+  box-shadow: 0 0 12px rgba(82,183,136,0.4);
+}
+.mnf-tag{ color: var(--incorrect); font-size: 11px; font-family:'JetBrains Mono', monospace; }
+.mnf-score-field{ margin-top: 10px; }
+.mnf-score-field label{
+  display:flex; flex-direction:column; gap: 4px; max-width: 200px;
+  font-family:'JetBrains Mono', monospace; font-size: 10px; letter-spacing:0.5px; text-transform:uppercase;
+  color: var(--chalk-dim);
+}
+.mnf-score-field input{
+  background: var(--night); border: 1px solid var(--line); color: var(--chalk);
+  font-family:'Oswald', sans-serif; font-size: 13px; padding: 7px 8px; border-radius: 6px;
+}
+@media (max-width: 480px){
+  .spread-edit-fields{ grid-template-columns: 1fr 1fr; }
+}
+
+.odds-bar{
+  flex-basis: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
+  display:flex; flex-direction:column; gap: 4px;
+}
+.odds-spread-line{
+  font-family:'Oswald', sans-serif; font-size: 15px; color: var(--chalk);
+}
+.odds-spread-line b{
+  font-family:'JetBrains Mono', monospace; font-weight:700; color: var(--amber);
+  text-shadow: 0 0 8px rgba(var(--amber-rgb),0.3);
+}
+.score-line{
+  flex-basis: 100%; margin-top: 6px; display:flex; align-items:center; gap: 8px;
+  font-family:'JetBrains Mono', monospace; font-size: 13px; font-weight:700; color: var(--chalk);
+  background: rgba(0,0,0,0.25); border-radius: 6px; padding: 6px 10px;
+  border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.status-tag{
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px;
+}
+.status-tag.live{ background: var(--incorrect); color: var(--chalk); }
+.status-tag.final{ background: var(--chalk-dim); color: var(--night); }
+.team-btn.cover{ border-color: var(--correct); box-shadow: 0 0 0 2px var(--correct) inset; }
+.team-btn.no-cover{ border-color: var(--incorrect); box-shadow: 0 0 0 2px var(--incorrect) inset; }
+.team-btn.push{ border-color: var(--chalk-dim); box-shadow: 0 0 0 2px var(--chalk-dim) inset; }
+.tiebreak-inline{
+  flex-basis: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
+  display:flex; align-items:center; gap: 12px; flex-wrap: wrap;
+  font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--chalk-dim);
+}
+.tiebreak-inline label{ display:flex; align-items:center; gap: 8px; }
+.tiebreak-inline input[type=number]{
+  background: var(--night); border: 1px solid var(--line); color: var(--chalk);
+  font-family:'JetBrains Mono', monospace; font-size: 13px; padding: 6px 8px; border-radius:6px; width: 80px;
+}
+.tiebreak-inline .tiebreak-result{ font-weight:700; color: var(--chalk-dim); }
+.tiebreak-inline .tiebreak-result.good{ color: var(--correct); }
+
+/* ---------- Live pulse ---------- */
+/* ---------- Live pulse ---------- */
+@keyframes pulseLive{
+  0%, 100%{ box-shadow: 0 0 0 0 rgba(230,57,70,0.55); }
+  50%{ box-shadow: 0 0 0 4px rgba(230,57,70,0); }
+}
+.status-tag.live{ animation: pulseLive 1.6s ease-in-out infinite; }
+
+@media (max-width: 480px){
+  .game-row{ grid-template-columns: 1fr; }
+  .row-actions{ justify-content: space-between; }
+  .season-tally{ text-align:left; }
+  .board-top{ flex-direction:column; align-items:flex-start; }
+  .standings-highlight-row{ grid-template-columns: 1fr; }
+  .standings-row.cols-full{ grid-template-columns: 40px 1fr auto; grid-template-areas: "rank team pts" "rank survivor total"; }
+  .standings-col-header{ display:none; }
+}

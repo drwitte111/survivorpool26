@@ -1,0 +1,56 @@
+/* ---------- Design tokens ---------- */
+:root{
+  --night: #0A1628;
+  --night-2: #0F2036;
+  --night-rgb: 10,22,40;
+  --turf: #141B2E;
+  --turf-2: #0F1524;
+  --chalk: #F1FAEE;
+  --chalk-dim: #A9BCC7;
+  --amber: #FFB703;
+  --amber-dim: #8A6A1F;
+  --amber-rgb: 255,183,3;
+  --correct: #52B788;
+  --incorrect: #E63946;
+  --line: rgba(241,250,238,0.12);
+  --radius: 10px;
+}
+
+/* ---------- Reset & document ---------- */
+*{box-sizing:border-box;}
+html{ scroll-behavior: smooth; }
+::selection{ background: var(--amber); color: var(--night); }
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-track{ background: var(--night-2); }
+::-webkit-scrollbar-thumb{ background: var(--amber-dim); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover{ background: var(--amber); }
+@keyframes fadeUp{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform: translateY(0);} }
+main.wrap{ animation: fadeUp .45s ease both; }
+html,body{margin:0;padding:0;}
+body{
+  background: var(--night);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(var(--amber-rgb),0.10), transparent 60%),
+    radial-gradient(ellipse 1200px 700px at 50% 110%, rgba(82,183,136,0.06), transparent 65%),
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 64px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 64px);
+  background-attachment: fixed;
+  color: var(--chalk);
+  font-family: 'Oswald', sans-serif;
+  min-height: 100vh;
+  padding: 0 0 60px 0;
+}
+.wrap{max-width: 920px; margin: 0 auto; padding: 0 20px;}
+
+/* ---------- Football-field backdrop
+   Original CSS artwork: yard-line stripes + two hash-mark bands.
+   Colors pull from the active team theme. ---------- */
+/* ---------- Top-down football field background (games & lock panels) ---------- */
+/* Original CSS artwork: yard-line stripes + two hash-mark bands. Colors pull from
+   the same theme variables as everything else, so it re-tints automatically when
+   a favorite team is set. */
+#gamesPanel{
+  background:
+    radial-gradient(ellipse 900px 300px at 50% -10%, rgba(var(--amber-rgb),0.06), transparent 60%),
+    var(--turf);
+}

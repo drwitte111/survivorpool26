@@ -1,0 +1,53 @@
+/* ---------- League gate / login ---------- */
+/* ---------- League Gate ---------- */
+.league-gate{
+  position: fixed; inset: 0; z-index: 500;
+  background:
+    radial-gradient(ellipse 500px 300px at 20% 10%, rgba(var(--amber-rgb),0.12), transparent 60%),
+    radial-gradient(ellipse 500px 300px at 80% 90%, rgba(82,183,136,0.1), transparent 60%),
+    var(--night);
+  display:flex; align-items:flex-start; justify-content:center; padding: 40px 20px;
+  overflow-y: auto;
+}
+.league-gate-stack{ max-width: 420px; width: 100%; }
+.league-gate-card{
+  width: 100%;
+  background: var(--night-2); border: 1px solid var(--amber-dim); border-radius: 14px;
+  padding: 28px 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  animation: fadeUp .4s ease both;
+}
+.league-gate-eyebrow{
+  font-family:'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--chalk-dim); text-align:center; margin-bottom: 18px;
+}
+.league-gate-title{
+  font-family:'Oswald', sans-serif; font-size: 22px; font-weight:700; text-transform:uppercase;
+  color: var(--amber); text-align:center; margin: 0 0 8px 0;
+}
+.league-gate-sub{
+  font-family:'Oswald', sans-serif; font-size: 13px; color: var(--chalk-dim); text-align:center;
+  line-height: 1.5; margin: 0 0 20px 0;
+}
+.league-gate-error{
+  font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--incorrect); min-height: 16px; margin: 10px 0;
+  text-align:center;
+}
+.league-gate-btn{ width: 100%; margin-top: 6px; }
+.league-gate-btn.secondary{
+  background: transparent; border: 2px solid var(--amber-dim); color: var(--chalk);
+  font-family:'Oswald', sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+  font-size: 14px; padding: 13px 30px; border-radius: 8px; cursor:pointer;
+}
+.league-gate-btn.secondary:hover{ border-color: var(--amber); color: var(--amber); }
+.league-gate-divider{
+  display:flex; align-items:center; text-align:center; margin: 18px 0;
+  color: var(--chalk-dim); font-family:'JetBrains Mono', monospace; font-size: 11px; text-transform:uppercase;
+}
+.league-gate-divider::before, .league-gate-divider::after{
+  content:''; flex:1; height:1px; background: var(--line);
+}
+.league-gate-divider span{ padding: 0 12px; }
+.league-gate-note{
+  font-family:'JetBrains Mono', monospace; font-size: 10px; color: var(--chalk-dim); text-align:center;
+  line-height: 1.5; margin: 20px 0 0 0; opacity: 0.8;
+}

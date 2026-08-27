@@ -1,0 +1,21 @@
+{
+  "seasonYear": 2026,
+  "totalWeeks": 18,
+  "survivorBonusPoints": 50,
+  "pickLockMinutesBeforeKickoff": 10,
+  "weekUnlockHoursBeforeStart": 24,
+  "trashTalkMaxLength": 280,
+  "reactionEmojis": [
+    "🔥",
+    "💀",
+    "😂"
+  ],
+  "firebase": {
+    "apiKey": "AIzaSyDbT7xh23HeSbZIUZZp0DNhGs0ExaPA4ig",
+    "authDomain": "nfl-confidence-pool-d6888.firebaseapp.com",
+    "projectId": "nfl-confidence-pool-d6888",
+    "storageBucket": "nfl-confidence-pool-d6888.firebasestorage.app",
+    "messagingSenderId": "346876447611",
+    "appId": "1:346876447611:web:9dfcb37faef0ad61e94bde"
+  }
+}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 NFL Season — Confidence Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Bungee&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/games.css">
+<link rel="stylesheet" href="css/sync.css">
+<link rel="stylesheet" href="css/survivor.css">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/gate.css">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<div id="loginGate" class="league-gate">
+  <div class="league-gate-stack">
+    <div class="league-gate-eyebrow">🏈 Hungry Dawgs Run Faster</div>
+    <div class="league-gate-card">
+      <h1 class="league-gate-title">Log In</h1>
+      <p class="league-gate-sub">Your account, league, and picks follow you to any device once you're logged in.</p>
+      <form id="loginForm" autocomplete="on">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="loginEmailInput" name="email" placeholder="you@example.com" autocomplete="username" required>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Password</label>
+          <input type="password" id="loginPasswordInput" name="password" placeholder="Password" autocomplete="current-password" required>
+        </div>
+        <div class="league-gate-error" id="loginError"></div>
+        <button class="submit-btn complete league-gate-btn" id="loginBtn" type="submit">Log In</button>
+        <div class="league-gate-divider"><span>new here?</span></div>
+        <button class="league-gate-btn secondary" id="signupBtn" type="submit">Create Account</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="leagueGate" class="league-gate" style="display:none;">
+  <div class="league-gate-stack">
+    <div class="league-gate-eyebrow">🏈 Hungry Dawgs Run Faster</div>
+
+    <div class="league-gate-card">
+      <h1 class="league-gate-title">Create a League</h1>
+      <p class="league-gate-sub">Start your own pool. Give the name and password to whoever you want to invite.</p>
+      <div class="field">
+        <label>League Name</label>
+        <input type="text" id="createLeagueNameInput" placeholder="e.g. The Basement Boys" maxlength="40" autocomplete="off">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>League Password</label>
+        <input type="password" id="createLeaguePasswordInput" placeholder="Choose a password" maxlength="40" autocomplete="off">
+      </div>
+      <div class="league-gate-error" id="createLeagueError"></div>
+      <button class="submit-btn complete league-gate-btn" id="createLeagueBtn">Create League</button>
+    </div>
+
+    <div class="league-gate-divider"><span>or</span></div>
+
+    <div class="league-gate-card">
+      <h1 class="league-gate-title">Join a League</h1>
+      <p class="league-gate-sub">Already have a league name and password from someone? Enter them here.</p>
+      <div class="field">
+        <label>League Name</label>
+        <input type="text" id="joinLeagueNameInput" placeholder="e.g. The Basement Boys" maxlength="40" autocomplete="off">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>League Password</label>
+        <input type="password" id="joinLeaguePasswordInput" placeholder="Password" maxlength="40" autocomplete="off">
+      </div>
+      <div class="league-gate-error" id="joinLeagueError"></div>
+      <button class="league-gate-btn secondary" id="joinLeagueBtn">Join League</button>
+    </div>
+
+    <p class="league-gate-note">Note: this is a simple shared password, not real account security — good for keeping a friend group's league tidy, not for anything sensitive.</p>
+  </div>
+</div>
+
+<header class="board">
+  <div class="wrap">
+    <div class="board-top">
+      <div class="title-block">
+        <p class="eyebrow">2026 NFL Season</p>
+        <h1>HUNGRY DAWGS <span>RUN FASTER</span></h1>
+        <div class="header-identity" id="headerIdentity"></div>
+      </div>
+      <div class="season-tally">
+        <div class="num-row">
+          <div class="num" id="seasonNum">0</div>
+          <div class="rank-badge" id="seasonRank"></div>
+        </div>
+        <div class="lbl">Season Points</div>
+        <span class="streak-badge" id="streakBadge" style="display:none;"></span>
+      </div>
+    </div>
+    <div class="top-menu-row">
+      <div class="picker-item">
+        <button class="picker-btn" id="weekPickerBtn">
+          <span id="weekPickerLabel">Week 1</span>
+          <span class="wpb-dot" id="weekPickerDot" style="display:none;"></span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="week-dropdown-panel" id="weekPanel" style="display:none;">
+          <div class="week-list" id="weekList"></div>
+        </div>
+      </div>
+      <div class="picker-item">
+        <button class="picker-btn" id="accountMenuBtn">
+          <img class="menu-avatar" id="menuAvatarImg" src="" alt="">
+          <span>Menu</span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="dropdown-panel" id="accountPanel" style="display:none;">
+          <button class="menu-nav-link" id="navAccountBtn" type="button">👤 Account</button>
+          <button class="menu-nav-link" id="navStandingsBtn" type="button">🏆 Standings</button>
+          <button class="menu-nav-link" id="navTrashTalkBtn" type="button">💬 Trash Talk</button>
+          <button class="menu-nav-link" id="navRulesBtn" type="button">📜 Rules</button>
+          <button class="menu-nav-link" id="navAdminBtn" type="button">🛡️ League Admin</button>
+        </div>
+      </div>
+    </div>
+    <div class="sync-status" id="syncStatus"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="weekPage">
+    <div class="week-header">
+      <h2 id="weekTitle">Week 1</h2>
+      <div class="week-meta" id="weekMeta"></div>
+    </div>
+
+    <div id="lockPanel" class="panel lock-panel"></div>
+
+    <div id="gamesPanel" class="panel"></div>
+
+    <div class="mvp-callout" id="mvpCallout" style="display:none;"></div>
+    <div class="perfect-week-banner" id="perfectWeekBanner" style="display:none;"></div>
+
+    <div class="week-summary" id="weekSummary"></div>
+  </div>
+
+  <div id="standingsPage" style="display:none;">
+    <div class="week-header">
+      <h2>League Standings</h2>
+      <button class="sync-btn small" id="backFromStandingsBtn">← Back to Picks</button>
+    </div>
+
+    <div class="panel">
+      <div class="standings-toolbar">
+        <label for="standingsFilterSelect">Viewing</label>
+        <select id="standingsFilterSelect" class="standings-select"></select>
+      </div>
+      <div id="weekRecapCard"></div>
+      <div id="standingsHighlight"></div>
+      <div id="standingsList" class="standings-list-lg"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label"><span>Survivor Pool 🔒</span></div>
+      <div id="survivorList"></div>
+    </div>
+  </div>
+
+  <div id="accountPage" style="display:none;">
+    <div class="week-header">
+      <h2>Account</h2>
+      <button class="sync-btn small" id="backFromAccountBtn">← Back to Picks</button>
+    </div>
+
+    <div class="panel">
+      <div class="section-label"><span>Profile</span></div>
+      <div class="field">
+        <label>Profile Picture</label>
+        <div class="avatar-row">
+          <img class="avatar-preview" id="avatarPreview" src="" alt="" style="display:none;">
+          <div class="avatar-preview placeholder" id="avatarPlaceholder">🏈</div>
+          <div class="avatar-actions">
+            <label class="file-btn" for="avatarInput">Upload photo</label>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+            <button class="file-btn remove" id="removeAvatarBtn">Remove</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Team Name</label>
+        <input type="text" id="teamNameInput" placeholder="e.g. Gridiron Gurus" maxlength="40">
+      </div>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="yourNameInput" placeholder="e.g. Alex Rivera" maxlength="40">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Favorite NFL Team</label>
+        <select id="favTeamInput"><option value="">Select your team...</option></select>
+      </div>
+      <div class="profile-save-row">
+        <button class="submit-btn complete" id="saveProfileBtn">Save Profile</button>
+        <span class="profile-save-status" id="profileSaveStatus"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label"><span>🏆 Super Bowl Pick</span></div>
+      <p class="sb-disclaimer">Just for Fun</p>
+      <div id="sbPickContent"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label"><span>League</span></div>
+      <div class="league-info-row" id="accountLeagueInfo"></div>
+
+      <div class="my-leagues-label">My Leagues</div>
+      <div id="myLeaguesList"></div>
+
+      <button class="sync-btn small" id="toggleAddLeagueBtn" style="margin-top:10px;">+ Add Another League</button>
+      <div id="addLeagueForms" style="display:none;">
+        <div class="add-league-block">
+          <div class="add-league-title">Create a New League</div>
+          <div class="field">
+            <input type="text" id="acctCreateLeagueName" placeholder="League name" maxlength="40">
+          </div>
+          <div class="field" style="margin-bottom:8px;">
+            <input type="password" id="acctCreateLeaguePass" placeholder="Choose a password">
+          </div>
+          <div class="league-gate-error" id="acctCreateLeagueError"></div>
+          <button class="submit-btn complete" id="acctCreateLeagueBtn" style="width:100%;">Create League</button>
+        </div>
+        <div class="add-league-block">
+          <div class="add-league-title">Join an Existing League</div>
+          <div class="field">
+            <input type="text" id="acctJoinLeagueName" placeholder="League name" maxlength="40">
+          </div>
+          <div class="field" style="margin-bottom:8px;">
+            <input type="password" id="acctJoinLeaguePass" placeholder="Password">
+          </div>
+          <div class="league-gate-error" id="acctJoinLeagueError"></div>
+          <button class="league-gate-btn secondary" id="acctJoinLeagueBtn" style="width:100%;">Join League</button>
+        </div>
+      </div>
+
+      <button class="admin-kick-btn" id="leaveLeagueBtn" style="margin-top:14px;">Leave Current League</button>
+    </div>
+
+    <div class="panel">
+      <div class="section-label"><span>Account</span></div>
+      <div class="league-info-row" id="accountEmailInfo"></div>
+      <button class="admin-kick-btn" id="logoutBtn">Log Out</button>
+    </div>
+  </div>
+
+  <div id="trashTalkPage" style="display:none;">
+    <div class="week-header">
+      <h2>💬 Trash Talk</h2>
+      <button class="sync-btn small" id="backFromTrashTalkBtn">← Back to Picks</button>
+    </div>
+    <div class="panel">
+      <div class="section-label"><span>Post a Message</span></div>
+      <div class="trash-talk-composer">
+        <textarea id="trashTalkInput" placeholder="Talk your trash..." maxlength="280" rows="2"></textarea>
+        <button class="submit-btn complete" id="trashTalkPostBtn">Post</button>
+      </div>
+      <div id="trashTalkStatus" class="tt-status"></div>
+    </div>
+    <div class="panel">
+      <div class="section-label"><span>The Feed</span></div>
+      <div id="trashTalkFeed"></div>
+    </div>
+  </div>
+
+  <div id="rulesPage" style="display:none;">
+    <div class="week-header">
+      <h2>📜 Rules</h2>
+      <button class="sync-btn small" id="backFromRulesBtn">← Back to Picks</button>
+    </div>
+    <div class="panel">
+      <div id="rulesContent" class="rules-content"></div>
+    </div>
+  </div>
+
+  <div id="adminPage" style="display:none;">
+    <div class="week-header">
+      <h2>🛡️ League Admin</h2>
+      <button class="sync-btn small" id="backFromAdminBtn">← Back to Picks</button>
+    </div>
+    <div id="adminContent"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-yardline"></div>
+  <p>🏈 Hungry Dawgs Run Faster &middot; 2026 NFL Confidence Pool</p>
+</footer>
+</body>
+</html>

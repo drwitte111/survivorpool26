@@ -1,0 +1,82 @@
+// Small presentation helpers shared across the UI modules: escaping, date/number
+// formatting, and the confetti burst.
+
+export function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+
+export function ordinal(n){
+  const rem100 = n % 100;
+  if(rem100 >= 11 && rem100 <= 13) return n + 'th';
+  switch(n % 10){
+    case 1: return n + 'st';
+    case 2: return n + 'nd';
+    case 3: return n + 'rd';
+    default: return n + 'th';
+  }
+}
+
+export function timeAgo(iso){
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if(mins < 1) return 'just now';
+  if(mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if(hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  return days + 'd ago';
+}
+
+export function isoToLocalInput(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+export function localInputToIso(val){
+  if(!val) return null;
+  const d = new Date(val);
+  if(isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+
+export function rankBadge(i){
+  if(i === 0) return '\ud83e\udd47';
+  if(i === 1) return '\ud83e\udd48';
+  if(i === 2) return '\ud83e\udd49';
+  return '#' + (i + 1);
+}
+
+export function placeNickname(rank, total){
+  if(rank === 1) return 'Top Dog';
+  if(total > 1 && rank === total) return 'Average Browns Season';
+  if(rank === 2) return 'Runner-Up Royalty';
+  if(rank === 3) return 'Bronze Baller';
+  if(total > 3 && rank === total - 1) return 'On the Clock';
+  if(rank <= Math.ceil(total / 2)) return 'Playoff Hopeful';
+  return 'Rebuilding Year';
+}
+
+// Computes season-long achievement badges for every team in the league,
+
+export function burstConfetti(count){
+  count = count || 60;
+  const colors = ['var(--amber)', 'var(--correct)', 'var(--incorrect)', 'var(--chalk)'];
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+    el.style.animationDelay = (Math.random() * 0.35) + 's';
+    el.style.transform = `rotate(${Math.random() * 360}deg)`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4200);
+  }
+}
+
