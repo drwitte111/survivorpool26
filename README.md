@@ -119,6 +119,14 @@ failure and the fields stay hand-editable, so the pool never depends on them. Th
 over/under is display-only — it's shown on each matchup and used as the placeholder
 on the MNF tiebreaker, but nothing scores off it.
 
+### Publishing results
+
+The Results editor has a **Fetch results from ESPN** button matching the spread
+editor's. It fills in every finished game's winner, shows each final score beside
+the matchup, and works out the Monday Night combined total for the tiebreaker.
+Nothing is published until you press Save & Publish, so you always get to look at
+it first. Games still in progress are shown with a dashed score and left ungraded.
+
 ### Live scores and automatic grading
 
 Scores pull themselves. `core/refresh.js` is the single entry point every caller
