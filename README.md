@@ -86,9 +86,28 @@ Most changes are data edits, not code edits:
 `schedule.csv` columns are `week,away,home,kickoff_utc,is_mnf`. Team names must match
 the `name` column in `teams.csv` exactly. Kickoffs are UTC ISO timestamps.
 
-Spreads and results are **not** in these files — one league admin enters them in the
-app, and they're stored in Firestore under `schedule/week{n}` so every league sees the
-same numbers.
+Spreads, over/unders and results are **not** in these files — a league admin sets
+them in the app and they're stored in Firestore under `schedule/week{n}`, so every
+league sees the same numbers.
+
+### Pulling lines from ESPN
+
+The spread editor has a **Fetch lines from ESPN** button that fills in every game's
+spread, over/under and kickoff time. It's a button rather than an automatic sync on
+purpose: lines move during the week, and shifting them under people mid-week would
+change the board without anyone asking.
+
+Two public ESPN endpoints, no API key and no account — `site.api.espn.com/.../scoreboard`
+for the slate, `sports.core.api.espn.com/.../odds` for each line. Both send CORS
+headers, so the browser calls them directly with no proxy. ESPN's `spread` field
+already uses the same convention as `homeSpread` (negative = home favoured), so
+nothing is sign-flipped on the way in. Games are matched by ESPN's team abbreviation
+against the `espn_abbr` column in `teams.csv`.
+
+These are undocumented endpoints. If ESPN ever changes them the button reports the
+failure and the fields stay hand-editable, so the pool never depends on them. The
+over/under is display-only — it's shown on each matchup and used as the placeholder
+on the MNF tiebreaker, but nothing scores off it.
 
 ## Modules
 

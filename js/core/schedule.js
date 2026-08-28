@@ -26,7 +26,7 @@ export function seedDefaultSchedule(){
     week.games = DEFAULT_SCHEDULE[wk].map(({ away, home, kickoff, isMNF }) => ({
       id: gameId(), away, home, kickoff, isMNF,
       pick: null, confidence: null, actualWinner: null, tiebreakGuess: null,
-      homeSpread: null, liveAway: null, liveHome: null,
+      homeSpread: null, overUnder: null, liveAway: null, liveHome: null,
       gameState: 'pre', statusDetail: null
     }));
   });

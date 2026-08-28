@@ -86,6 +86,7 @@ export async function ensureSpreadsLoaded(n){
     const local = week.games.find(g => g.away === gs.away && g.home === gs.home);
     if(local){
       local.homeSpread = gs.homeSpread != null ? gs.homeSpread : local.homeSpread;
+      local.overUnder = gs.overUnder != null ? gs.overUnder : local.overUnder;
       if(gs.kickoff) local.kickoff = gs.kickoff;
       if(gs.isMNF !== undefined) local.isMNF = gs.isMNF;
       if(gs.actualWinner) local.actualWinner = gs.actualWinner;

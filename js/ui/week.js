@@ -1,7 +1,8 @@
 // The week page: matchup rows, the survivor lock panel, the admin spread and
 // results editors, and the week summary.
 import { store, ui, getWeek, peekWeek } from '../core/state.js';
-import { TEAM_LIST } from '../core/data.js';
+import { TEAM_LIST, CONFIG } from '../core/data.js';
+import { fetchWeekOdds } from '../core/espn.js';
 import { getTeamAbbr, getTeamColors, teamLogoUrl, teamAbbrEquals } from '../core/teams.js';
 import { saveState } from '../core/persist.js';
 import {
@@ -96,12 +97,22 @@ export function teamButtonRow(game, mode, locked){
   wrap.appendChild(vs);
   wrap.appendChild(homeBtn);
 
-  if(game.homeSpread != null){
+  if(game.homeSpread != null || game.overUnder != null){
     const oddsBar = document.createElement('div');
     oddsBar.className = 'odds-bar';
     const fmt = (v) => v > 0 ? '+' + v : String(v);
-    const awaySpread = -game.homeSpread;
-    oddsBar.innerHTML = `<div class="odds-spread-line">${escapeHtml(game.away)} <b>${fmt(awaySpread)}</b></div><div class="odds-spread-line">${escapeHtml(game.home)} <b>${fmt(game.homeSpread)}</b></div>`;
+    let html = '';
+    if(game.homeSpread != null){
+      const awaySpread = -game.homeSpread;
+      html += `<div class="odds-spread-line">${escapeHtml(game.away)} <b>${fmt(awaySpread)}</b></div>`
+            + `<div class="odds-spread-line">${escapeHtml(game.home)} <b>${fmt(game.homeSpread)}</b></div>`;
+    }
+    // Reference only -- the over/under is shown so you can eyeball the expected
+    // scoring, especially for the MNF tiebreaker. Nothing scores off it.
+    if(game.overUnder != null){
+      html += `<div class="odds-total-line">O/U <b>${game.overUnder}</b></div>`;
+    }
+    oddsBar.innerHTML = html;
     wrap.appendChild(oddsBar);
   }
 
@@ -133,7 +144,9 @@ export function teamButtonRow(game, mode, locked){
     const guessInput = document.createElement('input');
     guessInput.type = 'number'; guessInput.min = '0';
     guessInput.value = game.tiebreakGuess ?? '';
-    guessInput.placeholder = 'e.g. 47';
+    // The over/under is the bookmakers' own guess at this number, so it makes
+    // a far better prompt than an arbitrary example.
+    guessInput.placeholder = game.overUnder != null ? `O/U ${game.overUnder}` : 'e.g. 47';
     guessInput.disabled = disablePicks;
     guessInput.onchange = () => { game.tiebreakGuess = guessInput.value ? parseInt(guessInput.value) : null; saveState(); render(); };
     label.appendChild(guessInput);
@@ -407,19 +420,35 @@ export function renderSpreadEditor(panel, week){
 
   const intro = document.createElement('p');
   intro.className = 'spread-editor-intro';
-  intro.textContent = 'Set the spread and kickoff time for each game. Type either team\u2019s number and the other fills in automatically. This publishes for every league at once.';
+  intro.textContent = 'Set the spread, over/under and kickoff time for each game. Type either team\u2019s number and the other fills in automatically. This publishes for every league at once.';
   wrap.appendChild(intro);
+
+  // Pull the current lines from ESPN into the form. Deliberately a button
+  // rather than an automatic sync -- spreads moving under people mid-week
+  // would change the board without anyone asking for it.
+  const fetchRow = document.createElement('div');
+  fetchRow.className = 'espn-fetch-row';
+  const fetchBtn = document.createElement('button');
+  fetchBtn.className = 'sync-btn';
+  fetchBtn.textContent = '\u2193 Fetch lines from ESPN';
+  const fetchStatus = document.createElement('span');
+  fetchStatus.className = 'espn-fetch-status';
+  fetchRow.appendChild(fetchBtn);
+  fetchRow.appendChild(fetchStatus);
+  wrap.appendChild(fetchRow);
 
   const rows = week.games.map(g => {
     const row = document.createElement('div');
     row.className = 'spread-edit-row';
     const awayVal = g.homeSpread != null ? -g.homeSpread : '';
     const homeVal = g.homeSpread != null ? g.homeSpread : '';
+    const ouVal = g.overUnder != null ? g.overUnder : '';
     row.innerHTML = `
       <div class="spread-edit-matchup">${escapeHtml(g.away)} @ ${escapeHtml(g.home)}</div>
       <div class="spread-edit-fields">
         <label>${escapeHtml(g.away)} Spread<input type="number" step="0.5" class="se-away-spread" placeholder="e.g. 3.5" value="${awayVal}"></label>
         <label>${escapeHtml(g.home)} Spread<input type="number" step="0.5" class="se-home-spread" placeholder="e.g. -3.5" value="${homeVal}"></label>
+        <label>Over/Under<input type="number" step="0.5" class="se-over-under" placeholder="e.g. 47.5" value="${ouVal}"></label>
         <label>Kickoff<input type="datetime-local" class="se-kickoff" value="${isoToLocalInput(g.kickoff)}"></label>
       </div>`;
     const awayInput = row.querySelector('.se-away-spread');
@@ -439,6 +468,39 @@ export function renderSpreadEditor(panel, week){
   });
   rows.forEach(r => wrap.appendChild(r.row));
 
+  // Fills the form only -- the admin still has to hit Save & Publish.
+  fetchBtn.onclick = async () => {
+    fetchBtn.disabled = true;
+    fetchStatus.className = 'espn-fetch-status';
+    fetchStatus.textContent = 'Fetching…';
+    try{
+      const { games, missing } = await fetchWeekOdds(store.currentWeek, CONFIG.seasonYear);
+      let filled = 0, unmatched = 0;
+      games.forEach(g => {
+        const target = rows.find(r => r.game.away === g.away && r.game.home === g.home);
+        if(!target){ unmatched++; return; }
+        if(g.homeSpread != null){
+          target.row.querySelector('.se-home-spread').value = g.homeSpread;
+          target.row.querySelector('.se-away-spread').value = -g.homeSpread;
+          filled++;
+        }
+        if(g.overUnder != null) target.row.querySelector('.se-over-under').value = g.overUnder;
+        if(g.kickoff) target.row.querySelector('.se-kickoff').value = isoToLocalInput(g.kickoff);
+      });
+      const provider = (games.find(g => g.provider) || {}).provider;
+      const notes = [`Filled ${filled} of ${rows.length} games`];
+      if(provider) notes.push(`via ${provider}`);
+      if(missing) notes.push(`${missing} with no line yet`);
+      if(unmatched) notes.push(`${unmatched} not on this week’s board`);
+      fetchStatus.className = 'espn-fetch-status ok';
+      fetchStatus.textContent = notes.join(' · ') + ' — review, then Save & Publish.';
+    }catch(e){
+      fetchStatus.className = 'espn-fetch-status err';
+      fetchStatus.textContent = 'Couldn’t reach ESPN (' + e.message + '). Enter the numbers by hand.';
+    }
+    fetchBtn.disabled = false;
+  };
+
   const actionRow = document.createElement('div');
   actionRow.className = 'spread-editor-actions';
   const saveBtn = document.createElement('button');
@@ -450,11 +512,13 @@ export function renderSpreadEditor(panel, week){
     const gamesArr = rows.map(r => {
       const g = r.game;
       const homeVal = r.row.querySelector('.se-home-spread').value.trim();
+      const ouVal = r.row.querySelector('.se-over-under').value.trim();
       const kickoffVal = r.row.querySelector('.se-kickoff').value;
       return {
         away: g.away,
         home: g.home,
         homeSpread: homeVal !== '' ? parseFloat(homeVal) : null,
+        overUnder: ouVal !== '' ? parseFloat(ouVal) : null,
         kickoff: kickoffVal ? localInputToIso(kickoffVal) : g.kickoff
       };
     });
@@ -471,6 +535,7 @@ export function renderSpreadEditor(panel, week){
         const local = week.games.find(g => g.away === gs.away && g.home === gs.home);
         if(local){
           local.homeSpread = gs.homeSpread;
+          local.overUnder = gs.overUnder;
           local.kickoff = gs.kickoff;
           local.isMNF = gs.isMNF;
         }

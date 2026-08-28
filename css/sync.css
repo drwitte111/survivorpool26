@@ -122,3 +122,25 @@
 }
 .status-tag.live{ animation: pulseLive 1.6s ease-in-out infinite; }
 
+
+/* ---------- ESPN line fetch (spread editor) ---------- */
+.espn-fetch-row{
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 14px 0; padding-bottom: 12px;
+  border-bottom: 1px dashed var(--line);
+}
+.espn-fetch-status{
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--chalk-dim); flex: 1 1 220px;
+}
+.espn-fetch-status.ok{ color: var(--correct); }
+.espn-fetch-status.err{ color: var(--incorrect); }
+
+/* ---------- Over/under, shown alongside the spread ---------- */
+.odds-total-line{
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--chalk-dim); letter-spacing: 1px;
+}
+.odds-total-line b{
+  font-weight: 700; color: var(--chalk); letter-spacing: 0;
+}

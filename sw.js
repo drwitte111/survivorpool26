@@ -3,7 +3,7 @@
 // GET requests. Firebase traffic (auth, Firestore) is cross-origin and never
 // touched, so live league data always goes to the network.
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = `shell-${VERSION}`;
 const DATA = `data-${VERSION}`;
 
@@ -21,6 +21,7 @@ const SHELL_ASSETS = [
   'css/mobile.css',
   'js/app.js',
   'js/core/data.js',
+  'js/core/espn.js',
   'js/core/firebase.js',
   'js/core/league.js',
   'js/core/locks.js',
