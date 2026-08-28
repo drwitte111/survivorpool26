@@ -4,7 +4,7 @@
 import { store, ui, getWeek } from '../core/state.js';
 import { TOTAL_WEEKS, CONFIG } from '../core/data.js';
 import { db } from '../core/firebase.js';
-import { fetchWeekOdds } from '../core/espn.js';
+import { fetchWeekOdds, fetchWeekScores } from '../core/espn.js';
 import { fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults } from '../core/league.js';
 import { isWeekFullyLocked } from '../core/locks.js';
 import { isAdmin } from '../core/roles.js';
@@ -325,10 +325,26 @@ export function renderResultsEditor(panel, weekNum){
   intro.textContent = 'Mark who actually won each game, and enter the Monday Night combined final score for the tiebreaker. This publishes for every league at once and grades everyone’s picks.';
   wrap.appendChild(intro);
 
+  // Same idea as the spread editor: pull the real results in, then let the admin
+  // check them and publish. Scores already sync on their own for display -- this
+  // is what makes them the league's official, published result.
+  const fetchRow = document.createElement('div');
+  fetchRow.className = 'espn-fetch-row';
+  const fetchBtn = document.createElement('button');
+  fetchBtn.className = 'sync-btn';
+  fetchBtn.textContent = '↓ Fetch results from ESPN';
+  const fetchStatus = document.createElement('span');
+  fetchStatus.className = 'espn-fetch-status';
+  fetchRow.appendChild(fetchBtn);
+  fetchRow.appendChild(fetchStatus);
+  wrap.appendChild(fetchRow);
+
   const rows = week.games.map(g => {
     const row = document.createElement('div');
     row.className = 'spread-edit-row results-edit-row';
-    row.innerHTML = `<div class="spread-edit-matchup">${escapeHtml(g.away)} @ ${escapeHtml(g.home)}${g.isMNF ? ' <span class="mnf-tag">MNF</span>' : ''}</div>`;
+    const finalScore = (g.liveAway != null && g.liveHome != null)
+      ? `<span class="results-score">${g.liveAway}–${g.liveHome}</span>` : '';
+    row.innerHTML = `<div class="spread-edit-matchup">${escapeHtml(g.away)} @ ${escapeHtml(g.home)}${g.isMNF ? ' <span class="mnf-tag">MNF</span>' : ''}${finalScore}</div>`;
     const btnRow = document.createElement('div');
     btnRow.className = 'results-winner-row';
     const awayBtn = document.createElement('button');
@@ -370,10 +386,58 @@ export function renderResultsEditor(panel, weekNum){
     return {
       row, game: g,
       getSelected: () => selected,
+      setSelected: (v) => { selected = v; refresh(); },
+      scoreInput,
       clear: () => { selected = null; refresh(); if(scoreInput) scoreInput.value = ''; }
     };
   });
   rows.forEach(r => wrap.appendChild(r.row));
+
+  // Fills the form only -- Save & Publish is still a separate, deliberate step.
+  fetchBtn.onclick = async () => {
+    fetchBtn.disabled = true;
+    fetchStatus.className = 'espn-fetch-status';
+    fetchStatus.textContent = 'Fetching…';
+    try{
+      const results = await fetchWeekScores(weekNum, CONFIG.seasonYear);
+      let graded = 0, pending = 0, ties = 0;
+      results.forEach(r => {
+        const target = rows.find(x => x.game.away === r.away && x.game.home === r.home);
+        if(!target) return;
+
+        // Show the score in the row whether or not the game is over yet.
+        const label = target.row.querySelector('.spread-edit-matchup');
+        let scoreEl = label.querySelector('.results-score');
+        if(r.awayScore != null && r.homeScore != null){
+          if(!scoreEl){
+            scoreEl = document.createElement('span');
+            scoreEl.className = 'results-score';
+            label.appendChild(scoreEl);
+          }
+          scoreEl.textContent = `${r.awayScore}–${r.homeScore}`;
+          scoreEl.classList.toggle('pending', !r.completed);
+        }
+
+        if(!r.completed){ pending++; return; }
+        if(r.winner){ target.setSelected(r.winner); graded++; }
+        else ties++;
+
+        // The tiebreaker wants the two teams' combined final score.
+        if(target.game.isMNF && target.scoreInput && r.awayScore != null && r.homeScore != null){
+          target.scoreInput.value = r.awayScore + r.homeScore;
+        }
+      });
+      const notes = [`${graded} of ${rows.length} games final`];
+      if(pending) notes.push(`${pending} still in progress`);
+      if(ties) notes.push(`${ties} tied — left ungraded`);
+      fetchStatus.className = 'espn-fetch-status ok';
+      fetchStatus.textContent = notes.join(' · ') + ' — review, then Save & Publish.';
+    }catch(e){
+      fetchStatus.className = 'espn-fetch-status err';
+      fetchStatus.textContent = 'Couldn’t reach ESPN (' + e.message + '). Mark the winners by hand.';
+    }
+    fetchBtn.disabled = false;
+  };
 
   const actionRow = document.createElement('div');
   actionRow.className = 'spread-editor-actions';

@@ -5,10 +5,9 @@ import { store, normalizeState } from './state.js';
 import { loadUserState } from './firebase.js';
 import { applyTeamTheme } from './theme.js';
 import { getActiveWeekByDate, seedDefaultSchedule } from './schedule.js';
-import { syncToLeague, autoFillWeekLines } from './league.js';
+import { syncToLeague } from './league.js';
 import { refreshWeek } from './refresh.js';
 import { isAdmin } from './roles.js';
-import { saveState } from './persist.js';
 import { render } from '../ui/router.js';
 import { updateSeasonRank } from '../ui/standings.js';
 
@@ -41,8 +40,8 @@ export async function enterApp(){
     seedDefaultSchedule();
     render();
   }
-  await refreshWeek(store.currentWeek);
-  if(await autoFillWeekLines(store.currentWeek)){ saveState(); render(); }
+  // A first-load refresh can fill in live scores and ESPN lines; paint them.
+  if(await refreshWeek(store.currentWeek)) render();
   syncToLeague().catch(() => {});
   updateSeasonRank().catch(() => {});
 }

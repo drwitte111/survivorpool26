@@ -12,13 +12,12 @@
 import { db, saveUserState } from './firebase.js';
 import { store, getWeek, peekWeek } from './state.js';
 import { saveState } from './persist.js';
-import { TOTAL_WEEKS, CONFIG } from './data.js';
+import { TOTAL_WEEKS } from './data.js';
 import { isGameLocked, isSuperBowlPickLocked } from './locks.js';
 import { weekScore } from './scoring.js';
 import { getSurvivorStatus } from './survivor.js';
 import { teamAbbrEquals } from './teams.js';
 import { isAdmin } from './roles.js';
-import { fetchWeekOdds } from './espn.js';
 
 export function slugifyTeam(name){
   return (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'team';
@@ -95,62 +94,6 @@ export async function ensureSpreadsLoaded(n){
     }
   });
   if(data.mnfFinalScore != null) week.mnfActualTotal = data.mnfFinalScore;
-}
-
-// Fills a week's spreads and over/unders from ESPN, once per session, and only
-// when nothing is set yet. Runs on every user's first load so the board is
-// never blank before an admin has touched it; an admin's client also publishes
-// what it pulled, so the numbers become canonical for every league. Once a line
-// exists -- fetched here or published by an admin -- this bails out (the guard
-// below trips), and all later changes go through the manual "Fetch lines from
-// ESPN" button. Lines move during the week, and shifting them under people
-// unasked is exactly what we're avoiding.
-//
-// Runs *after* ensureSpreadsLoaded in refreshWeek(), so a published line is
-// already merged in and the ESPN calls are skipped entirely.
-const autoLineFetchTried = new Set();
-
-export async function autoFillWeekLines(n){
-  if(autoLineFetchTried.has(n)) return false;
-  autoLineFetchTried.add(n);
-
-  const week = peekWeek(n);
-  if(!week.games.length) return false;
-  if(week.games.some(g => g.homeSpread != null)) return false;
-
-  let odds;
-  try{
-    odds = await fetchWeekOdds(n, CONFIG.seasonYear);
-  }catch(e){
-    // A transient failure shouldn't burn the one attempt for this session.
-    console.warn('auto line fetch failed', e.message);
-    autoLineFetchTried.delete(n);
-    return false;
-  }
-
-  let filled = 0;
-  week.games.forEach(g => {
-    const hit = odds.games.find(o => o.away === g.away && o.home === g.home);
-    if(!hit) return;
-    // Kickoff is left alone on purpose -- schedule.csv owns it and it drives the
-    // per-game pick locks. Only the betting lines are filled here.
-    if(hit.homeSpread != null){ g.homeSpread = hit.homeSpread; filled++; }
-    if(hit.overUnder != null) g.overUnder = hit.overUnder;
-  });
-  if(!filled) return false;
-
-  if(isAdmin()){
-    const gamesArr = week.games.map(g => ({
-      away: g.away,
-      home: g.home,
-      homeSpread: g.homeSpread ?? null,
-      overUnder: g.overUnder ?? null,
-      kickoff: g.kickoff,
-      isMNF: g.isMNF,
-    }));
-    await saveGlobalSpreads(n, gamesArr); // best effort; a failed publish is fine
-  }
-  return true;
 }
 
 export async function getLeagueMeta(slug){
