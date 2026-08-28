@@ -74,10 +74,6 @@
   background: var(--night); border: 1px solid var(--line); color: var(--chalk);
   font-family:'Oswald', sans-serif; font-size: 13px; padding: 7px 8px; border-radius: 6px;
 }
-@media (max-width: 480px){
-  .spread-edit-fields{ grid-template-columns: 1fr 1fr; }
-}
-
 .odds-bar{
   flex-basis: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
   display:flex; flex-direction:column; gap: 4px;
@@ -126,12 +122,3 @@
 }
 .status-tag.live{ animation: pulseLive 1.6s ease-in-out infinite; }
 
-@media (max-width: 480px){
-  .game-row{ grid-template-columns: 1fr; }
-  .row-actions{ justify-content: space-between; }
-  .season-tally{ text-align:left; }
-  .board-top{ flex-direction:column; align-items:flex-start; }
-  .standings-highlight-row{ grid-template-columns: 1fr; }
-  .standings-row.cols-full{ grid-template-columns: 40px 1fr auto; grid-template-areas: "rank team pts" "rank survivor total"; }
-  .standings-col-header{ display:none; }
-}

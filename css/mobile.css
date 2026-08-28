@@ -1,0 +1,179 @@
+/* ---------- Mobile & installed-app behaviour ----------
+   Loaded last so it can correct the desktop rules above it. Covers three
+   things: killing horizontal scroll, making the board usable with a thumb,
+   and behaving like an app rather than a web page when launched from the
+   home screen. */
+
+/* ---------- Horizontal scroll ---------- */
+/* The header's radial glow is a fixed 900px, which pushed the page ~260px wider
+   than a phone screen and let the whole thing pan sideways. */
+header.board::before{ max-width: 100%; }
+html, body{ overflow-x: hidden; max-width: 100%; }
+
+/* header.board is itself a flex container, so its .wrap became a flex item and
+   shrink-wrapped to its content instead of filling the bar. Harmless on a wide
+   screen where .wrap hits its 920px cap anyway; on a phone it left the header
+   content squeezed into the middle ~260px. */
+header.board > .wrap{ flex: 1 1 auto; width: 100%; min-width: 0; }
+
+/* ---------- Touch behaviour ---------- */
+/* No grey flash on tap, no 300ms double-tap-zoom delay, no accidental
+   text selection when jabbing at team buttons. */
+button, .team-btn, .week-item, .menu-nav-link, .file-btn, .sync-btn,
+.tt-reaction-btn, .del-btn, select{
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button, .team-btn, .week-item, .menu-nav-link, .file-btn, .sync-btn, .lbl, .eyebrow{
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* iOS zooms the whole page in when you focus an input under 16px. Bumping the
+   font is the only reliable fix that doesn't disable pinch-zoom entirely.
+   Scoped to touch devices so pointer users keep the tighter 14px look, and
+   written at the same specificity as the rules it has to beat. */
+@media (pointer: coarse){
+  input, select, textarea,
+  .field input[type=text], .field input[type=password], .field input[type=email],
+  .field select,
+  .add-form input[type=text],
+  .tiebreak-inline input[type=number],
+  .tiebreak-panel input[type=number],
+  .trash-talk-composer textarea,
+  .lock-team-select,
+  .standings-select,
+  .sb-pick-select,
+  .conf-select,
+  .re-mnf-score,
+  .se-away-spread, .se-home-spread, .se-kickoff{
+    font-size: 16px;
+  }
+}
+
+/* ---------- Installed-app chrome ---------- */
+/* In standalone mode there's no browser UI, so the page owns the notch and the
+   home-indicator strip. */
+body{
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain; /* no rubber-band / pull-to-refresh surprise */
+}
+header.board{
+  padding-top: calc(28px + env(safe-area-inset-top));
+}
+.wrap{
+  padding-left: calc(20px + env(safe-area-inset-left));
+  padding-right: calc(20px + env(safe-area-inset-right));
+}
+.league-gate{
+  padding-top: calc(40px + env(safe-area-inset-top));
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 720px){
+  /* ---------- Header ---------- */
+  /* 300px of scoreboard is most of a phone screen before you see a single game. */
+  header.board{ min-height: 0; padding-bottom: 14px; }
+  header.board::before{ top: -60px; height: 180px; }
+
+  /* Title and season tally stay side by side. Stacking them (as the original
+     480px rule did) costs ~65px of a phone screen before the first game. */
+  .board-top{ gap: 12px; flex-direction: row; flex-wrap: nowrap; align-items: center; }
+  .title-block{ flex: 1 1 auto; min-width: 0; }
+  .season-tally{ flex: 0 0 auto; text-align: right; padding: 8px 12px; }
+
+  .title-block h1{ font-size: 18px; line-height: 1.12; margin-bottom: 4px; }
+  .title-block .eyebrow{ font-size: 10px; letter-spacing: 2px; margin-bottom: 2px; }
+  .header-identity{ font-size: 11px; }
+  .season-tally .num{ font-size: 30px; }
+  .season-tally .lbl{ font-size: 9px; }
+  .wrap{ padding-left: calc(14px + env(safe-area-inset-left));
+         padding-right: calc(14px + env(safe-area-inset-right)); }
+
+  /* Week picker + Menu side by side, each a comfortable thumb target. */
+  .top-menu-row{ margin-top: 14px; padding-top: 14px; gap: 8px; }
+  .picker-item{ min-width: 0; }
+  .picker-btn{ min-height: 48px; font-size: 14px; padding: 10px; }
+  .dropdown-panel, .week-dropdown-panel{ width: 100%; min-width: 0; }
+  .menu-nav-link{ min-height: 48px; display: flex; align-items: center; }
+
+  /* ---------- Game rows ---------- */
+  /* Stack the matchup above its controls instead of a 3-column grid. */
+  .panel{ padding: 14px 12px 12px; }
+  .game-row{
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 'matchup matchup' 'conf actions';
+    padding: 12px;
+    gap: 10px;
+  }
+  .game-row .matchup{ grid-area: matchup; }
+  .game-row .conf-select{ grid-area: conf; }
+  .game-row .row-actions{ grid-area: actions; }
+
+  /* Two team buttons share the row and stay tappable. */
+  .matchup{ gap: 8px; }
+  .team-btn{ flex: 1 1 0; min-width: 0; min-height: 52px; font-size: 13px; }
+  .team-btn-label{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vs{ flex: 0 0 auto; }
+
+  /* Confidence select becomes the primary control on the second line. */
+  .conf-select{ min-height: 48px; width: 100%; font-size: 16px; }
+  .row-actions{ display: flex; align-items: center; }
+  .del-btn{ min-width: 48px; min-height: 48px; font-size: 16px; }
+
+  /* ---------- Buttons & forms ---------- */
+  .submit-btn{ width: 100%; min-height: 52px; }
+  .sync-btn, .sync-btn.small{ min-height: 44px; padding: 10px 12px; }
+  /* The MNF tiebreaker is a required weekly entry -- give it a real target. */
+  .tiebreak-inline input[type=number],
+  .tiebreak-panel input[type=number]{ min-height: 44px; min-width: 88px; }
+  .lock-team-select{ min-height: 48px; }
+  .field input, .field select{ min-height: 48px; }
+  .file-btn{ min-height: 44px; display: inline-flex; align-items: center; }
+  .league-gate-btn{ min-height: 52px; }
+  .admin-kick-btn{ min-height: 44px; }
+
+  /* ---------- Pages ---------- */
+  .week-header{ flex-wrap: wrap; gap: 8px; }
+  .week-header h2{ font-size: 20px; }
+  .standings-toolbar{ flex-wrap: wrap; }
+  .standings-select{ min-height: 48px; width: 100%; }
+  .trash-talk-composer{ flex-direction: column; align-items: stretch; gap: 8px; }
+  .trash-talk-composer textarea{ width: 100%; }
+  .tt-reaction-btn{ min-height: 40px; min-width: 52px; }
+  .rules-content{ font-size: 15px; }
+
+  /* Wide content scrolls inside its own box rather than the page. */
+  .standings-list-lg, #survivorList, #adminContent{ overflow-x: auto; }
+}
+
+/* Rules that used to live in sync.css's own 480px block. Gathered here so every
+   responsive override sits in one file and they stop overriding each other. */
+@media (max-width: 480px){
+  .spread-edit-fields{ grid-template-columns: 1fr 1fr; }
+  .row-actions{ justify-content: space-between; }
+  .standings-highlight-row{ grid-template-columns: 1fr; }
+  .standings-row.cols-full{
+    grid-template-columns: 40px 1fr auto;
+    grid-template-areas: "rank team pts" "rank survivor total";
+  }
+  .standings-col-header{ display: none; }
+}
+
+/* Very narrow phones: let the two team buttons stack rather than squeeze. */
+@media (max-width: 360px){
+  .team-btn{ font-size: 12px; padding: 6px 8px; }
+  .season-tally .num{ font-size: 28px; }
+  .title-block h1{ font-size: 17px; }
+}
+
+/* People who prefer less motion get no confetti and no transitions. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .confetti-piece{ display: none !important; }
+}

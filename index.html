@@ -2,9 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- viewport-fit=cover lets the page paint under the notch; the CSS then pads
+     content back out with env(safe-area-inset-*). No maximum-scale, so pinch
+     zoom still works for anyone who needs it. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>2026 NFL Season — Confidence Board</title>
+
+<!-- Installed-app metadata -->
+<meta name="theme-color" content="#0A1628">
+<meta name="description" content="2026 NFL confidence pool and survivor board.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- iOS still reads the apple-prefixed tags; without these, Add to Home Screen
+     opens in a Safari chrome instead of standalone. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hungry Dawgs">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="icon" href="img/favicon.png" sizes="64x64" type="image/png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Bungee&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/layout.css">
@@ -13,10 +31,28 @@
 <link rel="stylesheet" href="css/survivor.css">
 <link rel="stylesheet" href="css/pages.css">
 <link rel="stylesheet" href="css/gate.css">
+<link rel="stylesheet" href="css/mobile.css">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script type="module" src="js/app.js"></script>
+<script>
+  // Registered outside the module graph so a service-worker failure can never
+  // stop the app itself from booting.
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW registration failed', e));
+    });
+    // A new worker calls skipWaiting() and takes over straight away. Reload once
+    // so the page isn't left running against the previous version's assets.
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(reloading) return;          // guard: controllerchange can fire more than once
+      reloading = true;
+      window.location.reload();
+    });
+  }
+</script>
 </head>
 <body>
 <div id="loginGate" class="league-gate">
