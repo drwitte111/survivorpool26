@@ -160,3 +160,13 @@
   color: var(--night); background: var(--amber);
   padding: 2px 8px; border-radius: 999px; white-space: nowrap;
 }
+
+/* Final score shown beside a matchup in the results editor. */
+.results-score{
+  margin-left: 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  color: var(--night); background: var(--chalk-dim);
+  padding: 1px 7px; border-radius: 999px;
+}
+/* Still in progress -- shown, but visibly not a final result. */
+.results-score.pending{ background: transparent; color: var(--chalk-dim); border: 1px dashed var(--line); }

@@ -96,15 +96,8 @@ every league sees the same numbers.
 
 ### Pulling lines from ESPN
 
-Lines fill themselves. The first time anyone loads a week that has no spreads yet,
-`autoFillWeekLines` (in `core/league.js`) pulls them from ESPN into that person's
-board; if the loader is an admin, it also publishes them to `schedule/week{n}` so
-the numbers become canonical for every league.
+Spreads and over/unders appear on their own: on first load a week with no lines gets filled (so a fresh week shows real numbers), and refreshWeek only fills blanks — it never overwrites a value already on screen or one an admin published. Odds cost a request per game, so they're fetched only when missing and at most once every ten minutes per week. The spread editor also has a **Fetch lines from ESPN** button for publishing: it fills the form so an admin can review the numbers and Save & Publish them, which writes them to Firestore and makes them the league's official line — frozen from that point, so a mid-week move doesn't shift the board under anyone.
 
-After that it's manual. The spread editor on the Admin page has a **Fetch lines
-from ESPN** button for pulling fresh numbers, because lines move during the week and
-shifting them under people mid-week would change the board without anyone asking.
-Once any spread exists for a week, the auto-fetch never runs for it again.
 
 Two public ESPN endpoints, no API key and no account — `site.api.espn.com/.../scoreboard`
 for the slate, `sports.core.api.espn.com/.../odds` for each line. Both send CORS
@@ -117,6 +110,14 @@ These are undocumented endpoints. If ESPN ever changes them the button reports t
 failure and the fields stay hand-editable, so the pool never depends on them. The
 over/under is display-only — it's shown on each matchup and used as the placeholder
 on the MNF tiebreaker, but nothing scores off it.
+
+### Publishing results
+
+The Results editor has a **Fetch results from ESPN** button matching the spread
+editor's. It fills in every finished game's winner, shows each final score beside
+the matchup, and works out the Monday Night combined total for the tiebreaker.
+Nothing is published until you press Save & Publish, so you always get to look at
+it first. Games still in progress are shown with a dashed score and left ungraded.
 
 ### Live scores and automatic grading
 

@@ -34,21 +34,40 @@ refuses if someone else has pushed in the meantime.
 
 ## Day-to-day flow
 
-For anything more than a one-line fix, work on a branch:
+**Both of us push straight to `main`.** There is no branch to remember, no pull
+request to open, and nothing to merge:
 
 ```bash
-git checkout -b spreads-tweak
-# ... edit ...
+git pull
 git add -A && git commit -m "Tighten the spread editor layout"
-git push -u origin spreads-tweak
+git push
 ```
 
-Open a pull request. Netlify builds a **Deploy Preview** at its own URL, so you
-can look at the change running for real before it touches the live site. Merge
-when it looks right.
+Two people who talk to each other don't need a review process. The `git pull`
+first is the whole discipline — with `pull.rebase` set it replays your work on
+top of the other person's and the push goes through.
 
 Small, frequent commits conflict far less than one big one. If you're about to
 touch something large, say so first — that costs a message and saves an hour.
+
+### When a branch is worth it
+
+Branches are optional here, not the default. Reach for one only when:
+
+- **You want to see it deployed before it's live.** A pull request gets its own
+  Netlify Deploy Preview URL, so you can click through the real thing without
+  putting it in front of the league.
+- **The change is big or risky** and you'd like the other person to look first.
+- **You're mid-way through something** and need to push a quick fix to `main`
+  without dragging the unfinished work along.
+
+```bash
+git checkout -b spreads-tweak
+git push -u origin spreads-tweak
+```
+
+Then open a pull request on GitHub and merge it when the preview looks right.
+For a typo or a schedule fix, that's ceremony you don't need — just push.
 
 ## If you do hit a conflict
 
