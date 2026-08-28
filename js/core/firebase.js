@@ -10,10 +10,11 @@ export function initFirebase(){
   firebase.initializeApp(CONFIG.firebase);
   db = firebase.firestore();
   auth = firebase.auth();
-  // Only stay logged in for the current browser session -- closing the browser
-  // (or the tab, in some browsers) sends you back to the login screen next time,
-  // rather than silently staying logged in indefinitely.
-  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+  // Stay signed in on this device until the person explicitly logs out. The app
+  // is meant to live on a phone home screen, where SESSION persistence meant
+  // retyping a password every single launch. "Log Out" on the Account page is
+  // the way back out.
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .catch(e => console.error('setPersistence failed', e));
 }
 

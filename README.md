@@ -39,6 +39,18 @@ The site is a PWA, so it installs to a home screen and runs without browser chro
 Once installed it launches standalone, keeps its own colour on the status bar, and
 paints under the notch — the CSS pads content back with `env(safe-area-inset-*)`.
 
+### Staying signed in
+
+Firebase Auth uses `Persistence.LOCAL`, so a login sticks on that device until the
+person taps **Log Out** on the Account page. Restoring the session is asynchronous,
+so `<html>` starts with an `auth-pending` class that hides both gates behind a
+splash; `app.js` clears it on the first auth callback (with an 8s failsafe) so a
+signed-in person never sees the login form flash on launch.
+
+This is a per-device convenience, not a security boundary: anyone who picks up an
+unlocked phone with the app installed is already signed in. That is the normal
+trade for a home-screen app, but it's why the pool holds nothing sensitive.
+
 ### Offline
 
 `sw.js` caches the app shell and everything in `data/` on first visit, so the board

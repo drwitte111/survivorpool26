@@ -21,6 +21,7 @@ const $ = (id) => document.getElementById(id);
 const RANK_REFRESH_MS = 60000;
 const RESULTS_POLL_MS = 30000;
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
+const AUTH_SPLASH_TIMEOUT_MS = 8000;
 
 // ---------- Dropdown panels (week picker + account menu) ----------
 // Both behave the same way: opening one closes the other, an outside click
@@ -260,16 +261,25 @@ function wireAuth(){
 
   $('logoutBtn').onclick = () => auth.signOut();
 
+  // Drop the splash once we know whether there's a saved session. Belt-and-braces
+  // timeout so a wedged auth call can never leave someone stuck on it.
+  const clearAuthPending = () => document.documentElement.classList.remove('auth-pending');
+  setTimeout(clearAuthPending, AUTH_SPLASH_TIMEOUT_MS);
+
   auth.onAuthStateChanged(async (user) => {
     if(user){
       store.currentUser = user;
       $('loginGate').style.display = 'none';
+      // Render the board before revealing it, so the splash gives way to the
+      // week page rather than to an empty shell.
       await loadState();
+      clearAuthPending();
     } else {
       store.currentUser = null;
       $('loginGate').style.display = 'flex';
       $('leagueGate').style.display = 'none';
       showPage(null); // hide all app pages behind the login gate
+      clearAuthPending();
     }
   });
 }

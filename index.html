@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<!-- auth-pending hides both gates until Firebase has restored (or ruled out) a
+     saved session. Without it every launch flashes the login form for a moment
+     before signing you back in. Cleared in app.js on the first auth callback. -->
+<html lang="en" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <!-- viewport-fit=cover lets the page paint under the notch; the CSS then pads
@@ -55,6 +58,11 @@
 </script>
 </head>
 <body>
+<div id="authSplash" class="auth-splash">
+  <img src="img/icon-192.png" alt="" class="auth-splash-icon">
+  <div class="auth-splash-label">Hungry Dawgs Run Faster</div>
+</div>
+
 <div id="loginGate" class="league-gate">
   <div class="league-gate-stack">
     <div class="league-gate-eyebrow">🏈 Hungry Dawgs Run Faster</div>
