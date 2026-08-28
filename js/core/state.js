@@ -16,6 +16,7 @@ export const ui = {
   showIncompleteWarning: false,
   resultsEditMode: false,
   standingsFilter: 'overall',
+  adminWeek: 1, // which week the Admin page's spread/results editors act on
 };
 
 export function newAccount(){

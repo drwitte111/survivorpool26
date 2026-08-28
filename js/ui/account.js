@@ -7,6 +7,7 @@ import { saveUserState } from '../core/firebase.js';
 import { isSuperBowlPickLocked, superBowlLockTime } from '../core/locks.js';
 import { saveState } from '../core/persist.js';
 import { switchActiveLeague, syncToLeague } from '../core/league.js';
+import { isAdmin } from '../core/roles.js';
 import { escapeHtml } from './dom.js';
 import { render, showWeekPage } from './router.js';
 import { enterApp } from '../core/session.js';
@@ -38,7 +39,7 @@ export function renderAccount(){
   const leagueInfoEl = document.getElementById('accountLeagueInfo');
   if(leagueInfoEl){
     leagueInfoEl.innerHTML = acct.leagueName
-      ? `You're in <b>${escapeHtml(acct.leagueName)}</b>${acct.isLeagueAdmin ? ' (you\u2019re the admin)' : ''}`
+      ? `You're in <b>${escapeHtml(acct.leagueName)}</b>${isAdmin() ? ' (you\u2019re a pool admin)' : ''}`
       : 'Not in a league.';
   }
 
@@ -54,7 +55,7 @@ export function renderAccount(){
         const isActive = l.slug === acct.leagueSlug;
         const row = document.createElement('div');
         row.className = 'my-league-row' + (isActive ? ' active' : '');
-        row.innerHTML = `<div class="my-league-name">${escapeHtml(l.name)}${l.isAdmin ? '<span class="admin-tag">ADMIN</span>' : ''}</div>`;
+        row.innerHTML = `<div class="my-league-name">${escapeHtml(l.name)}${isAdmin() ? '<span class="admin-tag">ADMIN</span>' : ''}</div>`;
         if(isActive){
           const tag = document.createElement('span');
           tag.className = 'my-league-active-tag';
@@ -66,7 +67,7 @@ export function renderAccount(){
           btn.textContent = 'Switch';
           btn.onclick = async () => {
             btn.disabled = true; btn.textContent = 'Switching…';
-            switchActiveLeague(l.slug, l.name, l.isAdmin);
+            switchActiveLeague(l.slug, l.name);
             await saveUserState(store.currentUser.uid, store.state);
             showWeekPage();
             await enterApp();

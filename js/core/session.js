@@ -5,8 +5,10 @@ import { store, normalizeState } from './state.js';
 import { loadUserState } from './firebase.js';
 import { applyTeamTheme } from './theme.js';
 import { getActiveWeekByDate, seedDefaultSchedule } from './schedule.js';
-import { syncToLeague } from './league.js';
+import { syncToLeague, autoFillWeekLines } from './league.js';
 import { refreshWeek } from './refresh.js';
+import { isAdmin } from './roles.js';
+import { saveState } from './persist.js';
 import { render } from '../ui/router.js';
 import { updateSeasonRank } from '../ui/standings.js';
 
@@ -14,6 +16,12 @@ export async function loadState(){
   const loaded = await loadUserState(store.currentUser.uid);
   if(loaded) store.state = loaded;
   normalizeState();
+
+  // Admin is the fixed email list in roles.js, nothing else. Overwrite whatever
+  // was persisted -- an old user doc may still carry isLeagueAdmin: true from the
+  // retired "first to join claims admin" rule.
+  store.state.account.isLeagueAdmin = isAdmin();
+  (store.state.leagues || []).forEach(l => { l.isAdmin = isAdmin(); });
 
   if(!store.state.account.leagueSlug){
     document.getElementById('leagueGate').style.display = 'flex';
@@ -34,6 +42,7 @@ export async function enterApp(){
     render();
   }
   await refreshWeek(store.currentWeek);
+  if(await autoFillWeekLines(store.currentWeek)){ saveState(); render(); }
   syncToLeague().catch(() => {});
   updateSeasonRank().catch(() => {});
 }

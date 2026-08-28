@@ -90,16 +90,21 @@ Most changes are data edits, not code edits:
 `schedule.csv` columns are `week,away,home,kickoff_utc,is_mnf`. Team names must match
 the `name` column in `teams.csv` exactly. Kickoffs are UTC ISO timestamps.
 
-Spreads, over/unders and results are **not** in these files — a league admin sets
-them in the app and they're stored in Firestore under `schedule/week{n}`, so every
-league sees the same numbers.
+Spreads, over/unders and results are **not** in these files — a pool admin sets
+them on the Admin page and they're stored in Firestore under `schedule/week{n}`, so
+every league sees the same numbers.
 
 ### Pulling lines from ESPN
 
-The spread editor has a **Fetch lines from ESPN** button that fills in every game's
-spread, over/under and kickoff time. It's a button rather than an automatic sync on
-purpose: lines move during the week, and shifting them under people mid-week would
-change the board without anyone asking.
+Lines fill themselves. The first time anyone loads a week that has no spreads yet,
+`autoFillWeekLines` (in `core/league.js`) pulls them from ESPN into that person's
+board; if the loader is an admin, it also publishes them to `schedule/week{n}` so
+the numbers become canonical for every league.
+
+After that it's manual. The spread editor on the Admin page has a **Fetch lines
+from ESPN** button for pulling fresh numbers, because lines move during the week and
+shifting them under people mid-week would change the board without anyone asking.
+Once any spread exists for a week, the auto-fetch never runs for it again.
 
 Two public ESPN endpoints, no API key and no account — `site.api.espn.com/.../scoreboard`
 for the slate, `sports.core.api.espn.com/.../odds` for each line. Both send CORS
@@ -147,13 +152,23 @@ changed.
 | `survivor.js` | Weekly locks, used teams, alive/eliminated. |
 | `scoring.js` | Confidence scoring, MVP pick, perfect week, hot streak. |
 | `schedule.js` | Seeds the board from `schedule.csv`; picks the active week. |
-| `league.js` | All shared Firestore collections: leagues, members, spreads, results. |
+| `league.js` | All shared Firestore collections: leagues, members, spreads, results. Also `autoFillWeekLines`. |
+| `roles.js` | `isAdmin()` — the fixed two-email admin list. Mirror it in `firestore.rules`. |
 | `persist.js` | `saveState()` — kept tiny, since most modules call it. |
 | `session.js` | `loadState()` / `enterApp()` — boot and post-league-join re-entry. |
 
 **ui/** — `router.js` (pages, week picker, top-level `render()`), `week.js`,
-`standings.js`, `account.js`, `trashtalk.js`, `rules.js`, `admin.js`, and `dom.js`
+`standings.js`, `account.js`, `trashtalk.js`, `rules.js`, `admin.js` (roster plus
+the admin-only spread and results editors and their week selector), and `dom.js`
 (shared formatting helpers).
+
+## Admins
+
+Admin is exactly two people — the emails in `js/core/roles.js` — and nothing in the
+app grants it. That client check is mirrored by `firestore.rules`, which is the real
+gate: it restricts `schedule/*` writes and league edits to those addresses. The
+rules file is only enforced once pasted into the Firebase console
+(Firestore → Rules → Publish); keep the two email lists identical.
 
 ## Working on this with someone else
 

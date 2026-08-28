@@ -198,6 +198,21 @@
 }
 .league-info-row{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--chalk-dim); margin-bottom: 16px; }
 
+/* Admin page: week selector + spread/results toggles above the roster */
+.admin-week-row{ margin-bottom: 12px; }
+.admin-week-label{
+  font-family:'JetBrains Mono', monospace; font-size: 11px; letter-spacing:1px;
+  text-transform:uppercase; color: var(--chalk-dim);
+  display:flex; align-items:center; gap: 10px;
+}
+.admin-week-select{
+  font-family:'Oswald', sans-serif; font-size: 14px; color: var(--chalk);
+  background: var(--night-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; min-height: 44px; color-scheme: dark;
+}
+.admin-week-select option{ background: var(--night-2); color: var(--chalk); }
+.admin-tool-toggle-row{ display:flex; gap: 10px; flex-wrap:wrap; margin-bottom: 14px; }
+
 .sb-disclaimer{
   font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--chalk-dim); line-height: 1.5;
   margin-bottom: 14px; padding: 10px 12px; background: rgba(var(--amber-rgb),0.08); border: 1px solid var(--amber-dim);

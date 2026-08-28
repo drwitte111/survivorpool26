@@ -12,11 +12,13 @@
 import { db, saveUserState } from './firebase.js';
 import { store, getWeek, peekWeek } from './state.js';
 import { saveState } from './persist.js';
-import { TOTAL_WEEKS } from './data.js';
+import { TOTAL_WEEKS, CONFIG } from './data.js';
 import { isGameLocked, isSuperBowlPickLocked } from './locks.js';
 import { weekScore } from './scoring.js';
 import { getSurvivorStatus } from './survivor.js';
 import { teamAbbrEquals } from './teams.js';
+import { isAdmin } from './roles.js';
+import { fetchWeekOdds } from './espn.js';
 
 export function slugifyTeam(name){
   return (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'team';
@@ -95,6 +97,62 @@ export async function ensureSpreadsLoaded(n){
   if(data.mnfFinalScore != null) week.mnfActualTotal = data.mnfFinalScore;
 }
 
+// Fills a week's spreads and over/unders from ESPN, once per session, and only
+// when nothing is set yet. Runs on every user's first load so the board is
+// never blank before an admin has touched it; an admin's client also publishes
+// what it pulled, so the numbers become canonical for every league. Once a line
+// exists -- fetched here or published by an admin -- this bails out (the guard
+// below trips), and all later changes go through the manual "Fetch lines from
+// ESPN" button. Lines move during the week, and shifting them under people
+// unasked is exactly what we're avoiding.
+//
+// Runs *after* ensureSpreadsLoaded in refreshWeek(), so a published line is
+// already merged in and the ESPN calls are skipped entirely.
+const autoLineFetchTried = new Set();
+
+export async function autoFillWeekLines(n){
+  if(autoLineFetchTried.has(n)) return false;
+  autoLineFetchTried.add(n);
+
+  const week = peekWeek(n);
+  if(!week.games.length) return false;
+  if(week.games.some(g => g.homeSpread != null)) return false;
+
+  let odds;
+  try{
+    odds = await fetchWeekOdds(n, CONFIG.seasonYear);
+  }catch(e){
+    // A transient failure shouldn't burn the one attempt for this session.
+    console.warn('auto line fetch failed', e.message);
+    autoLineFetchTried.delete(n);
+    return false;
+  }
+
+  let filled = 0;
+  week.games.forEach(g => {
+    const hit = odds.games.find(o => o.away === g.away && o.home === g.home);
+    if(!hit) return;
+    // Kickoff is left alone on purpose -- schedule.csv owns it and it drives the
+    // per-game pick locks. Only the betting lines are filled here.
+    if(hit.homeSpread != null){ g.homeSpread = hit.homeSpread; filled++; }
+    if(hit.overUnder != null) g.overUnder = hit.overUnder;
+  });
+  if(!filled) return false;
+
+  if(isAdmin()){
+    const gamesArr = week.games.map(g => ({
+      away: g.away,
+      home: g.home,
+      homeSpread: g.homeSpread ?? null,
+      overUnder: g.overUnder ?? null,
+      kickoff: g.kickoff,
+      isMNF: g.isMNF,
+    }));
+    await saveGlobalSpreads(n, gamesArr); // best effort; a failed publish is fine
+  }
+  return true;
+}
+
 export async function getLeagueMeta(slug){
   try{
     const docSnap = await db.collection('leagues').doc(slug).get();
@@ -104,6 +162,8 @@ export async function getLeagueMeta(slug){
 }
 
 // Sets which league is currently active for this account.
+// Admin is not league-specific -- it's the fixed email list in roles.js -- so
+// this takes no admin argument and just re-derives the flag.
 // Each league has its own completely separate set of picks/points/schedule.
 // store.state.weeks always holds the CURRENTLY ACTIVE league's data (so all the
 // existing pick/scoring code just keeps working against it unchanged);
@@ -113,7 +173,7 @@ export async function getLeagueMeta(slug){
 // and something else entirely in another. Favorite team (color theme) and
 // profile picture stay shared across all leagues, since those are personal,
 // not league-specific.
-export function switchActiveLeague(slug, name, isAdmin){
+export function switchActiveLeague(slug, name){
   if(!store.state.leagueData) store.state.leagueData = {};
   if(!store.state.leagueProfiles) store.state.leagueProfiles = {};
   if(store.state.account.leagueSlug && store.state.account.leagueSlug !== slug){
@@ -129,23 +189,23 @@ export function switchActiveLeague(slug, name, isAdmin){
   store.state.account.yourName = profile.yourName || '';
   store.state.account.leagueSlug = slug;
   store.state.account.leagueName = name;
-  store.state.account.isLeagueAdmin = isAdmin;
+  store.state.account.isLeagueAdmin = isAdmin();
   store.state.account.leagueJoinedAt = new Date().toISOString();
 }
 
 // Adds (or updates) a league in the account's list of leagues it belongs to,
 // so the person can switch back to it later without re-entering the password.
-export function addToMyLeagues(slug, name, isAdmin){
+export function addToMyLeagues(slug, name){
   if(!store.state.leagues) store.state.leagues = [];
   const existingIdx = store.state.leagues.findIndex(l => l.slug === slug);
-  const entry = { slug, name, isAdmin };
+  const entry = { slug, name, isAdmin: isAdmin() };
   if(existingIdx >= 0) store.state.leagues[existingIdx] = entry;
   else store.state.leagues.push(entry);
 }
 
-// Creates a new league. Whoever creates it becomes admin, tracked via a
-// locally-stored secret token -- there's no real server-side auth here, just
-// enough to keep a friend group's league organized.
+// Creates a new league. The creator's uid is recorded for reference, but admin
+// rights come only from the fixed email list in roles.js -- creating a league
+// does not make you its admin.
 export async function createLeague(name, password){
   const trimmedName = name.trim();
   if(!trimmedName) return { ok: false, error: 'Enter a league name.' };
@@ -168,8 +228,8 @@ export async function createLeague(name, password){
     const detail = (e && e.message) ? e.message : 'unknown error';
     return { ok: false, error: 'Couldn\u2019t create the league right now (' + detail + ') \u2014 try again.' };
   }
-  switchActiveLeague(slug, trimmedName, true);
-  addToMyLeagues(slug, trimmedName, true);
+  switchActiveLeague(slug, trimmedName);
+  addToMyLeagues(slug, trimmedName);
   const saved = await saveUserState(store.currentUser.uid, store.state);
   if(!saved) return { ok: false, error: 'League was created, but saving it to your account failed \u2014 try refreshing and switching to it from Account.' };
   return { ok: true, created: true };
@@ -187,20 +247,9 @@ export async function joinLeague(name, password){
   if(existing.password !== password){
     return { ok: false, error: 'Incorrect password for that league.' };
   }
-  const uid = store.currentUser ? store.currentUser.uid : null;
-  let isAdmin = !!(existing.creatorUid && uid && existing.creatorUid === uid);
-  // Leagues created before login existed have no creatorUid on file. The first
-  // person who joins one with the correct password claims admin -- knowing the
-  // password is already the bar for entry, so this just recognizes whoever
-  // originally set it up (most likely you, testing this exact scenario).
-  if(!existing.creatorUid && uid){
-    try{
-      await db.collection('leagues').doc(slug).update({ creatorUid: uid });
-      isAdmin = true;
-    }catch(e){ console.error('admin claim failed', e); }
-  }
-  switchActiveLeague(slug, existing.leagueName, isAdmin);
-  addToMyLeagues(slug, existing.leagueName, isAdmin);
+  // Joining never confers admin -- that's the fixed email list in roles.js.
+  switchActiveLeague(slug, existing.leagueName);
+  addToMyLeagues(slug, existing.leagueName);
   store.state.account.leagueJoinedAt = new Date().toISOString();
   saveState();
   const saved = await saveUserState(store.currentUser.uid, store.state);

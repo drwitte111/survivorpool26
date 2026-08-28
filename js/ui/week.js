@@ -1,8 +1,7 @@
-// The week page: matchup rows, the survivor lock panel, the admin spread and
-// results editors, and the week summary.
+// The week page: matchup rows, the survivor lock panel, and the week summary.
+// The admin spread and results editors live on the Admin page now (ui/admin.js).
 import { store, ui, getWeek, peekWeek } from '../core/state.js';
 import { TEAM_LIST, CONFIG } from '../core/data.js';
-import { fetchWeekOdds } from '../core/espn.js';
 import { getTeamAbbr, getTeamColors, teamLogoUrl, teamAbbrEquals } from '../core/teams.js';
 import { saveState } from '../core/persist.js';
 import {
@@ -17,9 +16,8 @@ import {
   getLockStatusForWeek, getUsedLockTeams, getSurvivorStatus,
   getSurvivorChoices, survivorPickError,
 } from '../core/survivor.js';
-import { saveGlobalSpreads, saveGlobalResults, ensureSpreadsLoaded } from '../core/league.js';
-import { escapeHtml, isoToLocalInput, localInputToIso, burstConfetti } from './dom.js';
-import { render, setSyncStatus } from './router.js';
+import { escapeHtml, burstConfetti } from './dom.js';
+import { render } from './router.js';
 
 export function coverStatus(game, side){
   if(game.homeSpread == null) return null;
@@ -212,7 +210,7 @@ export function renderLockPanel(){
 
   const header = document.createElement('div');
   header.className = 'lock-header';
-  header.innerHTML = `<div class="lock-title">Survivor <span>\ud83d\udd12</span></div>`;
+  header.innerHTML = `<div class="lock-title">Survivor <span>🔒</span></div>`;
   const badge = document.createElement('div');
   badge.className = 'survivor-badge ' + (survivor.alive || eliminatedThisWeek ? 'alive' : 'out');
   badge.textContent = survivor.alive
@@ -224,7 +222,7 @@ export function renderLockPanel(){
   if(!week.games.length){
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.textContent = 'Load this week\u2019s matchups above before setting your Survivor pick.';
+    empty.textContent = 'Load this week’s matchups above before setting your Survivor pick.';
     panel.appendChild(empty);
     return;
   }
@@ -232,7 +230,7 @@ export function renderLockPanel(){
   if(eliminatedBeforeThisWeek){
     const msg = document.createElement('div');
     msg.className = 'lock-eliminated-msg';
-    msg.innerHTML = `You\u2019re out of the Survivor pool \u2014 <b>${escapeHtml(survivor.eliminatedTeam)}</b> lost in Week ${survivor.eliminatedWeek}. Your confidence picks keep going, but there\u2019s no lock pick to make here anymore.`;
+    msg.innerHTML = `You’re out of the Survivor pool — <b>${escapeHtml(survivor.eliminatedTeam)}</b> lost in Week ${survivor.eliminatedWeek}. Your confidence picks keep going, but there’s no lock pick to make here anymore.`;
     panel.appendChild(msg);
     return;
   }
@@ -274,7 +272,7 @@ export function renderLockPanel(){
     if(!typed){ week.lockTeam = null; saveState(); render(); return; }
     const matchesGame = week.games.find(g => g.away === typed || g.home === typed);
     if(!matchesGame){
-      errorEl.textContent = `"${typed}" isn\u2019t one of this week\u2019s teams.`;
+      errorEl.textContent = `"${typed}" isn’t one of this week’s teams.`;
       return;
     }
     const usedElsewhere = getUsedLockTeams(store.currentWeek).find(u => teamAbbrEquals(u.team, typed));
@@ -291,7 +289,7 @@ export function renderLockPanel(){
   if(status && status.result && status.result !== 'unmatched'){
     const chip = document.createElement('div');
     chip.className = 'lock-status-chip ' + status.result;
-    const label = status.result === 'pending' ? '\u23f3 Pending' : (status.result === 'win' ? '\u2705 Survived' : '\u274c Eliminated');
+    const label = status.result === 'pending' ? '⏳ Pending' : (status.result === 'win' ? '✅ Survived' : '❌ Eliminated');
     chip.textContent = label;
     row.appendChild(chip);
   }
@@ -322,271 +320,6 @@ export function renderLockPanel(){
 }
 
 
-export function renderResultsEditor(panel, week){
-  const wrap = document.createElement('div');
-  wrap.className = 'spread-editor';
-
-  const intro = document.createElement('p');
-  intro.className = 'spread-editor-intro';
-  intro.textContent = 'Mark who actually won each game, and enter the Monday Night combined final score for the tiebreaker. This publishes for every league at once and grades everyone\u2019s picks.';
-  wrap.appendChild(intro);
-
-  const rows = week.games.map(g => {
-    const row = document.createElement('div');
-    row.className = 'spread-edit-row results-edit-row';
-    row.innerHTML = `<div class="spread-edit-matchup">${escapeHtml(g.away)} @ ${escapeHtml(g.home)}${g.isMNF ? ' <span class="mnf-tag">MNF</span>' : ''}</div>`;
-    const btnRow = document.createElement('div');
-    btnRow.className = 'results-winner-row';
-    const awayBtn = document.createElement('button');
-    awayBtn.type = 'button';
-    awayBtn.className = 'results-winner-btn' + (g.actualWinner === 'away' ? ' selected' : '');
-    awayBtn.textContent = g.away + ' Won';
-    const homeBtn = document.createElement('button');
-    homeBtn.type = 'button';
-    homeBtn.className = 'results-winner-btn' + (g.actualWinner === 'home' ? ' selected' : '');
-    homeBtn.textContent = g.home + ' Won';
-    const undoBtn = document.createElement('button');
-    undoBtn.type = 'button';
-    undoBtn.className = 'results-undo-btn';
-    undoBtn.title = 'Undo this game\u2019s result';
-    undoBtn.textContent = '\u21b6';
-    let selected = g.actualWinner || null;
-    const refresh = () => {
-      awayBtn.classList.toggle('selected', selected === 'away');
-      homeBtn.classList.toggle('selected', selected === 'home');
-      undoBtn.style.visibility = selected ? 'visible' : 'hidden';
-    };
-    awayBtn.onclick = () => { selected = (selected === 'away') ? null : 'away'; refresh(); };
-    homeBtn.onclick = () => { selected = (selected === 'home') ? null : 'home'; refresh(); };
-    undoBtn.onclick = () => { selected = null; refresh(); };
-    btnRow.appendChild(awayBtn);
-    btnRow.appendChild(homeBtn);
-    btnRow.appendChild(undoBtn);
-    row.appendChild(btnRow);
-    refresh();
-
-    let scoreInput = null;
-    if(g.isMNF){
-      const scoreField = document.createElement('div');
-      scoreField.className = 'mnf-score-field';
-      scoreField.innerHTML = `<label>Combined Final Score<input type="number" class="re-mnf-score" placeholder="e.g. 45" value="${week.mnfActualTotal != null ? week.mnfActualTotal : ''}"></label>`;
-      row.appendChild(scoreField);
-      scoreInput = scoreField.querySelector('.re-mnf-score');
-    }
-    return {
-      row, game: g,
-      getSelected: () => selected,
-      clear: () => { selected = null; refresh(); if(scoreInput) scoreInput.value = ''; }
-    };
-  });
-  rows.forEach(r => wrap.appendChild(r.row));
-
-  const actionRow = document.createElement('div');
-  actionRow.className = 'spread-editor-actions';
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'submit-btn complete';
-  saveBtn.textContent = 'Save & Publish Results';
-  saveBtn.onclick = async () => {
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Publishing…';
-    // Include every game's current selection, even ones cleared back to null --
-    // otherwise an undone result would just get silently skipped instead of
-    // actually clearing for everyone.
-    const resultsArr = rows.map(r => ({
-      away: r.game.away,
-      home: r.game.home,
-      actualWinner: r.getSelected()
-    }));
-    const mnfInput = wrap.querySelector('.re-mnf-score');
-    const mnfScore = mnfInput && mnfInput.value.trim() !== '' ? parseInt(mnfInput.value, 10) : null;
-
-    const ok = await saveGlobalResults(store.currentWeek, resultsArr, mnfScore);
-    if(ok){
-      resultsArr.forEach(r => {
-        const local = week.games.find(g => g.away === r.away && g.home === r.home);
-        if(local) local.actualWinner = r.actualWinner;
-      });
-      week.mnfActualTotal = mnfScore;
-      saveState();
-      ui.resultsEditMode = false;
-      render();
-    } else {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save & Publish Results';
-      setSyncStatus('Couldn\u2019t publish results right now \u2014 try again.');
-    }
-  };
-  actionRow.appendChild(saveBtn);
-
-  const resetBtn = document.createElement('button');
-  resetBtn.className = 'admin-kick-btn';
-  resetBtn.textContent = 'Reset All';
-  resetBtn.title = 'Clear every result on this screen (you\u2019ll still need to Save & Publish)';
-  let resetArmed = false;
-  let resetArmTimer = null;
-  resetBtn.onclick = () => {
-    if(!resetArmed){
-      resetArmed = true;
-      resetBtn.textContent = 'Confirm Reset All?';
-      setTimeout(() => {
-        if(resetArmed){ resetArmed = false; resetBtn.textContent = 'Reset All'; }
-      }, 3000);
-      return;
-    }
-    clearTimeout(resetArmTimer);
-    rows.forEach(r => r.clear());
-    resetArmed = false;
-    resetBtn.textContent = 'Reset All';
-  };
-  actionRow.appendChild(resetBtn);
-  wrap.appendChild(actionRow);
-
-  panel.appendChild(wrap);
-}
-
-
-export function renderSpreadEditor(panel, week){
-  const wrap = document.createElement('div');
-  wrap.className = 'spread-editor';
-
-  const intro = document.createElement('p');
-  intro.className = 'spread-editor-intro';
-  intro.textContent = 'Set the spread, over/under and kickoff time for each game. Type either team\u2019s number and the other fills in automatically. This publishes for every league at once.';
-  wrap.appendChild(intro);
-
-  // Pull the current lines from ESPN into the form. Deliberately a button
-  // rather than an automatic sync -- spreads moving under people mid-week
-  // would change the board without anyone asking for it.
-  const fetchRow = document.createElement('div');
-  fetchRow.className = 'espn-fetch-row';
-  const fetchBtn = document.createElement('button');
-  fetchBtn.className = 'sync-btn';
-  fetchBtn.textContent = '\u2193 Fetch lines from ESPN';
-  const fetchStatus = document.createElement('span');
-  fetchStatus.className = 'espn-fetch-status';
-  fetchRow.appendChild(fetchBtn);
-  fetchRow.appendChild(fetchStatus);
-  wrap.appendChild(fetchRow);
-
-  const rows = week.games.map(g => {
-    const row = document.createElement('div');
-    row.className = 'spread-edit-row';
-    const awayVal = g.homeSpread != null ? -g.homeSpread : '';
-    const homeVal = g.homeSpread != null ? g.homeSpread : '';
-    const ouVal = g.overUnder != null ? g.overUnder : '';
-    row.innerHTML = `
-      <div class="spread-edit-matchup">${escapeHtml(g.away)} @ ${escapeHtml(g.home)}</div>
-      <div class="spread-edit-fields">
-        <label>${escapeHtml(g.away)} Spread<input type="number" step="0.5" class="se-away-spread" placeholder="e.g. 3.5" value="${awayVal}"></label>
-        <label>${escapeHtml(g.home)} Spread<input type="number" step="0.5" class="se-home-spread" placeholder="e.g. -3.5" value="${homeVal}"></label>
-        <label>Over/Under<input type="number" step="0.5" class="se-over-under" placeholder="e.g. 47.5" value="${ouVal}"></label>
-        <label>Kickoff<input type="datetime-local" class="se-kickoff" value="${isoToLocalInput(g.kickoff)}"></label>
-      </div>`;
-    const awayInput = row.querySelector('.se-away-spread');
-    const homeInput = row.querySelector('.se-home-spread');
-    [awayInput, homeInput].forEach(inp => {
-      inp.addEventListener('wheel', e => { e.preventDefault(); }, { passive: false });
-    });
-    awayInput.addEventListener('input', () => {
-      const v = parseFloat(awayInput.value);
-      homeInput.value = isNaN(v) ? '' : (-v);
-    });
-    homeInput.addEventListener('input', () => {
-      const v = parseFloat(homeInput.value);
-      awayInput.value = isNaN(v) ? '' : (-v);
-    });
-    return { row, game: g };
-  });
-  rows.forEach(r => wrap.appendChild(r.row));
-
-  // Fills the form only -- the admin still has to hit Save & Publish.
-  fetchBtn.onclick = async () => {
-    fetchBtn.disabled = true;
-    fetchStatus.className = 'espn-fetch-status';
-    fetchStatus.textContent = 'Fetching…';
-    try{
-      const { games, missing } = await fetchWeekOdds(store.currentWeek, CONFIG.seasonYear);
-      let filled = 0, unmatched = 0;
-      games.forEach(g => {
-        const target = rows.find(r => r.game.away === g.away && r.game.home === g.home);
-        if(!target){ unmatched++; return; }
-        if(g.homeSpread != null){
-          target.row.querySelector('.se-home-spread').value = g.homeSpread;
-          target.row.querySelector('.se-away-spread').value = -g.homeSpread;
-          filled++;
-        }
-        if(g.overUnder != null) target.row.querySelector('.se-over-under').value = g.overUnder;
-        if(g.kickoff) target.row.querySelector('.se-kickoff').value = isoToLocalInput(g.kickoff);
-      });
-      const provider = (games.find(g => g.provider) || {}).provider;
-      const notes = [`Filled ${filled} of ${rows.length} games`];
-      if(provider) notes.push(`via ${provider}`);
-      if(missing) notes.push(`${missing} with no line yet`);
-      if(unmatched) notes.push(`${unmatched} not on this week’s board`);
-      fetchStatus.className = 'espn-fetch-status ok';
-      fetchStatus.textContent = notes.join(' · ') + ' — review, then Save & Publish.';
-    }catch(e){
-      fetchStatus.className = 'espn-fetch-status err';
-      fetchStatus.textContent = 'Couldn’t reach ESPN (' + e.message + '). Enter the numbers by hand.';
-    }
-    fetchBtn.disabled = false;
-  };
-
-  const actionRow = document.createElement('div');
-  actionRow.className = 'spread-editor-actions';
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'submit-btn complete';
-  saveBtn.textContent = 'Save & Publish Spreads';
-  saveBtn.onclick = async () => {
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Publishing…';
-    const gamesArr = rows.map(r => {
-      const g = r.game;
-      const homeVal = r.row.querySelector('.se-home-spread').value.trim();
-      const ouVal = r.row.querySelector('.se-over-under').value.trim();
-      const kickoffVal = r.row.querySelector('.se-kickoff').value;
-      return {
-        away: g.away,
-        home: g.home,
-        homeSpread: homeVal !== '' ? parseFloat(homeVal) : null,
-        overUnder: ouVal !== '' ? parseFloat(ouVal) : null,
-        kickoff: kickoffVal ? localInputToIso(kickoffVal) : g.kickoff
-      };
-    });
-    // Latest kickoff becomes the MNF / tiebreaker game
-    let latestIdx = 0;
-    gamesArr.forEach((g, i) => {
-      if(g.kickoff && new Date(g.kickoff) > new Date(gamesArr[latestIdx].kickoff || 0)) latestIdx = i;
-    });
-    gamesArr.forEach((g, i) => { g.isMNF = (i === latestIdx); });
-
-    const ok = await saveGlobalSpreads(store.currentWeek, gamesArr);
-    if(ok){
-      gamesArr.forEach(gs => {
-        const local = week.games.find(g => g.away === gs.away && g.home === gs.home);
-        if(local){
-          local.homeSpread = gs.homeSpread;
-          local.overUnder = gs.overUnder;
-          local.kickoff = gs.kickoff;
-          local.isMNF = gs.isMNF;
-        }
-      });
-      saveState();
-      ui.spreadEditMode = false;
-      render();
-    } else {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save & Publish Spreads';
-      setSyncStatus('Couldn\u2019t publish spreads right now \u2014 try again.');
-    }
-  };
-  actionRow.appendChild(saveBtn);
-  wrap.appendChild(actionRow);
-
-  panel.appendChild(wrap);
-}
-
-
 export function renderGames(){
   const week = getWeek(store.currentWeek);
   const panel = document.getElementById('gamesPanel');
@@ -600,32 +333,6 @@ export function renderGames(){
   label.className = 'section-label';
   label.innerHTML = `<span>Week ${store.currentWeek}</span>`;
   if(week.games.length){
-    if(store.state.account.isLeagueAdmin){
-      const editBtn = document.createElement('button');
-      editBtn.className = 'sync-btn small';
-      editBtn.textContent = ui.spreadEditMode ? 'Cancel Editing' : 'Update Spreads';
-      editBtn.disabled = fullyLocked;
-      editBtn.title = fullyLocked
-        ? 'Every game has kicked off \u2014 spreads can\u2019t be changed anymore so no one gets caught out.'
-        : 'Set the spread and kickoff time for each game';
-      editBtn.onclick = () => {
-        if(fullyLocked) return;
-        ui.spreadEditMode = !ui.spreadEditMode;
-        render();
-      };
-      label.appendChild(editBtn);
-
-      const resultsBtn = document.createElement('button');
-      resultsBtn.className = 'sync-btn small';
-      resultsBtn.textContent = ui.resultsEditMode ? 'Cancel Editing' : 'Game Results';
-      resultsBtn.onclick = () => {
-        ui.resultsEditMode = !ui.resultsEditMode;
-        ui.spreadEditMode = false;
-        render();
-      };
-      label.appendChild(resultsBtn);
-    }
-
     const clearAllBtn = document.createElement('button');
     clearAllBtn.className = 'sync-btn small';
     clearAllBtn.textContent = 'Clear All';
@@ -661,17 +368,6 @@ export function renderGames(){
     label.appendChild(clearAllBtn);
   }
   panel.appendChild(label);
-
-  if(store.state.account.isLeagueAdmin && ui.spreadEditMode && !fullyLocked && week.games.length){
-    renderSpreadEditor(panel, week);
-    return;
-  }
-  if(ui.spreadEditMode && fullyLocked) ui.spreadEditMode = false;
-
-  if(store.state.account.isLeagueAdmin && ui.resultsEditMode && week.games.length){
-    renderResultsEditor(panel, week);
-    return;
-  }
 
   if(!week.games.length){
     const empty = document.createElement('div');
@@ -746,7 +442,7 @@ export function renderGames(){
     const unlockAt = weekUnlockTime(store.currentWeek);
     const banner = document.createElement('div');
     banner.className = 'lock-banner opens-soon';
-    banner.innerHTML = `🕐 <b>Week ${store.currentWeek} hasn\u2019t opened yet</b> — picks unlock ${unlockAt.toLocaleString('en-US', { weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' })}.`;
+    banner.innerHTML = `🕐 <b>Week ${store.currentWeek} hasn’t opened yet</b> — picks unlock ${unlockAt.toLocaleString('en-US', { weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' })}.`;
     footer.appendChild(banner);
   } else if(locked){
     const banner = document.createElement('div');
@@ -757,7 +453,7 @@ export function renderGames(){
     const missing = getMissingItems(week);
     const warnBox = document.createElement('div');
     warnBox.className = 'lock-banner incomplete-warning';
-    warnBox.innerHTML = `\u26a0\ufe0f <b>Your Week ${store.currentWeek} lineup isn\u2019t complete</b> \u2014 you\u2019re still missing ${missing.join(', ')}. Finish those before submitting.`;
+    warnBox.innerHTML = `⚠️ <b>Your Week ${store.currentWeek} lineup isn’t complete</b> — you’re still missing ${missing.join(', ')}. Finish those before submitting.`;
     footer.appendChild(warnBox);
     const goBackBtn = document.createElement('button');
     goBackBtn.className = 'submit-btn complete';
@@ -849,7 +545,7 @@ export function renderSummary(){
   if(mvp){
     const team = mvp.pick === 'home' ? mvp.home : mvp.away;
     mvpEl.style.display = 'flex';
-    mvpEl.innerHTML = `<span class="mvp-star">\ud83c\udf1f</span> <span><b>MVP Pick:</b> ${escapeHtml(team)} nailed you <b>+${mvp.confidence}</b> points this week.</span>`;
+    mvpEl.innerHTML = `<span class="mvp-star">🌟</span> <span><b>MVP Pick:</b> ${escapeHtml(team)} nailed you <b>+${mvp.confidence}</b> points this week.</span>`;
   } else {
     mvpEl.style.display = 'none';
     mvpEl.innerHTML = '';
@@ -859,7 +555,7 @@ export function renderSummary(){
   const perfectEl = document.getElementById('perfectWeekBanner');
   if(isPerfectWeek(week)){
     perfectEl.style.display = 'block';
-    perfectEl.innerHTML = `\ud83c\udfc6 <b>PERFECT WEEK!</b> Every single pick hit in Week ${store.currentWeek}.`;
+    perfectEl.innerHTML = `🏆 <b>PERFECT WEEK!</b> Every single pick hit in Week ${store.currentWeek}.`;
     if(!week.perfectCelebrated){
       week.perfectCelebrated = true;
       saveState();
@@ -877,9 +573,8 @@ export function renderSummary(){
   const streak = computeHotStreak();
   if(streak >= 2){
     streakEl.style.display = 'inline-flex';
-    streakEl.textContent = `\ud83d\udd25 ${streak}-week streak`;
+    streakEl.textContent = `🔥 ${streak}-week streak`;
   } else {
     streakEl.style.display = 'none';
   }
 }
-

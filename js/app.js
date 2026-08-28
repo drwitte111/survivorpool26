@@ -170,8 +170,10 @@ function wireLeagueControls(){
     s.weeks = {};
     Object.assign(s.account, {
       teamName: '', yourName: '', leagueSlug: null, leagueName: '',
-      isLeagueAdmin: false, leagueAdminSecret: null, leagueJoinedAt: null,
+      leagueAdminSecret: null, leagueJoinedAt: null,
     });
+    // isLeagueAdmin is derived from the signed-in email (core/roles.js), not
+    // league membership, so leaving a league doesn't change it.
     saveState();
     $('leagueGate').style.display = 'flex';
     ['createLeagueNameInput', 'createLeaguePasswordInput', 'joinLeagueNameInput', 'joinLeaguePasswordInput']

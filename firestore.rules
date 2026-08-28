@@ -1,0 +1,55 @@
+// Firestore Security Rules for the confidence pool.
+//
+// This file is the source of truth -- but Firestore only enforces what's been
+// published in the Firebase console (Firestore Database -> Rules -> Publish).
+// After editing this, paste it there and publish, or it does nothing.
+//
+// The admin list here MUST match ADMIN_EMAILS in js/core/roles.js.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn(){
+      return request.auth != null;
+    }
+
+    // The two pool admins. Email/password sign-in puts the address in the token.
+    function isAdmin(){
+      return signedIn()
+        && request.auth.token.email in ['cbower683@gmail.com', 'drwitte111@gmail.com'];
+    }
+
+    // Personal state (picks, points, profile): only its owner.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // A league: anyone signed in can read it (joining needs to check the
+    // password field) and create a new one. Only an admin can change or delete
+    // an existing league.
+    match /leagues/{slug} {
+      allow read, create: if signedIn();
+      allow update, delete: if isAdmin();
+
+      // Members sync their own row on every pick; an admin can remove anyone.
+      // Left open to any signed-in user, matching the app's current behaviour.
+      match /members/{teamKey} {
+        allow read, write, delete: if signedIn();
+      }
+
+      // Trash talk, if it lives under the league.
+      match /{document=**} {
+        allow read, write: if signedIn();
+      }
+    }
+
+    // NFL facts -- spreads, kickoffs, results. Everyone reads; only admins
+    // write, so a published line or a graded result is always an admin's.
+    match /schedule/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
