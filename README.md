@@ -81,7 +81,7 @@ Most changes are data edits, not code edits:
 | Team colors or logo codes | `data/teams.csv` |
 | Week open/close dates | `data/weeks.csv` |
 | Rules wording | `data/rules.json` |
-| Survivor bonus, lock timing, reaction emojis | `data/config.json` |
+| Season year, lock timing, week count | `data/config.json` |
 
 `schedule.csv` columns are `week,away,home,kickoff_utc,is_mnf`. Team names must match
 the `name` column in `teams.csv` exactly. Kickoffs are UTC ISO timestamps.
