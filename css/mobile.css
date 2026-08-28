@@ -145,6 +145,14 @@ header.board{
 
   /* Wide content scrolls inside its own box rather than the page. */
   .standings-list-lg, #survivorList, #adminContent{ overflow-x: auto; }
+
+  /* Score line: full team names wrapped this to three rows on a phone. Swap in
+     the abbreviations so the whole result fits on one. */
+  .score-line{ font-size: 12px; padding: 5px 8px; gap: 6px; }
+  .score-teams{ gap: 6px; }
+  .score-team-full{ display: none; }
+  .score-team-abbr{ display: inline; }
+  .score-margin{ font-size: 10px; padding: 2px 7px; }
 }
 
 /* Rules that used to live in sync.css's own 480px block. Gathered here so every

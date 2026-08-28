@@ -6,7 +6,8 @@ import { initFirebase, auth } from './core/firebase.js';
 import { store, ui, peekWeek } from './core/state.js';
 import { applyTeamTheme } from './core/theme.js';
 import { saveState } from './core/persist.js';
-import { createLeague, joinLeague, ensureSpreadsLoaded } from './core/league.js';
+import { createLeague, joinLeague } from './core/league.js';
+import { refreshWeek } from './core/refresh.js';
 import { loadState, enterApp } from './core/session.js';
 import {
   render, showPage, showWeekPage, showAccountPage,
@@ -288,17 +289,19 @@ function wireAuth(){
 function startPolling(){
   setInterval(() => { updateSeasonRank().catch(() => {}); }, RANK_REFRESH_MS);
 
-  // Quietly re-check the current week's spreads/results, so a result the admin
-  // publishes shows up for everyone else without needing to reload or switch
-  // weeks and back.
+  // Quietly re-pull the current week: live scores and final results from ESPN,
+  // then anything the admin corrected by hand. Scores tick over on their own
+  // during games without anyone reloading or switching weeks and back.
   setInterval(async () => {
     if(!store.currentUser || !store.state.account.leagueSlug) return;
+    if(document.hidden) return; // don't poll a backgrounded tab
     const week = peekWeek(store.currentWeek);
     if(!week.games.length) return;
-    const before = JSON.stringify(week.games.map(g => g.actualWinner));
-    await ensureSpreadsLoaded(store.currentWeek);
-    const after = JSON.stringify(week.games.map(g => g.actualWinner));
-    if(before !== after){
+    const snapshot = () => JSON.stringify(
+      week.games.map(g => [g.actualWinner, g.liveAway, g.liveHome, g.gameState]));
+    const before = snapshot();
+    await refreshWeek(store.currentWeek);
+    if(snapshot() !== before){
       saveState();
       render();
     }

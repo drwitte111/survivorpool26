@@ -144,3 +144,19 @@
 .odds-total-line b{
   font-weight: 700; color: var(--chalk); letter-spacing: 0;
 }
+
+/* ---------- Final / live score line ---------- */
+.score-teams{ display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.score-team{ color: var(--chalk-dim); font-weight: 500; }
+.score-team-abbr{ display: none; }
+.score-team b{ color: var(--chalk); font-weight: 700; }
+/* The side that's ahead reads brighter than the one trailing. */
+.score-team.leading{ color: var(--chalk); }
+.score-team.leading b{ color: var(--amber); text-shadow: 0 0 8px rgba(var(--amber-rgb),0.35); }
+.score-dash{ color: var(--chalk-dim); opacity: 0.6; }
+.score-margin{
+  margin-left: auto;
+  font-size: 11px; letter-spacing: 0.5px; font-weight: 700;
+  color: var(--night); background: var(--amber);
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}

@@ -5,7 +5,8 @@ import { store, normalizeState } from './state.js';
 import { loadUserState } from './firebase.js';
 import { applyTeamTheme } from './theme.js';
 import { getActiveWeekByDate, seedDefaultSchedule } from './schedule.js';
-import { ensureSpreadsLoaded, syncToLeague } from './league.js';
+import { syncToLeague } from './league.js';
+import { refreshWeek } from './refresh.js';
 import { render } from '../ui/router.js';
 import { updateSeasonRank } from '../ui/standings.js';
 
@@ -32,7 +33,7 @@ export async function enterApp(){
     seedDefaultSchedule();
     render();
   }
-  await ensureSpreadsLoaded(store.currentWeek);
+  await refreshWeek(store.currentWeek);
   syncToLeague().catch(() => {});
   updateSeasonRank().catch(() => {});
 }

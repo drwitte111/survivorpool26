@@ -1,7 +1,7 @@
 // Page switching, the week picker, and the top-level render pass.
 import { store, ui } from '../core/state.js';
 import { TOTAL_WEEKS } from '../core/data.js';
-import { ensureSpreadsLoaded } from '../core/league.js';
+import { refreshWeek } from '../core/refresh.js';
 import { renderLockPanel, renderGames, renderSummary } from './week.js';
 import { renderStandingsPage } from './standings.js';
 import { renderAccount } from './account.js';
@@ -47,7 +47,7 @@ export function renderWeekPicker(){
       document.getElementById('weekPickerBtn').classList.remove('open');
       showWeekPage();
       render();
-      ensureSpreadsLoaded(i).then(() => render());
+      refreshWeek(i).then(() => render());
     };
     list.appendChild(btn);
   }

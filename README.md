@@ -109,6 +109,25 @@ failure and the fields stay hand-editable, so the pool never depends on them. Th
 over/under is display-only — it's shown on each matchup and used as the placeholder
 on the MNF tiebreaker, but nothing scores off it.
 
+### Live scores and automatic grading
+
+Scores pull themselves. `core/refresh.js` is the single entry point every caller
+uses — on load, on switching weeks, and on the 30s poll — and it always runs in the
+same order:
+
+1. **ESPN** (`syncWeekScores`) fills in `liveAway` / `liveHome` / `gameState` and
+   grades any completed game by setting `actualWinner`.
+2. **Firestore** (`ensureSpreadsLoaded`) runs second, so a result an admin fixed by
+   hand in the Results editor overwrites whatever ESPN said.
+
+That ordering is the whole point: ESPN handles the routine case unattended, and a
+human still has the last word. Ties stay ungraded (`actualWinner: null`), which is
+already how the board treats "nobody picked this correctly".
+
+One scoreboard request covers every game in a week, so the poll is a single call.
+It skips backgrounded tabs, and only re-renders and saves when something actually
+changed.
+
 ## Modules
 
 **core/**

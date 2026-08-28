@@ -123,9 +123,40 @@ export function teamButtonRow(game, mode, locked){
     tag.className = 'status-tag ' + (game.gameState === 'in' ? 'live' : 'final');
     tag.textContent = game.gameState === 'in' ? (game.statusDetail || 'LIVE') : 'FINAL';
     score.appendChild(tag);
+
+    // Bold the side that's ahead so the result reads at a glance.
+    const a = game.liveAway, h = game.liveHome;
+    const hasScores = a != null && h != null;
+    const lead = hasScores ? (a > h ? 'away' : h > a ? 'home' : null) : null;
+    // Both spellings are rendered; CSS picks one, so a phone shows "DAL 20"
+    // where a desktop shows "Dallas Cowboys 20" without re-rendering.
+    const sideHtml = (side, name, pts) => {
+      const abbr = (getTeamAbbr(name) || name).toUpperCase();
+      return `<span class="score-team${lead === side ? ' leading' : ''}">`
+           + `<span class="score-team-full">${escapeHtml(name)}</span>`
+           + `<span class="score-team-abbr">${escapeHtml(abbr)}</span>`
+           + ` <b>${pts ?? '-'}</b></span>`;
+    };
     const scoreText = document.createElement('span');
-    scoreText.textContent = `${game.away} ${game.liveAway ?? '-'} — ${game.liveHome ?? '-'} ${game.home}`;
+    scoreText.className = 'score-teams';
+    scoreText.innerHTML = sideHtml('away', game.away, a) + '<span class="score-dash">—</span>' + sideHtml('home', game.home, h);
     score.appendChild(scoreText);
+
+    // "who won by how much", spelled out rather than left to mental arithmetic.
+    if(hasScores){
+      const margin = Math.abs(a - h);
+      const winner = lead === 'away' ? game.away : lead === 'home' ? game.home : null;
+      const verdict = document.createElement('span');
+      verdict.className = 'score-margin';
+      if(!winner){
+        verdict.textContent = game.gameState === 'post' ? 'Tie — no points' : 'Tied';
+      } else {
+        verdict.textContent = game.gameState === 'post'
+          ? `${getTeamAbbr(winner)?.toUpperCase() || winner} by ${margin}`
+          : `${getTeamAbbr(winner)?.toUpperCase() || winner} +${margin}`;
+      }
+      score.appendChild(verdict);
+    }
     wrap.appendChild(score);
   } else if(game.kickoff){
     const ko = document.createElement('div');
