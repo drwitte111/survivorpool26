@@ -1,0 +1,21 @@
+# Normalise line endings in the repo to LF regardless of who committed.
+#
+# Without this, one person on Windows and one on Mac/Linux can produce diffs
+# where every line looks changed, which turns a one-line edit into a whole-file
+# conflict. Files are stored LF and checked out however the local platform wants.
+* text=auto eol=lf
+
+# Binary: never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+
+# Data files are line-oriented; keep diffs readable.
+*.csv text eol=lf
+*.json text eol=lf

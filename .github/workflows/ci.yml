@@ -1,0 +1,37 @@
+name: Check
+
+# Runs on every push and every pull request. With two people pushing, this is
+# the thing that catches a bad merge -- a module renamed on one side and still
+# imported on the other, a half-resolved conflict, a broken schedule row --
+# before it reaches the live site.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No dependencies to install -- tools/check.mjs is deliberately stdlib-only.
+      - name: Repo health check
+        run: node tools/check.mjs
+
+      # The deploy stamps sw.js. If that ever silently no-ops, every returning
+      # visitor keeps a stale cache, so prove it still works on a scratch copy.
+      - name: Build stamp works
+        run: |
+          cp sw.js sw.js.orig
+          COMMIT_REF=${{ github.sha }} node tools/stamp-build.mjs
+          grep -q "const BUILD_ID = '" sw.js
+          ! grep -q "__BUILD_ID__" sw.js
+          mv sw.js.orig sw.js

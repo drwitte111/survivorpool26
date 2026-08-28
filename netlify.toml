@@ -1,4 +1,34 @@
-# Static site -- no build step. Netlify serves the repo root as-is.
+# Static site. The only build step stamps the service worker with the commit
+# SHA so returning visitors pick up a new deploy instead of a cached one.
 [build]
   publish = "."
-  command = ""
+  command = "node tools/stamp-build.mjs"
+
+# Deploy Previews: every pull request gets its own URL, so a change can be
+# looked at running for real before it reaches the live site.
+[context.deploy-preview]
+  command = "node tools/stamp-build.mjs"
+
+# Never let a preview or branch deploy get indexed as if it were the real site.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[context.deploy-preview.headers]]
+  for = "/*"
+  [context.deploy-preview.headers.values]
+    X-Robots-Tag = "noindex"
+
+[[context.branch-deploy.headers]]
+  for = "/*"
+  [context.branch-deploy.headers.values]
+    X-Robots-Tag = "noindex"
+
+# The service worker must never itself be served from a stale HTTP cache, or a
+# deploy can't take effect.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

@@ -3,9 +3,21 @@
 // GET requests. Firebase traffic (auth, Firestore) is cross-origin and never
 // touched, so live league data always goes to the network.
 
-const VERSION = 'v6';
-const SHELL = `shell-${VERSION}`;
-const DATA = `data-${VERSION}`;
+// Stamped at deploy time with the commit SHA (see tools/stamp-build.mjs, wired
+// up as the Netlify build command). Nobody edits this by hand.
+//
+// That matters for more than tidiness: this used to be a manual version bump on
+// a single line, so two people changing anything in the same week collided here
+// every single time.
+//
+// Left unstamped it still starts with '__', which puts the worker in dev mode:
+// no precaching and every request goes to the network, so a local edit shows up
+// on reload instead of being served from a stale cache.
+const BUILD_ID = '__BUILD_ID__';
+const IS_DEV = BUILD_ID.startsWith('__');
+
+const SHELL = `shell-${BUILD_ID}`;
+const DATA = `data-${BUILD_ID}`;
 
 // Everything needed to render the board offline.
 const SHELL_ASSETS = [
@@ -58,6 +70,7 @@ const DATA_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  if(IS_DEV){ self.skipWaiting(); return; }
   event.waitUntil((async () => {
     const shell = await caches.open(SHELL);
     // addAll is all-or-nothing; cache individually so one 404 can't break install.
@@ -85,6 +98,7 @@ self.addEventListener('message', (event) => {
 const isData = (url) => url.pathname.includes('/data/');
 
 self.addEventListener('fetch', (event) => {
+  if(IS_DEV) return; // straight to the network while developing
   const req = event.request;
   if(req.method !== 'GET') return;
 

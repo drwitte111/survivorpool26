@@ -58,9 +58,13 @@ opens and renders on a dead signal. Live league data (picks, standings, trash ta
 comes from Firestore and still needs a connection — the service worker never touches
 cross-origin requests, so it can't serve stale league data.
 
-**When you change a file, bump `VERSION` in `sw.js`.** Cached assets are keyed to it;
-without a bump, returning visitors keep the old copy until their next reload. The page
-reloads itself once when a new worker takes over.
+Cached assets are keyed to a build id that `tools/stamp-build.mjs` stamps from the
+commit SHA at deploy time, so a new deploy always invalidates the old cache. Nothing
+to remember and nothing to bump by hand — leave the `__BUILD_ID__` placeholder in
+`sw.js` alone. The page reloads itself once when a new worker takes over.
+
+Left unstamped (i.e. running locally) the worker switches to a no-cache dev mode, so
+an edit shows up on reload instead of being served from a stale cache.
 
 ## Responsive rules live in one file
 
@@ -150,6 +154,11 @@ changed.
 **ui/** — `router.js` (pages, week picker, top-level `render()`), `week.js`,
 `standings.js`, `account.js`, `trashtalk.js`, `rules.js`, `admin.js`, and `dom.js`
 (shared formatting helpers).
+
+## Working on this with someone else
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Short version: `git config --global pull.rebase true`,
+never force-push `main`, and run `node tools/check.mjs` before you push.
 
 ## Running locally
 
