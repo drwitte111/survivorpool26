@@ -6,9 +6,18 @@
 
 /* ---------- Horizontal scroll ---------- */
 /* The header's radial glow is a fixed 900px, which pushed the page ~260px wider
-   than a phone screen and let the whole thing pan sideways. */
+   than a phone screen and let the whole thing pan sideways. This is the actual
+   cause, and fixing it here is enough.
+
+   Do NOT add `overflow-x: hidden` to `html` as a safety net on top of this.
+   Per spec, a non-visible value on one axis forces the other to `auto`, which
+   turns <html> into its own scroll container. With no height constraint it then
+   grows to fit its content, so scrollHeight === clientHeight and the wheel has
+   nothing to scroll -- dragging the scrollbar still works, because that moves
+   the viewport directly. That combination is exactly what "I can't scroll
+   unless I touch the scrollbar" looks like. */
 header.board::before{ max-width: 100%; }
-html, body{ overflow-x: hidden; max-width: 100%; }
+body{ overflow-x: clip; }
 
 /* header.board is itself a flex container, so its .wrap became a flex item and
    shrink-wrapped to its content instead of filling the bar. Harmless on a wide

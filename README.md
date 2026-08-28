@@ -96,10 +96,16 @@ league sees the same numbers.
 
 ### Pulling lines from ESPN
 
-The spread editor has a **Fetch lines from ESPN** button that fills in every game's
-spread, over/under and kickoff time. It's a button rather than an automatic sync on
-purpose: lines move during the week, and shifting them under people mid-week would
-change the board without anyone asking.
+Spreads and over/unders appear on their own. `refreshWeek` fills in anything not
+already set, so a fresh week shows real numbers without an admin doing anything.
+Blanks only — it never overwrites a value already on screen, and never one an admin
+published. Odds cost a request per game, so unlike scores they're only fetched when
+something is missing, at most once every ten minutes per week.
+
+The spread editor also has a **Fetch lines from ESPN** button. That one is for
+publishing: it fills the form so an admin can review the numbers and Save & Publish
+them, which writes them to Firestore and makes them the league's official line —
+frozen from that point, so a mid-week move doesn't shift the board under anyone.
 
 Two public ESPN endpoints, no API key and no account — `site.api.espn.com/.../scoreboard`
 for the slate, `sports.core.api.espn.com/.../odds` for each line. Both send CORS
