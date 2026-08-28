@@ -17,6 +17,7 @@ export const ui = {
   resultsEditMode: false,
   standingsFilter: 'overall',
   adminWeek: 1, // which week the Admin page's spread/results editors act on
+  researchSeason: null, // Research tab: which NFL season to show (null -> current)
 };
 
 export function newAccount(){

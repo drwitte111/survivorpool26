@@ -155,6 +155,14 @@ header.board{
   /* Wide content scrolls inside its own box rather than the page. */
   .standings-list-lg, #survivorList, #adminContent{ overflow-x: auto; }
 
+  /* Research table: drop to team abbreviations and tighten so the six columns
+     fit a phone without the row itself needing a sideways scroll. */
+  .research-table td, .research-table th{ padding: 8px 7px; font-size: 12px; }
+  .research-team-full{ display: none; }
+  .research-team-abbr{ display: inline; font-weight: 600; }
+  .research-logo{ width: 18px; height: 18px; }
+  .research-season-btn{ flex: 1 1 0; }
+
   /* Score line: full team names wrapped this to three rows on a phone. Swap in
      the abbreviations so the whole result fits on one. */
   .score-line{ font-size: 12px; padding: 5px 8px; gap: 6px; }

@@ -8,8 +8,9 @@ import { renderAccount } from './account.js';
 import { renderTrashTalkFeed } from './trashtalk.js';
 import { renderRulesContent } from './rules.js';
 import { renderAdminPage } from './admin.js';
+import { renderResearchPage } from './research.js';
 
-const ALL_PAGES = ['weekPage', 'standingsPage', 'accountPage', 'trashTalkPage', 'rulesPage', 'adminPage'];
+const ALL_PAGES = ['weekPage', 'standingsPage', 'accountPage', 'trashTalkPage', 'rulesPage', 'adminPage', 'researchPage'];
 export function showPage(id){
   if(id !== 'accountPage') ui.accountFormDirty = false;
   ALL_PAGES.forEach(p => { document.getElementById(p).style.display = (p === id) ? 'block' : 'none'; });
@@ -26,6 +27,8 @@ export function showTrashTalkPage(){ showPage('trashTalkPage'); renderTrashTalkF
 export function showRulesPage(){ showPage('rulesPage'); renderRulesContent(); }
 
 export function showAdminPage(){ showPage('adminPage'); renderAdminPage(); }
+
+export function showResearchPage(){ showPage('researchPage'); renderResearchPage(); }
 
 
 export function renderWeekPicker(){

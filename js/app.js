@@ -12,7 +12,9 @@ import { loadState, enterApp } from './core/session.js';
 import {
   render, showPage, showWeekPage, showAccountPage,
   showStandingsPage, showTrashTalkPage, showRulesPage, showAdminPage,
+  showResearchPage,
 } from './ui/router.js';
+import { hideProfileGate } from './ui/onboarding.js';
 import { renderAccount } from './ui/account.js';
 import { postTrashTalk, renderTrashTalkFeed } from './ui/trashtalk.js';
 import { updateSeasonRank } from './ui/standings.js';
@@ -66,10 +68,12 @@ function wireNav(closeAccount){
   go('navStandingsBtn', showStandingsPage);
   go('navTrashTalkBtn', showTrashTalkPage);
   go('navRulesBtn', showRulesPage);
+  go('navResearchBtn', showResearchPage);
   go('navAdminBtn', showAdminPage);
 
   $('backFromTrashTalkBtn').onclick = () => showWeekPage();
   $('backFromRulesBtn').onclick = () => showWeekPage();
+  $('backFromResearchBtn').onclick = () => showWeekPage();
   $('backFromAdminBtn').onclick = () => showWeekPage();
   $('backFromStandingsBtn').onclick = () => showWeekPage();
   $('backFromAccountBtn').onclick = () => { ui.accountFormDirty = false; showWeekPage(); };
@@ -281,6 +285,7 @@ function wireAuth(){
       store.currentUser = null;
       $('loginGate').style.display = 'flex';
       $('leagueGate').style.display = 'none';
+      hideProfileGate();
       showPage(null); // hide all app pages behind the login gate
       clearAuthPending();
     }

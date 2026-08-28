@@ -127,6 +127,10 @@
   </div>
 </div>
 
+<!-- Forced "finish your profile" modal for a member who hasn't set their team
+     name / display name / favourite team yet. Filled in by js/ui/onboarding.js. -->
+<div id="profileGate" class="league-gate" style="display:none;"></div>
+
 <header class="board">
   <div class="wrap">
     <div class="board-top">
@@ -166,6 +170,7 @@
           <button class="menu-nav-link" id="navStandingsBtn" type="button">🏆 Standings</button>
           <button class="menu-nav-link" id="navTrashTalkBtn" type="button">💬 Trash Talk</button>
           <button class="menu-nav-link" id="navRulesBtn" type="button">📜 Rules</button>
+          <button class="menu-nav-link" id="navResearchBtn" type="button">📊 Research</button>
           <button class="menu-nav-link" id="navAdminBtn" type="button">🛡️ League Admin</button>
         </div>
       </div>
@@ -327,6 +332,14 @@
     <div class="panel">
       <div id="rulesContent" class="rules-content"></div>
     </div>
+  </div>
+
+  <div id="researchPage" style="display:none;">
+    <div class="week-header">
+      <h2>📊 Research</h2>
+      <button class="sync-btn small" id="backFromResearchBtn">← Back to Picks</button>
+    </div>
+    <div id="researchContent"></div>
   </div>
 
   <div id="adminPage" style="display:none;">

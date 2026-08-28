@@ -10,6 +10,7 @@ import { refreshWeek } from './refresh.js';
 import { isAdmin } from './roles.js';
 import { render } from '../ui/router.js';
 import { updateSeasonRank } from '../ui/standings.js';
+import { maybeShowProfileGate } from '../ui/onboarding.js';
 
 export async function loadState(){
   const loaded = await loadUserState(store.currentUser.uid);
@@ -40,6 +41,10 @@ export async function enterApp(){
     seedDefaultSchedule();
     render();
   }
+
+  // New (or half-set-up) member: block the board until they're on the leaderboard.
+  maybeShowProfileGate();
+
   // A first-load refresh can fill in live scores and ESPN lines; paint them.
   if(await refreshWeek(store.currentWeek)) render();
   syncToLeague().catch(() => {});
