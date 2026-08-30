@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T15:07:20Z",
+      "title": "Picked teams wear their own colours again",
+      "detail": "The team you pick now fills its row with diagonal stripes in that team’s primary and secondary colours, the way the old board did, instead of a flat wash of the primary. A dark scrim sits over the stripes so the name and the spread stay readable even behind Steelers gold or Chargers yellow.",
+      "by": "Claude",
+      "tags": [
+        "feature"
+      ]
+    },
+    {
       "at": "2026-08-30T13:30:16Z",
       "title": "Rebuilt the picks page around the spread",
       "detail": "Each game is now two stacked team rows with the spread in its own right-hand column, three times the size it was, so the two numbers line up and the favourite reads at a glance. Kickoff time and the over/under moved to one dim line underneath. A game is 112px on desktop and 139px on a phone, down from 175px and 275px before the rework started.",

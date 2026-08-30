@@ -82,10 +82,13 @@ export function teamButtonRow(game, mode, locked){
     }
     btn.className = cls;
 
-    // A wash of the picked team's colour, faint enough to keep text legible.
+    // Their own two colours, drawn as diagonal stripes behind the row.
     if(chosen && mode === 'pick'){
       const colors = getTeamColors(label);
-      if(colors) btn.style.setProperty('--pick-tint', colors[0]);
+      if(colors){
+        btn.style.setProperty('--pick-1', colors[0]);
+        btn.style.setProperty('--pick-2', colors[1] || colors[0]);
+      }
     }
 
     const abbr = getTeamAbbr(label);

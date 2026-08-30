@@ -88,15 +88,20 @@
 .team-pick:hover:not(:disabled){ background: rgba(0,0,0,0.34); border-color: var(--amber-dim); }
 .team-pick:disabled{ cursor: default; }
 
-/* Picked: a wash of that team's own colour behind the row. Drawn as an overlay
-   rather than mixed into the background so any team colour lands at the same
-   strength and the text on top stays legible. */
+/* Picked: the team's own two colours as diagonal stripes behind the row.
+   Drawn as an overlay rather than mixed into the background so every team lands
+   at the same strength, with a dark scrim in the same stack -- without it a
+   Steelers gold or a Chargers yellow washes out the white text on top. */
 .team-pick.picked{
   border-color: var(--amber-dim); border-left-color: var(--amber); font-weight: 700;
 }
 .team-pick.picked::before{
-  content:''; position:absolute; inset:0; border-radius: inherit;
-  background: var(--pick-tint, var(--amber)); opacity: 0.3; pointer-events:none;
+  content:''; position:absolute; inset:0; border-radius: inherit; pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(var(--night-rgb),0.5), rgba(var(--night-rgb),0.66)),
+    repeating-linear-gradient(135deg,
+      var(--pick-1, var(--amber)) 0px, var(--pick-1, var(--amber)) 9px,
+      var(--pick-2, var(--night)) 9px, var(--pick-2, var(--night)) 18px);
 }
 .team-pick > *{ position: relative; z-index: 1; }
 .team-pick.actual-picked{
