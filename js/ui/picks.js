@@ -14,9 +14,11 @@ import { TOTAL_WEEKS } from '../core/data.js';
 import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
 import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
+import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
 import { escapeHtml } from './dom.js';
 
 let picksWeek = null;
+let picksMode = 'confidence';   // 'confidence' | 'survivor'
 
 export function setPicksWeek(n){ picksWeek = n; }
 
@@ -24,6 +26,21 @@ export async function renderPicksPage(){
   const grid = document.getElementById('picksGrid');
   const weekSelect = document.getElementById('picksWeekSelect');
   if(picksWeek == null) picksWeek = store.currentWeek;
+
+  // Confidence is per week; Survivor is a season-long view, so the week picker
+  // doesn't apply to it.
+  const toggle = document.getElementById('picksModeToggle');
+  toggle.querySelectorAll('.picks-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === picksMode);
+    btn.onclick = () => {
+      if(picksMode === btn.dataset.mode) return;
+      picksMode = btn.dataset.mode;
+      renderPicksPage();
+    };
+  });
+  const survivorMode = picksMode === 'survivor';
+  document.getElementById('picksWeekLabel').style.display = survivorMode ? 'none' : '';
+  weekSelect.style.display = survivorMode ? 'none' : '';
 
   // Week chooser
   weekSelect.innerHTML = '';
@@ -39,14 +56,15 @@ export async function renderPicksPage(){
   };
 
   const week = getWeek(picksWeek);
-  if(!week.games.length){
+  // Survivor is a season view, so an empty selected week doesn't apply to it.
+  if(!survivorMode && !week.games.length){
     grid.innerHTML = `<div class="empty">No matchups loaded for Week ${picksWeek} yet.</div>`;
     return;
   }
 
   grid.innerHTML = '<div class="empty">Loading everyone’s picks…</div>';
   const members = await fetchLeagueTeams();
-  if(picksWeek !== parseInt(weekSelect.value, 10)) return; // week changed mid-load
+  if(!survivorMode && picksWeek !== parseInt(weekSelect.value, 10)) return; // week changed mid-load
 
   const me = store.state.account.teamName;
   const myUid = store.currentUser && store.currentUser.uid;
@@ -67,6 +85,11 @@ export async function renderPicksPage(){
 
   if(!members.length){
     grid.innerHTML = '<div class="empty">No one has joined this league yet.</div>';
+    return;
+  }
+
+  if(survivorMode){
+    renderSurvivorGrid(grid, members, me, myUid);
     return;
   }
 
@@ -207,5 +230,149 @@ function pickChip(game, entry, isMe){
   wrap.appendChild(pts);
 
   wrap.title = `${teamName}${entry.c != null ? ` — ${entry.c} pt${entry.c === 1 ? '' : 's'}` : ''}`;
+  return wrap;
+}
+
+
+// ---------------------------------------------------------------------------
+// Survivor view
+//
+// A season grid rather than a single week: weeks down the left, members across
+// the top, each cell the team they locked. Green ring if that team won, red if
+// it lost. Survivor is double elimination, so the running strike count matters
+// more than any one week -- it's shown under each member's name.
+// ---------------------------------------------------------------------------
+function renderSurvivorGrid(grid, members, me, myUid){
+  const isMine = (m) => (myUid && m.uid === myUid) || m.teamName === me;
+
+  // Only show weeks anyone has actually reached.
+  const weeks = [];
+  for(let n = 1; n <= TOTAL_WEEKS; n++){
+    const mine = peekWeek(n).lockTeam;
+    const theirs = members.some(m => m.locks && m.locks[n]);
+    if(mine || theirs) weeks.push(n);
+  }
+
+  grid.innerHTML = '';
+
+  if(!weeks.length){
+    grid.innerHTML = '<div class="empty">No Survivor picks yet. They appear here once each locked team has kicked off.</div>';
+    return;
+  }
+
+  const note = document.createElement('p');
+  note.className = 'picks-note';
+  note.textContent = 'Each week\u2019s Survivor pick. Double elimination \u2014 two losing locks and you\u2019re out. '
+    + 'Other people\u2019s locks appear once that team has kicked off; your own are always shown.';
+  grid.appendChild(note);
+
+  const table = document.createElement('table');
+  table.className = 'picks-table';
+
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const corner = document.createElement('th');
+  corner.className = 'picks-corner';
+  corner.textContent = 'Survivor';
+  headRow.appendChild(corner);
+  members.forEach(m => {
+    const th = document.createElement('th');
+    th.className = 'picks-member' + (isMine(m) ? ' is-me' : '');
+    const strikes = strikeCountFor(m, isMine(m));
+    const out = strikes >= STRIKES_ALLOWED;
+    th.innerHTML = `<span class="picks-member-name">${escapeHtml(m.teamName || '—')}</span>`
+      + `<span class="survivor-strikes ${out ? 'out' : strikes ? 'warn' : 'clean'}">`
+      + (out ? '💀 Out' : `${strikes}/${STRIKES_ALLOWED} strikes`)
+      + `</span>`;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  weeks.forEach(n => {
+    const tr = document.createElement('tr');
+    const wkCell = document.createElement('th');
+    wkCell.className = 'picks-game';
+    wkCell.innerHTML = `<span class="picks-game-teams">Week ${n}</span>`;
+    tr.appendChild(wkCell);
+
+    members.forEach(m => {
+      const td = document.createElement('td');
+      td.className = 'picks-cell';
+      const entry = isMine(m) ? myLockFor(n) : ((m.locks && m.locks[n]) || null);
+
+      if(!entry || !entry.team){
+        const empty = document.createElement('div');
+        empty.className = 'pick-empty';
+        empty.textContent = isMine(m) ? '—' : '🔒';
+        empty.title = isMine(m) ? 'No lock set' : 'Hidden until that team kicks off';
+        td.appendChild(empty);
+      } else {
+        td.appendChild(lockChip(entry, isMine(m)));
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  const scroller = document.createElement('div');
+  scroller.className = 'picks-scroll';
+  scroller.appendChild(table);
+  grid.appendChild(scroller);
+}
+
+/** Your own lock for a week, straight from local state so it's always visible. */
+function myLockFor(n){
+  const status = getLockStatusForWeek(n);
+  if(!status) return null;
+  return {
+    team: status.team,
+    result: status.result === 'win' || status.result === 'loss' ? status.result : null,
+  };
+}
+
+function strikeCountFor(member, mine){
+  if(mine) return getSurvivorStatus().strikes;
+  if(typeof member.survivorStrikes === 'number') return member.survivorStrikes;
+  // Older rows predate survivorStrikes; fall back to counting published losses.
+  return Object.values(member.locks || {}).filter(l => l && l.result === 'loss').length;
+}
+
+function lockChip(entry, mine){
+  const wrap = document.createElement('div');
+  wrap.className = 'pick-chip survivor-chip' + (mine ? ' is-me' : '');
+  if(entry.result === 'win') wrap.classList.add('correct');
+  else if(entry.result === 'loss') wrap.classList.add('wrong');
+
+  const abbr = (getTeamAbbr(entry.team) || entry.team).toUpperCase();
+  const logo = teamLogoUrl(entry.team);
+  if(logo){
+    const img = document.createElement('img');
+    img.className = 'pick-logo';
+    img.src = logo; img.alt = '';
+    img.onerror = () => {
+      img.remove();
+      const fb = document.createElement('span');
+      fb.className = 'pick-logo-fallback';
+      fb.textContent = abbr;
+      wrap.appendChild(fb);
+    };
+    wrap.appendChild(img);
+  } else {
+    const fb = document.createElement('span');
+    fb.className = 'pick-logo-fallback';
+    fb.textContent = abbr;
+    wrap.appendChild(fb);
+  }
+
+  // No wager on a Survivor pick, so the team code goes under the logo instead.
+  const tag = document.createElement('span');
+  tag.className = 'survivor-abbr';
+  tag.textContent = abbr;
+  wrap.appendChild(tag);
+
+  wrap.title = entry.team + (entry.result ? ` — ${entry.result === 'win' ? 'survived' : 'lost'}` : ' — pending');
   return wrap;
 }

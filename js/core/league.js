@@ -290,6 +290,24 @@ export async function syncToLeague(){
       if(Object.keys(weekPicks).length) picks[n] = weekPicks;
     }
 
+    // Survivor picks per week, for the grid's Survivor view. Same privacy rule
+    // as the confidence picks: a lock is only published once the team it's on
+    // has actually kicked off.
+    const locks = {};
+    for(let n = 1; n <= TOTAL_WEEKS; n++){
+      const w = peekWeek(n);
+      if(!w.lockTeam || !w.games.length) continue;
+      const lockGame = w.games.find(g =>
+        teamAbbrEquals(g.away, w.lockTeam) || teamAbbrEquals(g.home, w.lockTeam));
+      if(!lockGame || !isGameLocked(lockGame)) continue;
+      const side = teamAbbrEquals(lockGame.away, w.lockTeam) ? 'away' : 'home';
+      locks[n] = {
+        team: w.lockTeam,
+        // null while the game is in progress; 'win' or 'loss' once graded.
+        result: lockGame.actualWinner ? (lockGame.actualWinner === side ? 'win' : 'loss') : null,
+      };
+    }
+
     const survivor = getSurvivorStatus();
     const curWeek = peekWeek(store.currentWeek);
     // Your Survivor pick stays hidden from the league until the team you locked
@@ -305,12 +323,14 @@ export async function syncToLeague(){
       tiebreakGuesses,
       submittedWeeks,
       survivorAlive: survivor.alive,
+      survivorStrikes: survivor.strikes,
       survivorEliminatedWeek: survivor.eliminatedWeek,
       survivorEliminatedTeam: survivor.eliminatedTeam,
       currentLockWeek: store.currentWeek,
       currentLockTeam: currentLock,
       superBowlPick: isSuperBowlPickLocked() ? (store.state.account.superBowlPick || null) : null,
       picks,
+      locks,
       // Recorded so a row can always be traced back to the account that wrote
       // it, no matter how many times the team gets renamed.
       uid: store.currentUser ? store.currentUser.uid : null,

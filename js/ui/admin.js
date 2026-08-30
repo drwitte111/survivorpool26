@@ -155,7 +155,7 @@ export async function renderAdminPage(){
     row.innerHTML = `
       <div>
         <div class="admin-member-name">${escapeHtml(t.teamName)}${t.yourName ? ' — ' + escapeHtml(t.yourName) : ''}</div>
-        <div class="admin-member-sub">${t.total || 0} pts · ${t.survivorAlive ? 'Alive' : 'Eliminated Wk ' + (t.survivorEliminatedWeek || '?')} · joined ${joined}</div>
+        <div class="admin-member-sub">${t.total || 0} pts · ${t.survivorAlive ? (t.survivorStrikes ? t.survivorStrikes + ' strike' + (t.survivorStrikes === 1 ? '' : 's') : 'Alive') : 'Eliminated Wk ' + (t.survivorEliminatedWeek || '?')} · joined ${joined}</div>
       </div>`;
     if(t.teamName !== store.state.account.teamName){
       const kickBtn = document.createElement('button');

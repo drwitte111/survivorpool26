@@ -123,3 +123,10 @@
 @keyframes confettiFall{
   to{ transform: translateY(105vh) rotate(720deg); opacity: 0; }
 }
+
+/* Alive but carrying a strike -- double elimination's middle state. */
+.survivor-badge.warn{
+  background: rgba(var(--amber-rgb),0.15);
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}

@@ -439,3 +439,40 @@
   .pick-points{ font-size:14px; }
   .picks-table th, .picks-table td{ padding:4px; }
 }
+
+/* ---------- Group Picks: Confidence / Survivor toggle ---------- */
+.picks-mode-toggle{
+  display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;
+}
+.picks-mode-btn{
+  background:transparent; border:none; cursor:pointer;
+  font-family:'Oswald', sans-serif; font-size:12px; font-weight:600;
+  letter-spacing:0.5px; text-transform:uppercase;
+  color:var(--chalk-dim); padding:9px 14px; transition:all .12s ease;
+}
+.picks-mode-btn:hover{ color:var(--chalk); }
+.picks-mode-btn.active{ background:var(--amber); color:var(--night); }
+
+/* Running strike count under each name in the Survivor view. */
+.survivor-strikes{
+  display:block; font-family:'JetBrains Mono', monospace; font-size:9px;
+  letter-spacing:0.5px; white-space:nowrap;
+}
+.survivor-strikes.clean{ color:var(--correct); }
+.survivor-strikes.warn{ color:var(--amber); }
+.survivor-strikes.out{ color:var(--incorrect); }
+
+/* Survivor cells carry a team code rather than a wager. */
+.survivor-chip .pick-logo{ opacity:0.85; padding:5px; }
+.survivor-abbr{
+  position:absolute; left:0; right:0; bottom:-1px;
+  text-align:center;
+  font-family:'JetBrains Mono', monospace; font-size:8px; font-weight:700;
+  letter-spacing:0.5px; color:var(--chalk);
+  text-shadow:0 1px 3px rgba(0,0,0,0.95);
+  pointer-events:none;
+}
+
+@media (max-width: 720px){
+  .picks-mode-btn{ padding:9px 11px; font-size:11px; }
+}

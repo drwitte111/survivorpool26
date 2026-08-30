@@ -1,5 +1,6 @@
-// Survivor pool: one straight-up lock per week, each team usable only once,
-// one loss and you're out for the season.
+// Survivor pool: one straight-up lock per week, each team usable only once.
+// Double elimination -- the first losing lock is a strike, the second ends your
+// season.
 import { TOTAL_WEEKS } from './data.js';
 import { peekWeek } from './state.js';
 import { isGameLocked } from './locks.js';
@@ -26,13 +27,40 @@ export function getUsedLockTeams(excludeWeek){
   return used;
 }
 
-// Survivor status: alive until the first week where the locked team loses.
+// Two strikes and you're out.
+//
+// Double elimination: the first losing lock is a strike and you keep playing;
+// the second ends your season. `alive`, `eliminatedWeek` and `eliminatedTeam`
+// keep their original meanings so everything reading this still works -- they
+// now describe the *second* loss rather than the first.
+export const STRIKES_ALLOWED = 2;
+
 export function getSurvivorStatus(){
-  for(let n=1;n<=TOTAL_WEEKS;n++){
+  const losses = [];
+  for(let n = 1; n <= TOTAL_WEEKS; n++){
     const status = getLockStatusForWeek(n);
-    if(status && status.result === 'loss') return { alive: false, eliminatedWeek: n, eliminatedTeam: status.team };
+    if(status && status.result === 'loss'){
+      losses.push({ week: n, team: status.team });
+      if(losses.length >= STRIKES_ALLOWED){
+        return {
+          alive: false,
+          strikes: losses.length,
+          strikesAllowed: STRIKES_ALLOWED,
+          losses,
+          eliminatedWeek: n,
+          eliminatedTeam: status.team,
+        };
+      }
+    }
   }
-  return { alive: true, eliminatedWeek: null, eliminatedTeam: null };
+  return {
+    alive: true,
+    strikes: losses.length,          // 0, or 1 while carrying a strike
+    strikesAllowed: STRIKES_ALLOWED,
+    losses,
+    eliminatedWeek: null,
+    eliminatedTeam: null,
+  };
 }
 
 // Which teams you may still lock this week.

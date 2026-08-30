@@ -350,7 +350,11 @@
     </div>
     <div class="panel">
       <div class="picks-toolbar">
-        <label for="picksWeekSelect">Week</label>
+        <div class="picks-mode-toggle" id="picksModeToggle">
+          <button type="button" class="picks-mode-btn active" data-mode="confidence">Confidence</button>
+          <button type="button" class="picks-mode-btn" data-mode="survivor">Survivor 🔒</button>
+        </div>
+        <label for="picksWeekSelect" id="picksWeekLabel">Week</label>
         <select id="picksWeekSelect" class="standings-select"></select>
       </div>
       <div id="picksGrid"></div>

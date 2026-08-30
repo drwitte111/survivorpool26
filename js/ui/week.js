@@ -212,9 +212,13 @@ export function renderLockPanel(){
   header.className = 'lock-header';
   header.innerHTML = `<div class="lock-title">Survivor <span>🔒</span></div>`;
   const badge = document.createElement('div');
-  badge.className = 'survivor-badge ' + (survivor.alive || eliminatedThisWeek ? 'alive' : 'out');
+  // Double elimination, so "alive" has two flavours: clean, or carrying a strike.
+  const carryingStrike = survivor.alive && survivor.strikes > 0;
+  badge.className = 'survivor-badge ' + (survivor.alive ? (carryingStrike ? 'warn' : 'alive') : 'out');
   badge.textContent = survivor.alive
-    ? 'Alive'
+    ? (carryingStrike
+        ? `${survivor.strikes} strike${survivor.strikes === 1 ? '' : 's'} — ${survivor.strikesAllowed - survivor.strikes} left`
+        : 'Alive')
     : (eliminatedThisWeek ? 'Eliminated this week' : `Eliminated Wk ${survivor.eliminatedWeek}`);
   header.appendChild(badge);
   panel.appendChild(header);
@@ -230,7 +234,10 @@ export function renderLockPanel(){
   if(eliminatedBeforeThisWeek){
     const msg = document.createElement('div');
     msg.className = 'lock-eliminated-msg';
-    msg.innerHTML = `You’re out of the Survivor pool — <b>${escapeHtml(survivor.eliminatedTeam)}</b> lost in Week ${survivor.eliminatedWeek}. Your confidence picks keep going, but there’s no lock pick to make here anymore.`;
+    const lossList = survivor.losses
+      .map(l => `<b>${escapeHtml(l.team)}</b> (Wk ${l.week})`).join(' and ');
+    msg.innerHTML = `You’re out of the Survivor pool — ${survivor.strikesAllowed} losing locks: ${lossList}. `
+      + `Your confidence picks keep going, but there’s no lock pick to make here anymore.`;
     panel.appendChild(msg);
     return;
   }

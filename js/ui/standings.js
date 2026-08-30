@@ -312,8 +312,12 @@ export function renderSurvivorList(teams){
   sorted.forEach(t => {
     const row = document.createElement('div');
     row.className = 'standings-row' + (t.teamName === store.state.account.teamName ? ' me' : '') + (t.survivorAlive ? '' : ' last');
+    // Double elimination, so someone still alive may be carrying a strike.
+    const strikes = t.survivorStrikes || 0;
     const statusHtml = t.survivorAlive
-      ? `<span class="survivor-badge alive">Alive</span>`
+      ? (strikes
+          ? `<span class="survivor-badge warn">${strikes} strike${strikes === 1 ? '' : 's'}</span>`
+          : `<span class="survivor-badge alive">Alive</span>`)
       : `<span class="survivor-badge out">Out \u2014 Wk ${t.survivorEliminatedWeek}${t.survivorEliminatedTeam ? ' (' + escapeHtml(t.survivorEliminatedTeam) + ')' : ''}</span>`;
     const lockHtml = t.currentLockTeam ? `<div class="nick">Wk ${t.currentLockWeek} lock: ${escapeHtml(t.currentLockTeam)}</div>` : '';
     row.innerHTML = `
