@@ -19,16 +19,6 @@
   font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim);
   margin-top: 6px;
 }
-.kickoff{
-  font-family:'Bungee', 'Oswald', sans-serif; font-size: 16px; font-weight:700; color: #FFFFFF;
-  letter-spacing: 0.5px;
-  -webkit-text-stroke: 1.5px #000000;
-  paint-order: stroke fill;
-  text-shadow:
-    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
-    0 2px 4px rgba(0,0,0,0.5);
-  flex-basis: 100%; margin-top: 8px;
-}
 .spread-editor{ padding-top: 4px; }
 .spread-editor-intro{
   font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--chalk-dim);
@@ -63,7 +53,6 @@
   background: var(--correct); border-color: var(--correct); color: var(--night);
   box-shadow: 0 0 12px rgba(82,183,136,0.4);
 }
-.mnf-tag{ color: var(--incorrect); font-size: 11px; font-family:'JetBrains Mono', monospace; }
 .mnf-score-field{ margin-top: 10px; }
 .mnf-score-field label{
   display:flex; flex-direction:column; gap: 4px; max-width: 200px;
@@ -74,35 +63,8 @@
   background: var(--night); border: 1px solid var(--line); color: var(--chalk);
   font-family:'Oswald', sans-serif; font-size: 13px; padding: 7px 8px; border-radius: 6px;
 }
-.odds-bar{
-  flex-basis: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
-  display:flex; flex-direction:column; gap: 4px;
-}
-.odds-spread-line{
-  font-family:'Oswald', sans-serif; font-size: 15px; color: var(--chalk);
-}
-.odds-spread-line b{
-  font-family:'JetBrains Mono', monospace; font-weight:700; color: var(--amber);
-  text-shadow: 0 0 8px rgba(var(--amber-rgb),0.3);
-}
-.score-line{
-  flex-basis: 100%; margin-top: 6px; display:flex; align-items:center; gap: 8px;
-  font-family:'JetBrains Mono', monospace; font-size: 13px; font-weight:700; color: var(--chalk);
-  background: rgba(0,0,0,0.25); border-radius: 6px; padding: 6px 10px;
-  border: 1px solid var(--line);
-  font-variant-numeric: tabular-nums;
-}
-.status-tag{
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;
-  padding: 2px 6px; border-radius: 4px;
-}
-.status-tag.live{ background: var(--incorrect); color: var(--chalk); }
-.status-tag.final{ background: var(--chalk-dim); color: var(--night); }
-.team-btn.cover{ border-color: var(--correct); box-shadow: 0 0 0 2px var(--correct) inset; }
-.team-btn.no-cover{ border-color: var(--incorrect); box-shadow: 0 0 0 2px var(--incorrect) inset; }
-.team-btn.push{ border-color: var(--chalk-dim); box-shadow: 0 0 0 2px var(--chalk-dim) inset; }
 .tiebreak-inline{
-  flex-basis: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
   display:flex; align-items:center; gap: 12px; flex-wrap: wrap;
   font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--chalk-dim);
 }
@@ -120,7 +82,7 @@
   0%, 100%{ box-shadow: 0 0 0 0 rgba(230,57,70,0.55); }
   50%{ box-shadow: 0 0 0 4px rgba(230,57,70,0); }
 }
-.status-tag.live{ animation: pulseLive 1.6s ease-in-out infinite; }
+.sub-status.live{ animation: pulseLive 1.6s ease-in-out infinite; }
 
 
 /* ---------- ESPN line fetch (spread editor) ---------- */
@@ -135,31 +97,6 @@
 }
 .espn-fetch-status.ok{ color: var(--correct); }
 .espn-fetch-status.err{ color: var(--incorrect); }
-
-/* ---------- Over/under, shown alongside the spread ---------- */
-.odds-total-line{
-  font-family: 'JetBrains Mono', monospace; font-size: 12px;
-  color: var(--chalk-dim); letter-spacing: 1px;
-}
-.odds-total-line b{
-  font-weight: 700; color: var(--chalk); letter-spacing: 0;
-}
-
-/* ---------- Final / live score line ---------- */
-.score-teams{ display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.score-team{ color: var(--chalk-dim); font-weight: 500; }
-.score-team-abbr{ display: none; }
-.score-team b{ color: var(--chalk); font-weight: 700; }
-/* The side that's ahead reads brighter than the one trailing. */
-.score-team.leading{ color: var(--chalk); }
-.score-team.leading b{ color: var(--amber); text-shadow: 0 0 8px rgba(var(--amber-rgb),0.35); }
-.score-dash{ color: var(--chalk-dim); opacity: 0.6; }
-.score-margin{
-  margin-left: auto;
-  font-size: 11px; letter-spacing: 0.5px; font-weight: 700;
-  color: var(--night); background: var(--amber);
-  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
-}
 
 /* Final score shown beside a matchup in the results editor. */
 .results-score{

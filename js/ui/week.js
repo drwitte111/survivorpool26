@@ -55,39 +55,39 @@ export function coverStatus(game, side){
 }
 
 export function teamButtonRow(game, mode, locked){
-  // mode: 'pick' uses g.pick, 'actual' uses g.actualWinner
+  // Two stacked team rows with the spread right-aligned, the way a sportsbook
+  // lays a game out.
+  //
+  // The spread is the number people actually decide on, so it gets its own
+  // column and the biggest type in the row -- stacked, the two figures line up
+  // and who's favoured reads instantly. Kickoff time and the total are real but
+  // secondary, so they drop to a single dim subtext line underneath.
   const field = mode === 'pick' ? 'pick' : 'actualWinner';
   const disablePicks = mode === 'pick' && locked;
   const wrap = document.createElement('div');
   wrap.className = 'matchup';
-  if(game.isMNF){
-    const tag = document.createElement('span');
-    tag.className = 'mnf-tag'; tag.textContent = 'MNF';
-    wrap.appendChild(tag);
-  }
 
-  const awayBtn = document.createElement('button');
-  const homeBtn = document.createElement('button');
-  [['away', awayBtn, game.away], ['home', homeBtn, game.home]].forEach(([side, btn, label]) => {
-    let cls = 'team-btn';
-    if(game[field] === side){
-      if(mode === 'pick'){
-        const cover = coverStatus(game, side);
-        cls += cover ? ' picked ' + cover : ' picked';
-      } else {
-        cls += ' actual-picked';
-      }
+  [['away', game.away], ['home', game.home]].forEach(([side, label]) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    let cls = 'team-pick';
+    const chosen = game[field] === side;
+    if(chosen) cls += mode === 'pick' ? ' picked' : ' actual-picked';
+    if(mode === 'pick' && chosen){
+      const cover = coverStatus(game, side);
+      if(cover) cls += ' ' + cover;
     }
     if(mode === 'pick' && game.actualWinner){
       cls += (game.actualWinner === side) ? ' result-win' : ' result-loss';
     }
     btn.className = cls;
-    if(game[field] === side && mode === 'pick'){
+
+    // A wash of the picked team's colour, faint enough to keep text legible.
+    if(chosen && mode === 'pick'){
       const colors = getTeamColors(label);
-      if(colors){
-        btn.style.backgroundImage = `repeating-linear-gradient(135deg, ${colors[0]} 0px, ${colors[0]} 9px, ${colors[1]} 9px, ${colors[1]} 18px)`;
-      }
+      if(colors) btn.style.setProperty('--pick-tint', colors[0]);
     }
+
     const abbr = getTeamAbbr(label);
     const logo = teamLogoUrl(label);
     if(logo){
@@ -95,46 +95,63 @@ export function teamButtonRow(game, mode, locked){
       img.className = 'team-logo'; img.src = logo; img.alt = '';
       img.onerror = () => {
         img.remove();
-        const fallback = document.createElement('span');
-        fallback.className = 'team-logo-fallback';
-        fallback.textContent = abbr ? abbr.toUpperCase() : '';
-        btn.insertBefore(fallback, btn.firstChild);
+        const fb = document.createElement('span');
+        fb.className = 'team-logo-fallback';
+        fb.textContent = abbr ? abbr.toUpperCase() : '';
+        btn.insertBefore(fb, btn.firstChild);
       };
       btn.appendChild(img);
     } else if(abbr){
-      const fallback = document.createElement('span');
-      fallback.className = 'team-logo-fallback';
-      fallback.textContent = abbr.toUpperCase();
-      btn.appendChild(fallback);
+      const fb = document.createElement('span');
+      fb.className = 'team-logo-fallback';
+      fb.textContent = abbr.toUpperCase();
+      btn.appendChild(fb);
     }
-    const txt = document.createElement('span');
-    txt.className = 'team-btn-label';
-    txt.textContent = label;
-    btn.appendChild(txt);
 
-    // The spread rides on the button rather than in a separate bar below. Same
-    // information, roughly half the row height, so more of the slate fits on
-    // one screen.
-    if(mode === 'pick' && game.homeSpread != null){
-      const num = side === 'home' ? game.homeSpread : -game.homeSpread;
-      const sp = document.createElement('span');
-      sp.className = 'tb-spread' + (num < 0 ? ' fav' : '');
-      sp.textContent = num > 0 ? '+' + num : String(num);
-      btn.appendChild(sp);
+    // Both spellings are rendered; CSS shows one, so a narrow screen falls back
+    // to the abbreviation without a second render pass.
+    const name = document.createElement('span');
+    name.className = 'team-name';
+    const full = document.createElement('span');
+    full.className = 'team-name-full';
+    full.textContent = label;
+    const short = document.createElement('span');
+    short.className = 'team-name-short';
+    short.textContent = (abbr || label).toUpperCase();
+    name.appendChild(full);
+    name.appendChild(short);
+    btn.appendChild(name);
+
+    if(game.isMNF && side === 'home'){
+      const tag = document.createElement('span');
+      tag.className = 'mnf-tag';
+      tag.textContent = 'MNF';
+      btn.appendChild(tag);
     }
+
+    // The headline number.
+    const sp = document.createElement('span');
+    sp.className = 'team-spread';
+    if(game.homeSpread == null){
+      sp.classList.add('none');
+      sp.textContent = '—';
+    } else {
+      const num = side === 'home' ? game.homeSpread : -game.homeSpread;
+      if(num < 0) sp.classList.add('fav');
+      sp.textContent = num > 0 ? '+' + num : String(num);
+    }
+    btn.appendChild(sp);
+
     btn.disabled = disablePicks;
     btn.onclick = () => {
       if(disablePicks) return;
       const clearing = game[field] === side;
       game[field] = clearing ? null : side;
-      // Record the line as it stood the moment the pick was made. This is the
-      // number that actually matters -- it's what the person was looking at --
-      // and capturing it here means nothing has to be raced against kickoff.
+      // The line as it stood when the pick was made -- what the person was
+      // actually looking at, so nothing has to be raced against kickoff.
       if(mode === 'pick'){
         if(clearing){
-          game.pickedSpread = null;
-          game.pickedOverUnder = null;
-          game.pickedAt = null;
+          game.pickedSpread = null; game.pickedOverUnder = null; game.pickedAt = null;
         } else {
           game.pickedSpread = game.homeSpread ?? null;
           game.pickedOverUnder = game.overUnder ?? null;
@@ -143,119 +160,93 @@ export function teamButtonRow(game, mode, locked){
       }
       saveState(); render();
     };
+    wrap.appendChild(btn);
   });
-  wrap.appendChild(awayBtn);
-  const vs = document.createElement('span'); vs.className='vs'; vs.textContent='@';
-  wrap.appendChild(vs);
-  wrap.appendChild(homeBtn);
 
-  // Everything secondary -- the total, and either the kickoff time or the live
-  // score -- shares one line. Stacked, they were most of the row's height.
-  const meta = document.createElement('div');
-  meta.className = 'game-meta';
+  // ---- Subtext: kickoff and total, or the score once it's underway ----
+  const sub = document.createElement('div');
+  sub.className = 'game-sub';
 
-  {
-    const fmt = (v) => v > 0 ? '+' + v : String(v);
-    // Spreads sit on the team buttons now; only the total needs its own slot.
-    // Reference only -- nothing scores off it, but it frames the MNF tiebreaker.
-    if(game.overUnder != null){
-      const ou = document.createElement('span');
-      ou.className = 'odds-total-line';
-      ou.innerHTML = `O/U <b>${game.overUnder}</b>`;
-      meta.appendChild(ou);
-    }
-
-    // The line has moved since this pick was made. Show both numbers side by
-    // side and offer to take the new one -- your pick is still judged against
-    // the old one until you say otherwise.
-    if(mode === 'pick' && lineMoved(game)){
-      const forSide = (v) => fmt(game.pick === 'home' ? v : -v);
-      const moved = document.createElement('div');
-      moved.className = 'line-moved-row';
-      moved.innerHTML =
-        `<span class="lm-label">Line moved</span>`
-        + `<span class="lm-pair"><span class="lm-yours">yours <b>${forSide(game.pickedSpread)}</b></span>`
-        + `<span class="lm-arrow">→</span>`
-        + `<span class="lm-now">now <b>${forSide(game.homeSpread)}</b></span></span>`;
-
-      // Only offered while the game is still open; once it kicks off, what you
-      // took is settled.
-      if(!locked){
-        const take = document.createElement('button');
-        take.type = 'button';
-        take.className = 'lm-take-btn';
-        take.textContent = `Take ${forSide(game.homeSpread)}`;
-        take.title = 'Judge this pick against the current line instead';
-        take.onclick = (e) => {
-          e.stopPropagation();
-          game.pickedSpread = game.homeSpread;
-          game.pickedOverUnder = game.overUnder ?? game.pickedOverUnder;
-          game.pickedAt = new Date().toISOString();
-          saveState(); render();
-        };
-        moved.appendChild(take);
-      }
-      // Full width below the meta line -- it carries a button and matters.
-      wrap.appendChild(meta);
-      wrap.appendChild(moved);
-      meta.dataset.placed = '1';
-    }
+  // Says the same thing the greyed-out row does, in words. Reads better here
+  // than as a padlock floating over the spread.
+  if(mode === 'pick' && locked && game.gameState !== 'in' && game.gameState !== 'post'){
+    const lock = document.createElement('span');
+    lock.className = 'sub-lock';
+    lock.textContent = 'Locked';
+    sub.appendChild(lock);
   }
 
   if(game.gameState === 'in' || game.gameState === 'post'){
-    const score = document.createElement('div');
-    score.className = 'score-line';
-    const tag = document.createElement('span');
-    tag.className = 'status-tag ' + (game.gameState === 'in' ? 'live' : 'final');
-    tag.textContent = game.gameState === 'in' ? (game.statusDetail || 'LIVE') : 'FINAL';
-    score.appendChild(tag);
-
-    // Bold the side that's ahead so the result reads at a glance.
     const a = game.liveAway, h = game.liveHome;
-    const hasScores = a != null && h != null;
-    const lead = hasScores ? (a > h ? 'away' : h > a ? 'home' : null) : null;
-    // Both spellings are rendered; CSS picks one, so a phone shows "DAL 20"
-    // where a desktop shows "Dallas Cowboys 20" without re-rendering.
-    const sideHtml = (side, name, pts) => {
-      const abbr = (getTeamAbbr(name) || name).toUpperCase();
-      return `<span class="score-team${lead === side ? ' leading' : ''}">`
-           + `<span class="score-team-full">${escapeHtml(name)}</span>`
-           + `<span class="score-team-abbr">${escapeHtml(abbr)}</span>`
-           + ` <b>${pts ?? '-'}</b></span>`;
-    };
-    const scoreText = document.createElement('span');
-    scoreText.className = 'score-teams';
-    scoreText.innerHTML = sideHtml('away', game.away, a) + '<span class="score-dash">—</span>' + sideHtml('home', game.home, h);
-    score.appendChild(scoreText);
+    const status = document.createElement('span');
+    status.className = 'sub-status ' + (game.gameState === 'in' ? 'live' : 'final');
+    status.textContent = game.gameState === 'in' ? (game.statusDetail || 'LIVE') : 'FINAL';
+    sub.appendChild(status);
+    if(a != null && h != null){
+      const score = document.createElement('span');
+      score.className = 'sub-score';
+      score.textContent = a + '–' + h;
+      sub.appendChild(score);
 
-    // "who won by how much", spelled out rather than left to mental arithmetic.
-    if(hasScores){
-      const margin = Math.abs(a - h);
+      const lead = a > h ? 'away' : h > a ? 'home' : null;
       const winner = lead === 'away' ? game.away : lead === 'home' ? game.home : null;
       const verdict = document.createElement('span');
-      verdict.className = 'score-margin';
-      if(!winner){
-        verdict.textContent = game.gameState === 'post' ? 'Tie — no points' : 'Tied';
-      } else {
-        verdict.textContent = game.gameState === 'post'
-          ? `${getTeamAbbr(winner)?.toUpperCase() || winner} by ${margin}`
-          : `${getTeamAbbr(winner)?.toUpperCase() || winner} +${margin}`;
-      }
-      score.appendChild(verdict);
+      verdict.className = 'sub-margin';
+      verdict.textContent = winner
+        ? (getTeamAbbr(winner)?.toUpperCase() || winner)
+          + (game.gameState === 'post' ? ' by ' : ' +') + Math.abs(a - h)
+        : (game.gameState === 'post' ? 'Tie — no points' : 'Tied');
+      sub.appendChild(verdict);
     }
-    meta.appendChild(score);
-  } else if(game.kickoff){
-    const ko = document.createElement('span');
-    ko.className = 'kickoff';
-    try{
-      ko.textContent = formatInZone(game.kickoff, { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' ' + zoneLabel();
-    }catch(e){ ko.textContent = ''; }
-    meta.appendChild(ko);
   }
 
-  // Placed after the line-moved banner above, if that already inserted it.
-  if(!meta.dataset.placed && meta.childElementCount) wrap.appendChild(meta);
+  const facts = [];
+  if(game.gameState !== 'in' && game.gameState !== 'post' && game.kickoff){
+    try{
+      facts.push(formatInZone(game.kickoff, { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+        + ' ' + zoneLabel());
+    }catch(e){ /* nothing to show */ }
+  }
+  if(game.overUnder != null) facts.push('O/U ' + game.overUnder);
+  if(facts.length){
+    const span = document.createElement('span');
+    span.className = 'sub-facts';
+    span.textContent = facts.join(' · ');
+    sub.appendChild(span);
+  }
+  if(sub.childElementCount) wrap.appendChild(sub);
 
+  // ---- The line moved after this pick was made ----
+  if(mode === 'pick' && lineMoved(game)){
+    const fmt = (v) => v > 0 ? '+' + v : String(v);
+    const forSide = (v) => fmt(game.pick === 'home' ? v : -v);
+    const moved = document.createElement('div');
+    moved.className = 'line-moved-row';
+    moved.innerHTML =
+      '<span class="lm-label">Line moved</span>'
+      + '<span class="lm-pair"><span class="lm-yours">yours <b>' + forSide(game.pickedSpread) + '</b></span>'
+      + '<span class="lm-arrow">→</span>'
+      + '<span class="lm-now">now <b>' + forSide(game.homeSpread) + '</b></span></span>';
+    // Only while the game is open; once it kicks off, what you took is settled.
+    if(!locked){
+      const take = document.createElement('button');
+      take.type = 'button';
+      take.className = 'lm-take-btn';
+      take.textContent = 'Take ' + forSide(game.homeSpread);
+      take.title = 'Judge this pick against the current line instead';
+      take.onclick = (e) => {
+        e.stopPropagation();
+        game.pickedSpread = game.homeSpread;
+        game.pickedOverUnder = game.overUnder ?? game.pickedOverUnder;
+        game.pickedAt = new Date().toISOString();
+        saveState(); render();
+      };
+      moved.appendChild(take);
+    }
+    wrap.appendChild(moved);
+  }
+
+  // ---- MNF tiebreaker ----
   if(game.isMNF && mode === 'pick'){
     const tb = document.createElement('div');
     tb.className = 'tiebreak-inline';
@@ -264,11 +255,14 @@ export function teamButtonRow(game, mode, locked){
     const guessInput = document.createElement('input');
     guessInput.type = 'number'; guessInput.min = '0';
     guessInput.value = game.tiebreakGuess ?? '';
-    // The over/under is the bookmakers' own guess at this number, so it makes
-    // a far better prompt than an arbitrary example.
-    guessInput.placeholder = game.overUnder != null ? `O/U ${game.overUnder}` : 'e.g. 47';
+    // The over/under is the bookmakers' own guess at this number, so it makes a
+    // far better prompt than an arbitrary example.
+    guessInput.placeholder = game.overUnder != null ? 'O/U ' + game.overUnder : 'e.g. 47';
     guessInput.disabled = disablePicks;
-    guessInput.onchange = () => { game.tiebreakGuess = guessInput.value ? parseInt(guessInput.value) : null; saveState(); render(); };
+    guessInput.onchange = () => {
+      game.tiebreakGuess = guessInput.value ? parseInt(guessInput.value) : null;
+      saveState(); render();
+    };
     label.appendChild(guessInput);
     tb.appendChild(label);
     if(game.gameState === 'post' && game.liveAway != null && game.liveHome != null && game.tiebreakGuess != null){
@@ -276,7 +270,9 @@ export function teamButtonRow(game, mode, locked){
       const diff = Math.abs(game.tiebreakGuess - actualTotal);
       const res = document.createElement('span');
       res.className = 'tiebreak-result' + (diff === 0 ? ' good' : '');
-      res.textContent = diff === 0 ? `Dead on! (${actualTotal})` : `Actual ${actualTotal} · off by ${diff}`;
+      res.textContent = diff === 0
+        ? 'Dead on! (' + actualTotal + ')'
+        : 'Actual ' + actualTotal + ' · off by ' + diff;
       tb.appendChild(res);
     }
     wrap.appendChild(tb);

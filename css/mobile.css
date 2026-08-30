@@ -28,12 +28,12 @@ header.board > .wrap{ flex: 1 1 auto; width: 100%; min-width: 0; }
 /* ---------- Touch behaviour ---------- */
 /* No grey flash on tap, no 300ms double-tap-zoom delay, no accidental
    text selection when jabbing at team buttons. */
-button, .team-btn, .week-item, .menu-nav-link, .file-btn, .sync-btn,
+button, .team-pick, .week-item, .menu-nav-link, .file-btn, .sync-btn,
 .tt-reaction-btn, .del-btn, select{
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
-button, .team-btn, .week-item, .menu-nav-link, .file-btn, .sync-btn, .lbl, .eyebrow{
+button, .team-pick, .week-item, .menu-nav-link, .file-btn, .sync-btn, .lbl, .eyebrow{
   -webkit-user-select: none;
   user-select: none;
 }
@@ -109,26 +109,16 @@ header.board{
   /* ---------- Game rows ---------- */
   /* Stack the matchup above its controls instead of a 3-column grid. */
   .panel{ padding: 14px 12px 12px; }
-  .game-row{
-    grid-template-columns: 1fr auto;
-    grid-template-areas: 'matchup matchup' 'conf actions';
-    padding: 12px;
-    gap: 10px;
-  }
-  .game-row .matchup{ grid-area: matchup; }
-  .game-row .conf-select{ grid-area: conf; }
-  .game-row .row-actions{ grid-area: actions; }
+  .game-row{ padding: 10px; gap: 8px; }
 
-  /* Two team buttons share the row and stay tappable. */
-  .matchup{ gap: 8px; }
-  .team-btn{ flex: 1 1 0; min-width: 0; min-height: 52px; font-size: 13px; }
-  .team-btn-label{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .vs{ flex: 0 0 auto; }
+  /* Stacked team rows, each a full-width tap target. */
+  .matchup{ gap: 5px; }
+  .team-pick{ min-height: 46px; }
 
-  /* Confidence select becomes the primary control on the second line. */
-  .conf-select{ min-height: 48px; width: 100%; font-size: 16px; }
+  /* The points selector rides beside the stack, sized for a thumb. */
+  .conf-select{ min-height: 48px; width: 56px; font-size: 16px; padding: 6px 2px; }
   .row-actions{ display: flex; align-items: center; }
-  .del-btn{ min-width: 48px; min-height: 48px; font-size: 16px; }
+  .del-btn{ min-width: 40px; min-height: 44px; font-size: 16px; padding: 4px; }
 
   /* ---------- Buttons & forms ---------- */
   .submit-btn{ width: 100%; min-height: 52px; }
@@ -163,18 +153,14 @@ header.board{
   .research-logo{ width: 18px; height: 18px; }
   .research-season-btn{ flex: 1 1 0; }
 
-  /* Score line: full team names wrapped this to three rows on a phone. Swap in
-     the abbreviations so the whole result fits on one. */
-  .score-line{ font-size: 12px; padding: 5px 8px; gap: 6px; }
-  .score-teams{ gap: 6px; }
-  .score-team-full{ display: none; }
-  .score-team-abbr{ display: inline; }
-  .score-margin{ font-size: 10px; padding: 2px 7px; }
 }
 
 /* Rules that used to live in sync.css's own 480px block. Gathered here so every
    responsive override sits in one file and they stop overriding each other. */
 @media (max-width: 480px){
+  /* Below this the full name only ellipsises; the abbreviation says more. */
+  .team-name-full{ display: none; }
+  .team-name-short{ display: inline; }
   .spread-edit-fields{ grid-template-columns: 1fr 1fr; }
   .row-actions{ justify-content: space-between; }
   .standings-highlight-row{ grid-template-columns: 1fr; }
@@ -185,9 +171,10 @@ header.board{
   .standings-col-header{ display: none; }
 }
 
-/* Very narrow phones: let the two team buttons stack rather than squeeze. */
+/* Very narrow phones: tighten the row so the spread keeps its column. */
 @media (max-width: 360px){
-  .team-btn{ font-size: 12px; padding: 6px 8px; }
+  .team-pick{ font-size: 12px; gap: 6px; padding-right: 7px; }
+  .team-spread{ font-size: 15px; min-width: 42px; }
   .season-tally .num{ font-size: 28px; }
   .title-block h1{ font-size: 17px; }
 }

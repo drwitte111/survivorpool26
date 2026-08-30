@@ -58,54 +58,105 @@
 .game-row.graded.correct{ border-color: var(--correct); }
 .game-row.graded.incorrect{ border-color: var(--incorrect); }
 
+/* ---------- Matchup: two stacked team rows ----------
+   Laid out the way a sportsbook does it. Each row is [logo] [name ....] [SPREAD],
+   so the two spreads sit in one right-hand column and who is favoured reads at a
+   glance instead of being compared across a line of text. Kickoff and the total
+   are real information but nobody decides on them, so they drop to a single dim
+   line underneath. */
 .matchup{
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
 }
 .mnf-tag{
-  font-family:'JetBrains Mono', monospace; font-size: 9px; letter-spacing:1px;
-  background: var(--amber); color: var(--night); padding: 2px 6px; border-radius: 4px; font-weight:700;
+  flex: 0 0 auto;
+  font-family:'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 1px;
+  background: var(--amber); color: var(--night); padding: 2px 5px; border-radius: 3px; font-weight:700;
 }
-.team-btn{
-  background: transparent; border: 2px solid var(--line); color: var(--chalk);
-  font-family:'Oswald', sans-serif; font-size: 14px; padding: 6px 10px; border-radius:6px;
-  cursor:pointer; transition: all .12s ease;
-}
-.team-btn:hover{ border-color: var(--amber-dim); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
-.team-btn:active{ transform: translateY(0); }
-.team-btn.picked{
-  background: var(--amber); border: 2px solid var(--amber); color: #fff; font-weight:700;
-}
-.team-btn.result-win{
+.team-pick{
   position: relative;
-  border-color: var(--correct) !important;
-  box-shadow: 0 0 0 2px var(--correct) inset, 0 0 10px rgba(82,183,136,0.5);
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  color: var(--chalk); text-align: left;
+  font-family:'Oswald', sans-serif; font-size: 14px;
+  padding: 4px 10px 4px 8px; min-height: 36px;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease;
 }
-.team-btn.result-win::after{
-  content:'✓'; position:absolute; top:-8px; right:-6px;
-  background: var(--correct); color: var(--night); font-weight:900; font-size:11px;
-  width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+.team-pick:hover:not(:disabled){ background: rgba(0,0,0,0.34); border-color: var(--amber-dim); }
+.team-pick:disabled{ cursor: default; }
+
+/* Picked: a wash of that team's own colour behind the row. Drawn as an overlay
+   rather than mixed into the background so any team colour lands at the same
+   strength and the text on top stays legible. */
+.team-pick.picked{
+  border-color: var(--amber-dim); border-left-color: var(--amber); font-weight: 700;
 }
-.team-btn.result-loss{
-  position: relative;
-  border-color: var(--incorrect) !important;
-  opacity: 0.6;
+.team-pick.picked::before{
+  content:''; position:absolute; inset:0; border-radius: inherit;
+  background: var(--pick-tint, var(--amber)); opacity: 0.3; pointer-events:none;
 }
-.team-btn.result-loss::after{
-  content:'✕'; position:absolute; top:-8px; right:-6px;
-  background: var(--incorrect); color: var(--chalk); font-weight:900; font-size:11px;
-  width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+.team-pick > *{ position: relative; z-index: 1; }
+.team-pick.actual-picked{
+  background: rgba(82,183,136,0.2);
+  border-color: var(--correct); border-left-color: var(--correct); font-weight: 700;
 }
-.team-btn-label{ display:inline-block; }
-.team-btn.picked .team-btn-label{
-  background: rgba(0,0,0,0.45);
-  padding: 2px 7px;
-  border-radius: 5px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+
+.team-name{
+  flex: 1 1 auto; min-width: 0; letter-spacing: 0.3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.team-btn.actual-picked{ background: var(--correct); border-color: var(--correct); color: var(--night); font-weight:600; }
-.vs{ color: var(--chalk-dim); font-family:'JetBrains Mono', monospace; font-size:12px; }
+.team-name-short{ display: none; }
+
+/* The number people actually decide on: its own column, the largest type in the
+   row, tabular figures so the two line up digit for digit. */
+.team-spread{
+  flex: 0 0 auto; min-width: 50px; text-align: right;
+  font-family:'JetBrains Mono', monospace; font-size: 17px; font-weight: 700;
+  line-height: 1; color: var(--chalk-dim); font-variant-numeric: tabular-nums;
+}
+.team-spread.fav{ color: var(--amber); text-shadow: 0 0 10px rgba(var(--amber-rgb),0.35); }
+.team-spread.none{ color: var(--chalk-dim); opacity: 0.5; }
+.team-pick.picked .team-spread{ color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.85); }
+
+/* Graded: the left edge carries the verdict so the spread column never shifts. */
+.team-pick.result-win{ border-left-color: var(--correct); border-color: var(--correct); }
+.team-pick.result-loss{ border-left-color: var(--incorrect); opacity: 0.5; }
+.team-pick.result-win::after,
+.team-pick.result-loss::after{
+  position: absolute; left: 21px; top: 50%; margin-top: 1px; z-index: 2;
+  width: 15px; height: 15px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 900; line-height: 1;
+  border: 1.5px solid var(--night);
+}
+.team-pick.result-win::after{ content:'✓'; background: var(--correct); color: var(--night); }
+.team-pick.result-loss::after{ content:'✕'; background: var(--incorrect); color: var(--chalk); }
+
+/* Against the spread, once there's a score to judge it by. */
+.team-pick.cover{ box-shadow: inset 0 0 0 1px var(--correct); }
+.team-pick.no-cover{ box-shadow: inset 0 0 0 1px var(--incorrect); }
+.team-pick.push{ box-shadow: inset 0 0 0 1px var(--chalk-dim); }
+
+/* ---------- Subtext: kickoff, total, score ---------- */
+.game-sub{
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 2px; padding-left: 3px;
+  font-family:'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.3px; color: var(--chalk-dim);
+}
+.sub-status, .sub-lock{
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px;
+}
+.sub-status.live{ background: var(--incorrect); color: var(--chalk); }
+.sub-status.final{ background: var(--chalk-dim); color: var(--night); }
+.sub-lock{ border: 1px solid var(--line); color: var(--chalk-dim); }
+.sub-score{
+  color: var(--chalk); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
 
 .conf-select{
   background: var(--night); color: var(--amber); border: 1px solid var(--line);
@@ -153,15 +204,14 @@
 
 /* ---------- Team logos ---------- */
 /* ---------- Team logos ---------- */
-.team-btn{ display:inline-flex; align-items:center; gap:6px; }
 .team-logo{
-  width:30px; height:30px; object-fit:contain; flex:0 0 auto;
+  width: 26px; height: 26px; object-fit:contain; flex:0 0 auto;
   border-radius:50%; background:#fff; padding:3px; box-sizing:border-box;
   border: 2px solid rgba(255,255,255,0.25);
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 .team-logo-fallback{
-  width:30px; height:30px; border-radius:50%; flex:0 0 auto;
+  width: 26px; height: 26px; border-radius:50%; flex:0 0 auto;
   background: var(--amber-dim); color: var(--night);
   font-family:'JetBrains Mono', monospace; font-size: 10px; font-weight:700;
   display:inline-flex; align-items:center; justify-content:center; letter-spacing: -0.5px;
@@ -202,13 +252,6 @@
 /* ---------- Per-game locking ---------- */
 /* A matchup that has already kicked off: still readable, clearly not editable. */
 .game-row.locked-game{ opacity: 0.62; }
-.game-row.locked-game .team-btn{ cursor: default; }
-.game-row.locked-game .matchup::after{
-  content: '🔒';
-  position: absolute; top: 10px; right: 12px;
-  font-size: 11px; opacity: 0.75; pointer-events: none;
-}
-.game-row.locked-game .matchup{ position: relative; }
 
 /* "Lineup submitted" note -- informational, not a lock. */
 .lock-banner.submitted-note{ background: rgba(82,183,136,0.08); border-color: var(--correct); }
@@ -264,11 +307,9 @@
   box-shadow: 0 0 0 1px var(--amber), 0 0 22px rgba(var(--amber-rgb),0.22);
 }
 /* Lift the contents so they stay readable against the amber wash. */
-.game-row.line-moved .team-btn{ border-color: rgba(var(--amber-rgb),0.45); }
+.game-row.line-moved .team-pick{ border-color: rgba(var(--amber-rgb),0.5); }
 .game-row.line-moved .conf-select{ border-color: rgba(var(--amber-rgb),0.45); }
-.game-row.line-moved .kickoff,
-.game-row.line-moved .odds-spread-line,
-.game-row.line-moved .odds-total-line{ color: var(--chalk); }
+.game-row.line-moved .game-sub{ color: var(--chalk); }
 .line-moved-row{
   flex-basis: 100%;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -300,35 +341,15 @@
 }
 
 /* ---------- Compact pick rows ----------
-   The row used to stack a matchup, a two-line odds bar and a kickoff line,
-   which came to ~175px a game -- barely two games on screen at once. The
-   spread now rides on each team button and the row is a single band, so the
-   same information fits in roughly a third of the height. */
+   A row used to stack a matchup, a two-line odds bar and a kickoff line, which
+   came to ~175px a game -- barely two games on screen at once. The stacked
+   layout above carries the spread inside the matchup itself, so the row is
+   tighter than that even with the spread three times the size. */
 .game-row{
   padding: 8px 10px;
   margin-bottom: 6px;
   gap: 6px 12px;
 }
-.matchup{ gap: 6px; row-gap: 4px; }
-.team-btn{
-  flex: 1 1 0; min-width: 0;
-  padding: 6px 10px; font-size: 13px; gap: 7px;
-}
-.team-logo{ width: 22px; height: 22px; padding: 2px; border-width: 1px; }
-.team-btn-label{ flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* The spread, sitting on the button it belongs to. */
-.tb-spread{
-  flex: 0 0 auto;
-  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-  color: var(--chalk-dim); letter-spacing: 0;
-}
-.tb-spread.fav{ color: var(--amber); }
-.team-btn.picked .tb-spread{ color: var(--chalk); }
-
-.odds-bar{ margin-top: 4px; padding-top: 4px; gap: 2px; }
-.kickoff{ font-size: 10px; margin-top: 2px; }
-.score-line{ margin-top: 4px; padding: 4px 8px; font-size: 12px; }
 .conf-select{ padding: 6px 4px; }
 .del-btn{ font-size: 13px; }
 
@@ -346,25 +367,14 @@
 @media (max-width: 720px){
   /* Two lines per game on a phone: the matchup, then the controls. */
   .game-row{ padding: 8px; gap: 6px; }
-  .team-btn{ min-height: 44px; font-size: 12px; padding: 5px 7px; gap: 5px; }
-  .team-logo{ width: 20px; height: 20px; }
-  .tb-spread{ font-size: 10px; }
+  .team-pick{ min-height: 44px; font-size: 13px; gap: 8px; }
+  .team-logo, .team-logo-fallback{ width: 24px; height: 24px; }
+  .team-spread{ font-size: 16px; min-width: 46px; }
+  .team-pick.result-win::after, .team-pick.result-loss::after{ left: 20px; }
   .conf-select{ min-height: 42px; }
   .del-btn{ min-width: 42px; min-height: 42px; }
   .game-sort-btn{ padding: 7px 8px; }
 }
 
-/* Total + kickoff (or the live score) share one line rather than stacking. */
-.game-meta{
-  flex-basis: 100%;
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  margin-top: 3px;
-}
-/* .kickoff and .score-line were built to sit full width inside .matchup, so
-   they still carry flex-basis:100% and would each claim their own line here. */
-.game-meta .kickoff{ margin-top: 0; flex: 0 0 auto; width: auto; }
-.game-meta .score-line{ flex: 1 1 auto; margin-top: 0; }
-.game-meta .odds-total-line{ flex: 0 0 auto; }
-/* The odds bar is gone from the pick rows; the wrapper only exists now when a
-   line has moved, which renders full width below the meta line. */
+/* The line-moved notice renders full width below the subtext line. */
 .line-moved-row{ margin-top: 6px; padding-top: 6px; }
