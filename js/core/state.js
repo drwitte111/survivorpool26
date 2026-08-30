@@ -16,6 +16,8 @@ export const ui = {
   showIncompleteWarning: false,
   resultsEditMode: false,
   standingsFilter: 'overall',
+  // Set briefly so rows moved by a confidence reorder can be highlighted.
+  shiftedGameIds: null,
   adminWeek: 1, // which week the Admin page's spread/results editors act on
   researchSeason: null, // Research tab: which NFL season to show (null -> current)
 };

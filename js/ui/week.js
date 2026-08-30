@@ -9,7 +9,7 @@ import {
   isWeekOpen, isWeekComplete, getMissingItems, weekUnlockTime,
 } from '../core/locks.js';
 import {
-  maxPointsFor, usedConfidenceValues, weekScore, seasonScore,
+  maxPointsFor, weekScore, seasonScore, assignConfidence, canShiftTo,
   getMvpPick, isPerfectWeek, computeHotStreak,
 } from '../core/scoring.js';
 import {
@@ -456,22 +456,50 @@ export function renderGames(){
     row.appendChild(teamButtonRow(game, 'pick', gameLocked));
 
     // Middle: confidence select
+    //
+    // Every value stays pickable. Choosing one that's already in use reorders
+    // the week rather than refusing: the games between here and there each
+    // shift a step, so the numbers stay 1..N with no repeats. A value is only
+    // offered if that shift wouldn't have to renumber a game that has already
+    // kicked off, since those points are settled.
+    const canMove = (g) => !isGameLocked(g);
     const sel = document.createElement('select');
     sel.className = 'conf-select';
     sel.disabled = gameLocked;
     const noneOpt = document.createElement('option');
     noneOpt.value = ''; noneOpt.textContent = '—';
     sel.appendChild(noneOpt);
-    const used = usedConfidenceValues(week, game.id);
     for(let v = maxPts; v >= 1; v--){
       const opt = document.createElement('option');
-      opt.value = v; opt.textContent = v;
-      if(used.has(v)) opt.disabled = true;
+      opt.value = v;
+      opt.textContent = String(v);
+      // Dry run on a copy, so an unreachable value is greyed rather than
+      // silently doing nothing when picked.
+      if(v !== game.confidence && !canShiftTo(week, game, v, canMove)) opt.disabled = true;
       if(game.confidence === v) opt.selected = true;
       sel.appendChild(opt);
     }
-    sel.onchange = () => { game.confidence = sel.value ? parseInt(sel.value) : null; saveState(); render(); };
+    sel.onchange = () => {
+      const next = sel.value ? parseInt(sel.value) : null;
+      const before = new Map(week.games.map(g => [g.id, g.confidence]));
+      const result = assignConfidence(week.games, game, next, canMove);
+      if(!result.ok){
+        sel.value = game.confidence == null ? '' : String(game.confidence);
+        return;
+      }
+      // Flag everything that shifted, so the moved rows are visible.
+      ui.shiftedGameIds = week.games
+        .filter(g => g.id !== game.id && before.get(g.id) !== g.confidence)
+        .map(g => g.id);
+      saveState(); render();
+    };
     row.appendChild(sel);
+
+    // Briefly mark rows the reorder moved -- most are off-screen.
+    if(ui.shiftedGameIds && ui.shiftedGameIds.includes(game.id)){
+      row.classList.add('just-shifted');
+      setTimeout(() => row.classList.remove('just-shifted'), 1600);
+    }
 
     // Right: reset points
     const actions = document.createElement('div');

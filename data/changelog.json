@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T02:21:35Z",
+      "title": "Changing a game's points now reorders the rest",
+      "detail": "You no longer have to clear another game first. Pick any number and the games in between shift a step to make room — move a game from 13 up to 16 and the ones that held 16, 15 and 14 slide down to 15, 14 and 13. Games that have already kicked off keep their points, so any move that would disturb one isn't offered.",
+      "by": "Claude",
+      "tags": [
+        "feature",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-08-30T02:16:39Z",
       "title": "The picks page shows how fresh the spreads are",
       "detail": "A line under the week heading says where the spreads and over/unders came from and when — “pulled from ESPN 40m ago” or “published by an admin 2h ago” — with a Refresh button to check again on the spot.",

@@ -241,3 +241,13 @@
   .odds-freshness{ margin-bottom: 10px; }
   .odds-refresh-btn{ min-height: 36px; }
 }
+
+/* Rows moved by a confidence reorder, flashed so the shift is visible. */
+.game-row.just-shifted{
+  animation: swap-flash 1.6s ease-out;
+}
+@keyframes swap-flash{
+  0%   { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(var(--amber-rgb),0.45); }
+  70%  { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(var(--amber-rgb),0.25); }
+  100% { border-color: var(--line);  box-shadow: none; }
+}
