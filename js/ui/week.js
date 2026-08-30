@@ -393,7 +393,7 @@ export function renderLockPanel(){
   select.onchange = () => {
     const typed = select.value;
     errorEl.textContent = '';
-    if(!typed){ week.lockTeam = null; saveState(); render(); return; }
+    if(!typed){ week.lockTeam = null; week.autoLock = false; saveState(); render(); return; }
     const matchesGame = week.games.find(g => g.away === typed || g.home === typed);
     if(!matchesGame){
       errorEl.textContent = `"${typed}" isn’t one of this week’s teams.`;
@@ -405,9 +405,19 @@ export function renderLockPanel(){
       return;
     }
     week.lockTeam = typed;
+    week.autoLock = false;
     saveState(); render();
   };
   row.appendChild(select);
+
+  if(week.autoLock && week.lockTeam){
+    const auto = document.createElement('div');
+    auto.className = 'lock-auto-chip';
+    auto.textContent = 'Auto-picked';
+    auto.title = 'You hadn’t locked anyone, and this was the last game with a team you '
+      + 'could still use — so it was picked for you.';
+    row.appendChild(auto);
+  }
 
   const status = getLockStatusForWeek(store.currentWeek);
   if(status && status.result && status.result !== 'unmatched'){

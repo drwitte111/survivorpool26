@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T16:54:31Z",
+      "title": "Survivor picks for you if you forget",
+      "detail": "If you never set a lock, one is chosen once every game holding a team you could still use has kicked off — the last of those games, taking the home side if both were still open to you and otherwise whichever one was left. It waits until the very last moment, so the choice is yours right up to the end, and it shows as \"Auto-picked\" on the Survivor panel. Nothing happens if you already picked, if you’d used every team playing that week, or once you’re eliminated.",
+      "by": "Claude",
+      "tags": [
+        "feature",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-08-30T16:52:36Z",
       "title": "Survivor no longer adds points to the standings",
       "detail": "Staying alive used to be worth a flat 50 on a combined \"Total\" column, which meant the board could rank someone above a player with more points — and the 50 sat there from Week 1 before anyone had locked anything. Survivor is now purely its own contest: the standings rank on confidence points alone, and the Survivor column says where you stand in the other game. The Total column is gone, since without the bonus it only repeated the Points beside it.",

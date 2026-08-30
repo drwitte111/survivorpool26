@@ -20,6 +20,8 @@
 import { TOTAL_WEEKS } from './data.js';
 import { peekWeek } from './state.js';
 import { isGameLocked } from './locks.js';
+import { teamAbbrEquals } from './teams.js';
+import { getUsedLockTeams, getSurvivorStatus } from './survivor.js';
 
 /**
  * Fills the blanks on every locked game in one week.
@@ -82,6 +84,56 @@ export function autoFillWeek(week){
 }
 
 /**
+ * Locks in a Survivor pick for someone who never made one.
+ *
+ * Only at the last possible moment: it waits until every game that still had a
+ * team you could use has kicked off. Up to that point the choice is yours, and
+ * firing early would take it away while you could still act.
+ *
+ * The pick comes from the last of those games -- the final chance you had. If
+ * both its teams were still available to you it takes the home side; otherwise
+ * there's only one team left to take and it takes that one.
+ *
+ * Does nothing if you already picked, if you'd used every team playing that
+ * week, or for a week after you were already eliminated.
+ *
+ * Returns 1 if it locked something, 0 otherwise.
+ */
+export function autoFillSurvivorWeek(n){
+  const week = peekWeek(n);
+  if(!week || !week.games || !week.games.length) return 0;
+  if(week.lockTeam) return 0;                       // they made a pick
+
+  // A week after the season ended for them has nothing to decide.
+  const status = getSurvivorStatus();
+  if(status.eliminatedWeek != null && n > status.eliminatedWeek) return 0;
+
+  const usedElsewhere = getUsedLockTeams(n);
+  const available = (name) => !usedElsewhere.some(u => teamAbbrEquals(u.team, name));
+
+  // Games that could ever have served as this week's pick.
+  const usable = week.games.filter(g => available(g.away) || available(g.home));
+  if(!usable.length) return 0;                      // every team already spent
+
+  // Still time to choose for themselves.
+  if(usable.some(g => !isGameLocked(g))) return 0;
+
+  // The last chance they had. Ordered the same way everywhere else is, so two
+  // devices resolve an identical week identically.
+  const last = usable.slice().sort((a, b) => {
+    const ka = Date.parse(a.kickoff) || 0;
+    const kb = Date.parse(b.kickoff) || 0;
+    if(ka !== kb) return ka - kb;
+    return String(a.id).localeCompare(String(b.id));
+  }).pop();
+
+  // Home when both were open to them; otherwise whichever one was left.
+  week.lockTeam = available(last.home) ? last.home : last.away;
+  week.autoLock = true;
+  return 1;
+}
+
+/**
  * Every week, not just the one on screen.
  *
  * A week that was never opened is exactly the one that needs this, so it can't
@@ -92,8 +144,12 @@ export function autoFillWeek(week){
  */
 export function autoFillAllWeeks(){
   let filled = 0;
+  // Ascending, and Survivor after the picks: auto-locking week 3 can be the
+  // loss that eliminates someone, and week 4 has to see that when it decides
+  // whether there's still a season to pick for.
   for(let n = 1; n <= TOTAL_WEEKS; n++){
     filled += autoFillWeek(peekWeek(n));
+    filled += autoFillSurvivorWeek(n);
   }
   return filled;
 }

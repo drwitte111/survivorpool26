@@ -130,3 +130,16 @@
   color: var(--amber);
   border-color: var(--amber-dim);
 }
+
+/* A Survivor lock nobody made: the last game with a team they could still use
+   kicked off with no pick set. Matches the auto-filled marker on the pick rows
+   -- valid and scoring, but visibly not a choice they made. */
+.lock-auto-chip{
+  align-self: center;
+  font-family:'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; font-weight: 700;
+  padding: 4px 9px; border-radius: 999px;
+  border: 1px dashed rgba(var(--amber-rgb),0.55);
+  color: var(--amber);
+  white-space: nowrap;
+}
