@@ -111,6 +111,17 @@ export function teamButtonRow(game, mode, locked){
     txt.className = 'team-btn-label';
     txt.textContent = label;
     btn.appendChild(txt);
+
+    // The spread rides on the button rather than in a separate bar below. Same
+    // information, roughly half the row height, so more of the slate fits on
+    // one screen.
+    if(mode === 'pick' && game.homeSpread != null){
+      const num = side === 'home' ? game.homeSpread : -game.homeSpread;
+      const sp = document.createElement('span');
+      sp.className = 'tb-spread' + (num < 0 ? ' fav' : '');
+      sp.textContent = num > 0 ? '+' + num : String(num);
+      btn.appendChild(sp);
+    }
     btn.disabled = disablePicks;
     btn.onclick = () => {
       if(disablePicks) return;
@@ -138,22 +149,21 @@ export function teamButtonRow(game, mode, locked){
   wrap.appendChild(vs);
   wrap.appendChild(homeBtn);
 
-  if(game.homeSpread != null || game.overUnder != null){
-    const oddsBar = document.createElement('div');
-    oddsBar.className = 'odds-bar';
+  // Everything secondary -- the total, and either the kickoff time or the live
+  // score -- shares one line. Stacked, they were most of the row's height.
+  const meta = document.createElement('div');
+  meta.className = 'game-meta';
+
+  {
     const fmt = (v) => v > 0 ? '+' + v : String(v);
-    let html = '';
-    if(game.homeSpread != null){
-      const awaySpread = -game.homeSpread;
-      html += `<div class="odds-spread-line">${escapeHtml(game.away)} <b>${fmt(awaySpread)}</b></div>`
-            + `<div class="odds-spread-line">${escapeHtml(game.home)} <b>${fmt(game.homeSpread)}</b></div>`;
-    }
-    // Reference only -- the over/under is shown so you can eyeball the expected
-    // scoring, especially for the MNF tiebreaker. Nothing scores off it.
+    // Spreads sit on the team buttons now; only the total needs its own slot.
+    // Reference only -- nothing scores off it, but it frames the MNF tiebreaker.
     if(game.overUnder != null){
-      html += `<div class="odds-total-line">O/U <b>${game.overUnder}</b></div>`;
+      const ou = document.createElement('span');
+      ou.className = 'odds-total-line';
+      ou.innerHTML = `O/U <b>${game.overUnder}</b>`;
+      meta.appendChild(ou);
     }
-    oddsBar.innerHTML = html;
 
     // The line has moved since this pick was made. Show both numbers side by
     // side and offer to take the new one -- your pick is still judged against
@@ -185,9 +195,11 @@ export function teamButtonRow(game, mode, locked){
         };
         moved.appendChild(take);
       }
-      oddsBar.appendChild(moved);
+      // Full width below the meta line -- it carries a button and matters.
+      wrap.appendChild(meta);
+      wrap.appendChild(moved);
+      meta.dataset.placed = '1';
     }
-    wrap.appendChild(oddsBar);
   }
 
   if(game.gameState === 'in' || game.gameState === 'post'){
@@ -231,15 +243,18 @@ export function teamButtonRow(game, mode, locked){
       }
       score.appendChild(verdict);
     }
-    wrap.appendChild(score);
+    meta.appendChild(score);
   } else if(game.kickoff){
-    const ko = document.createElement('div');
+    const ko = document.createElement('span');
     ko.className = 'kickoff';
     try{
       ko.textContent = formatInZone(game.kickoff, { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' ' + zoneLabel();
     }catch(e){ ko.textContent = ''; }
-    wrap.appendChild(ko);
+    meta.appendChild(ko);
   }
+
+  // Placed after the line-moved banner above, if that already inserted it.
+  if(!meta.dataset.placed && meta.childElementCount) wrap.appendChild(meta);
 
   if(game.isMNF && mode === 'pick'){
     const tb = document.createElement('div');
@@ -452,6 +467,29 @@ function oddsFreshnessRow(week){
   return bar;
 }
 
+/**
+ * The week's games in display order. Sorting is a view concern only -- the
+ * stored order stays the real slate order, so confidence values, the MNF game
+ * and everything else are unaffected.
+ *
+ * Games with no points yet sort to the end either way; they're the ones still
+ * needing attention, and burying them among numbered rows hides that.
+ */
+export function sortedGames(week){
+  const games = week.games.slice();
+  const mode = ui.gameSort || 'kickoff';
+  if(mode === 'kickoff') return games;
+
+  const dir = mode === 'points-asc' ? 1 : -1;
+  return games.sort((a, b) => {
+    const av = a.confidence, bv = b.confidence;
+    if(av == null && bv == null) return 0;
+    if(av == null) return 1;
+    if(bv == null) return -1;
+    return (av - bv) * dir;
+  });
+}
+
 export function renderGames(){
   const week = getWeek(store.currentWeek);
   const panel = document.getElementById('gamesPanel');
@@ -465,6 +503,20 @@ export function renderGames(){
   label.className = 'section-label';
   label.innerHTML = `<span>Week ${store.currentWeek}</span>`;
   if(week.games.length){
+    const sortWrap = document.createElement('div');
+    sortWrap.className = 'game-sort';
+    [['kickoff', 'Kickoff', 'Real slate order'],
+     ['points-desc', 'Pts ↓', 'Highest points first'],
+     ['points-asc', 'Pts ↑', 'Lowest points first']].forEach(([mode, text, title]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'game-sort-btn' + ((ui.gameSort || 'kickoff') === mode ? ' active' : '');
+      b.textContent = text;
+      b.title = title;
+      b.onclick = () => { ui.gameSort = mode; render(); };
+      sortWrap.appendChild(b);
+    });
+    label.appendChild(sortWrap);
     const clearAllBtn = document.createElement('button');
     clearAllBtn.className = 'sync-btn small';
     clearAllBtn.textContent = 'Clear All';
@@ -513,7 +565,7 @@ export function renderGames(){
 
   const maxPts = maxPointsFor(week);
 
-  week.games.forEach(game => {
+  sortedGames(week).forEach(game => {
     const row = document.createElement('div');
     row.className = 'game-row';
     let gradedClass = '';

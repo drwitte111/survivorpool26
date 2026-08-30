@@ -16,6 +16,9 @@ export const ui = {
   showIncompleteWarning: false,
   resultsEditMode: false,
   standingsFilter: 'overall',
+  // How the week's games are ordered: 'kickoff' (the real slate order),
+  // 'points-desc' or 'points-asc'.
+  gameSort: 'kickoff',
   // Set briefly so rows moved by a confidence reorder can be highlighted.
   shiftedGameIds: null,
   adminWeek: 1, // which week the Admin page's spread/results editors act on

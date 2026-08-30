@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T13:13:16Z",
+      "title": "Pick rows are half the height, and sort by points",
+      "detail": "Each game's spread now sits on the team button instead of a separate bar, and the total, kickoff and score share one line. Nine games fit on a desktop screen instead of five, four on a phone instead of two. A new control beside the week heading sorts by kickoff or by the points you've assigned, highest or lowest first.",
+      "by": "Claude",
+      "tags": [
+        "feature",
+        "mobile"
+      ]
+    },
+    {
       "at": "2026-08-30T03:48:48Z",
       "title": "Fixed tabs getting stuck on “Loading…”",
       "detail": "On a weak connection a page could hang on “Loading…” forever — and stay stuck even once the signal came back, so the only fix was switching tabs and returning. Requests now give up after 12 seconds and show a Try again button, and a stalled page reloads itself when you come back online or reopen the app.",
