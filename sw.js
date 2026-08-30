@@ -51,6 +51,7 @@ const SHELL_ASSETS = [
   'js/core/theme.js',
   'js/ui/account.js',
   'js/ui/admin.js',
+  'js/ui/confirm.js',
   'js/ui/dom.js',
   'js/ui/onboarding.js',
   'js/ui/research.js',

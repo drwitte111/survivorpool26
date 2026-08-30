@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T02:24:22Z",
+      "title": "Points already in use are marked, and reordering asks first",
+      "detail": "The points dropdown now shows which numbers are taken — “13 (used)” — as a reference, while still letting you pick them. Choosing one asks before it moves the other games, naming which game currently holds that number and how many will shift.",
+      "by": "Claude",
+      "tags": [
+        "feature",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-08-30T02:21:35Z",
       "title": "Changing a game's points now reorders the rest",
       "detail": "You no longer have to clear another game first. Pick any number and the games in between shift a step to make room — move a game from 13 up to 16 and the ones that held 16, 15 and 14 slide down to 15, 14 and 13. Games that have already kicked off keep their points, so any move that would disturb one isn't offered.",

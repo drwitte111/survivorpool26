@@ -114,3 +114,13 @@ export function canShiftTo(week, game, next, canMove = () => true){
   const byId = new Map(week.games.map(g => [g.id, g]));
   return assignConfidence(copies, target, next, (g) => canMove(byId.get(g.id) || g)).ok;
 }
+
+/** How many other games a move would renumber. Changes nothing. */
+export function shiftCount(week, game, next, canMove = () => true){
+  const copies = week.games.map(g => ({ ...g }));
+  const target = copies.find(g => g.id === game.id);
+  if(!target) return 0;
+  const byId = new Map(week.games.map(g => [g.id, g]));
+  const result = assignConfidence(copies, target, next, (g) => canMove(byId.get(g.id) || g));
+  return result.ok ? result.moved.length : 0;
+}

@@ -482,3 +482,47 @@
   margin-top: 10px; padding-top: 10px;
   border-top: 1px dashed var(--line);
 }
+
+/* ---------- Confirmation dialog ---------- */
+.confirm-overlay{
+  position: fixed; inset: 0; z-index: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+  animation: confirm-in .12s ease-out;
+}
+@keyframes confirm-in{ from{ opacity:0 } to{ opacity:1 } }
+.confirm-card{
+  width: 100%; max-width: 380px;
+  background: linear-gradient(180deg, var(--night-2), var(--night));
+  border: 1px solid var(--amber-dim); border-radius: 14px;
+  padding: 22px 20px 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+}
+.confirm-title{
+  font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 600;
+  color: var(--chalk); margin-bottom: 8px;
+}
+.confirm-body{
+  font-size: 14px; line-height: 1.5; color: var(--chalk-dim); margin-bottom: 18px;
+}
+.confirm-actions{ display: flex; gap: 10px; }
+.confirm-actions button{
+  flex: 1 1 0; min-height: 44px; border-radius: 8px; cursor: pointer;
+  font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  transition: all .12s ease;
+}
+.confirm-cancel{
+  background: transparent; border: 1px solid var(--line); color: var(--chalk-dim);
+}
+.confirm-cancel:hover{ border-color: var(--chalk-dim); color: var(--chalk); }
+.confirm-ok{
+  background: var(--amber); border: 1px solid var(--amber); color: var(--night);
+}
+.confirm-ok:hover{ filter: brightness(1.08); }
+
+/* A confidence value another game already holds. Greyed as a reference, but
+   still selectable -- picking it reorders the week. */
+.conf-select option.in-use{ color: var(--chalk-dim); }

@@ -9,7 +9,7 @@ import {
   isWeekOpen, isWeekComplete, getMissingItems, weekUnlockTime,
 } from '../core/locks.js';
 import {
-  maxPointsFor, weekScore, seasonScore, assignConfidence, canShiftTo,
+  maxPointsFor, weekScore, seasonScore, assignConfidence, canShiftTo, shiftCount,
   getMvpPick, isPerfectWeek, computeHotStreak,
 } from '../core/scoring.js';
 import {
@@ -20,6 +20,7 @@ import { escapeHtml, burstConfetti, timeAgo } from './dom.js';
 import { formatInZone, zoneLabel } from '../core/tz.js';
 import { render } from './router.js';
 import { refreshWeek } from '../core/refresh.js';
+import { confirmDialog } from './confirm.js';
 
 export function coverStatus(game, side){
   if(game.homeSpread == null) return null;
@@ -469,24 +470,45 @@ export function renderGames(){
     const noneOpt = document.createElement('option');
     noneOpt.value = ''; noneOpt.textContent = '—';
     sel.appendChild(noneOpt);
+    const holderOf = (v) => week.games.find(g => g.id !== game.id && g.confidence === v);
     for(let v = maxPts; v >= 1; v--){
       const opt = document.createElement('option');
       opt.value = v;
-      opt.textContent = String(v);
-      // Dry run on a copy, so an unreachable value is greyed rather than
-      // silently doing nothing when picked.
+      const holder = holderOf(v);
+      // Marked so you can see at a glance which numbers are spoken for. Still
+      // selectable -- the label is a reference, not a barrier.
+      opt.textContent = holder ? `${v} (used)` : String(v);
+      if(holder) opt.className = 'in-use';
+      // Dry run on a copy, so a genuinely unreachable value is disabled rather
+      // than silently doing nothing when picked.
       if(v !== game.confidence && !canShiftTo(week, game, v, canMove)) opt.disabled = true;
       if(game.confidence === v) opt.selected = true;
       sel.appendChild(opt);
     }
-    sel.onchange = () => {
+    sel.onchange = async () => {
       const next = sel.value ? parseInt(sel.value) : null;
+      const revert = () => { sel.value = game.confidence == null ? '' : String(game.confidence); };
+
+      // Taking a number off another game moves rows that are usually off-screen,
+      // so say what's about to happen first.
+      const holder = next == null ? null : holderOf(next);
+      if(holder){
+        const others = shiftCount(week, game, next, canMove);
+        const ok = await confirmDialog({
+          title: `Give ${next} point${next === 1 ? '' : 's'} to this game?`,
+          body: `${holder.away} @ ${holder.home} currently has ${next}. `
+              + (others > 1
+                  ? `It and ${others - 1} other game${others - 1 === 1 ? '' : 's'} will shift by one to make room.`
+                  : `It will shift by one to make room.`),
+          confirmText: 'Move it',
+          cancelText: 'Leave it',
+        });
+        if(!ok){ revert(); return; }
+      }
+
       const before = new Map(week.games.map(g => [g.id, g.confidence]));
       const result = assignConfidence(week.games, game, next, canMove);
-      if(!result.ok){
-        sel.value = game.confidence == null ? '' : String(game.confidence);
-        return;
-      }
+      if(!result.ok){ revert(); return; }
       // Flag everything that shifted, so the moved rows are visible.
       ui.shiftedGameIds = week.games
         .filter(g => g.id !== game.id && before.get(g.id) !== g.confidence)
