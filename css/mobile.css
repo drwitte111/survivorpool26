@@ -174,7 +174,7 @@ header.board{
 /* Very narrow phones: tighten the row so the spread keeps its column. */
 @media (max-width: 360px){
   .team-pick{ font-size: 12px; gap: 6px; padding-right: 7px; }
-  .team-side{ width: 15px; height: 15px; font-size: 8px; }
+  .team-side{ width: 10px; font-size: 12px; }
   .team-spread{ font-size: 15px; min-width: 42px; }
   .season-tally .num{ font-size: 28px; }
   .title-block h1{ font-size: 17px; }

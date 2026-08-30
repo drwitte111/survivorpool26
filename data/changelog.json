@@ -27,9 +27,9 @@
   ],
   "entries": [
     {
-      "at": "2026-08-30T15:09:50Z",
-      "title": "Every team row says whether it’s home or away",
-      "detail": "A small A or H badge now sits beside each team on the picks page. Away is on top as before, but that only tells you anything if you know the convention, and the spread’s sign is quoted against the home team — –2.5 on the H row means that team is laying 2.5. The home badge reads solid so it’s the one your eye lands on.",
+      "at": "2026-08-30T15:19:14Z",
+      "title": "The home team is marked with an @",
+      "detail": "The picks page now puts an @ on the home team’s row, so a game reads \"KC @ BUF\" straight down. Worth having because the spread’s sign is quoted against the home team — –2.5 on the @ row means that team is laying 2.5 — and which team that was had to be inferred from row order alone.",
       "by": "Claude",
       "tags": [
         "feature"

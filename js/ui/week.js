@@ -111,13 +111,16 @@ export function teamButtonRow(game, mode, locked){
       btn.appendChild(fb);
     }
 
-    // Which side is at home. The stacked order already says it -- away on top,
-    // the way every board lists it -- but only if you know the convention, and
-    // the spread's sign is read against the home team.
+    // Only home is marked -- read down the two rows it's "KC @ BUF", the way
+    // every board writes it, and the away row needs no label to say so. The
+    // away span is still rendered, empty, so both team names start at the same
+    // x and the column stays straight.
     const sideTag = document.createElement('span');
     sideTag.className = 'team-side ' + side;
-    sideTag.textContent = side === 'home' ? 'H' : 'A';
-    sideTag.title = side === 'home' ? 'Home team' : 'Away team';
+    if(side === 'home'){
+      sideTag.textContent = '@';
+      sideTag.title = 'Home team';
+    }
     btn.appendChild(sideTag);
 
     // Both spellings are rendered; CSS shows one, so a narrow screen falls back
