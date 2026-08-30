@@ -23,6 +23,17 @@ import { refreshWeek } from '../core/refresh.js';
 import { confirmDialog } from './confirm.js';
 
 /**
+ * True when the spread has moved since this pick was made. Drives the yellow
+ * highlight and the offer to take the new number.
+ */
+export function lineMoved(game){
+  return !!game.pick
+    && game.pickedSpread != null
+    && game.homeSpread != null
+    && game.pickedSpread !== game.homeSpread;
+}
+
+/**
  * The spread this pick is judged against: the line showing when it was made.
  * Falls back to what the game closed at, then to the current number, so picks
  * from before this was recorded still work.
@@ -142,14 +153,40 @@ export function teamButtonRow(game, mode, locked){
     if(game.overUnder != null){
       html += `<div class="odds-total-line">O/U <b>${game.overUnder}</b></div>`;
     }
-    // If the line moved after this pick was made, say so and name the number
-    // the pick is actually judged against.
-    if(mode === 'pick' && game.pick && game.pickedSpread != null
-       && game.homeSpread != null && game.pickedSpread !== game.homeSpread){
-      html += `<div class="odds-locked-line">You took <b>${fmt(game.pick === 'home' ? game.pickedSpread : -game.pickedSpread)}</b>`
-            + ` · line has since moved</div>`;
-    }
     oddsBar.innerHTML = html;
+
+    // The line has moved since this pick was made. Show both numbers side by
+    // side and offer to take the new one -- your pick is still judged against
+    // the old one until you say otherwise.
+    if(mode === 'pick' && lineMoved(game)){
+      const forSide = (v) => fmt(game.pick === 'home' ? v : -v);
+      const moved = document.createElement('div');
+      moved.className = 'line-moved-row';
+      moved.innerHTML =
+        `<span class="lm-label">Line moved</span>`
+        + `<span class="lm-pair"><span class="lm-yours">yours <b>${forSide(game.pickedSpread)}</b></span>`
+        + `<span class="lm-arrow">→</span>`
+        + `<span class="lm-now">now <b>${forSide(game.homeSpread)}</b></span></span>`;
+
+      // Only offered while the game is still open; once it kicks off, what you
+      // took is settled.
+      if(!locked){
+        const take = document.createElement('button');
+        take.type = 'button';
+        take.className = 'lm-take-btn';
+        take.textContent = `Take ${forSide(game.homeSpread)}`;
+        take.title = 'Judge this pick against the current line instead';
+        take.onclick = (e) => {
+          e.stopPropagation();
+          game.pickedSpread = game.homeSpread;
+          game.pickedOverUnder = game.overUnder ?? game.pickedOverUnder;
+          game.pickedAt = new Date().toISOString();
+          saveState(); render();
+        };
+        moved.appendChild(take);
+      }
+      oddsBar.appendChild(moved);
+    }
     wrap.appendChild(oddsBar);
   }
 
@@ -488,6 +525,8 @@ export function renderGames(){
     // Each matchup closes at its own kickoff, independent of the rest of the slate.
     const gameLocked = notOpenYet || isGameLocked(game);
     if(gameLocked) row.classList.add('locked-game');
+    // Stands out in a 16-row list -- easy to miss otherwise.
+    if(lineMoved(game)) row.classList.add('line-moved');
 
     // Left: matchup + team selection
     row.appendChild(teamButtonRow(game, 'pick', gameLocked));
