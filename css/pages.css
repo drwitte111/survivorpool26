@@ -476,3 +476,9 @@
 @media (max-width: 720px){
   .picks-mode-btn{ padding:9px 11px; font-size:11px; }
 }
+
+/* Several updates ship at once and share a timestamp; they stack under it. */
+.update-log-item + .update-log-item{
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}

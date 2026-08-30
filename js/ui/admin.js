@@ -202,37 +202,53 @@ function renderUpdateLog(el){
 
   const intro = document.createElement('p');
   intro.className = 'update-log-intro';
-  intro.textContent = `${CHANGELOG.length} update${CHANGELOG.length === 1 ? '' : 's'}, newest first. Times are shown in your local timezone.`;
+  intro.textContent = `${CHANGELOG.length} update${CHANGELOG.length === 1 ? '' : 's'}, newest first. `
+    + `Times are when the change shipped, in ${zoneLabel()}.`;
   panel.appendChild(intro);
 
   const table = document.createElement('div');
   table.className = 'update-log';
 
+  // Several changes usually ship together, so they share a timestamp. Printing
+  // the same clock on consecutive rows reads as noise; group them under one
+  // stamp instead.
+  const groups = [];
   CHANGELOG.forEach(entry => {
-    const when = new Date(entry.at);
-    const validDate = !isNaN(when.getTime());
+    const last = groups[groups.length - 1];
+    if(last && last.at === entry.at) last.entries.push(entry);
+    else groups.push({ at: entry.at, entries: [entry] });
+  });
+
+  groups.forEach(group => {
+    const when = new Date(group.at);
+    const valid = !isNaN(when.getTime());
 
     const row = document.createElement('div');
     row.className = 'update-log-row';
 
     const stamp = document.createElement('div');
     stamp.className = 'update-log-when';
-    stamp.innerHTML = validDate
-      ? `<span class="ul-date">${when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`
-        + `<span class="ul-time">${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>`
+    // League time, so everyone sees the same clock wherever their phone is.
+    stamp.innerHTML = valid
+      ? `<span class="ul-date">${formatInZone(when, { month: 'short', day: 'numeric' })}</span>`
+        + `<span class="ul-time">${formatInZone(when, { hour: 'numeric', minute: '2-digit' })}</span>`
       : `<span class="ul-date">—</span>`;
-    if(validDate) stamp.title = when.toLocaleString();
+    if(valid){
+      stamp.title = formatInZone(when, { dateStyle: 'full', timeStyle: 'short' }) + ' ' + zoneLabel(when);
+    }
     row.appendChild(stamp);
 
     const body = document.createElement('div');
     body.className = 'update-log-body';
-    let html = `<div class="update-log-title">${escapeHtml(entry.title || 'Untitled update')}</div>`;
-    if(entry.detail) html += `<div class="update-log-detail">${escapeHtml(entry.detail)}</div>`;
-    const meta = [];
-    if(entry.by) meta.push(`<span class="update-log-by">${escapeHtml(entry.by)}</span>`);
-    (entry.tags || []).forEach(t => meta.push(`<span class="update-log-tag">${escapeHtml(t)}</span>`));
-    if(meta.length) html += `<div class="update-log-meta">${meta.join('')}</div>`;
-    body.innerHTML = html;
+    body.innerHTML = group.entries.map(entry => {
+      let html = `<div class="update-log-title">${escapeHtml(entry.title || 'Untitled update')}</div>`;
+      if(entry.detail) html += `<div class="update-log-detail">${escapeHtml(entry.detail)}</div>`;
+      const meta = [];
+      if(entry.by) meta.push(`<span class="update-log-by">${escapeHtml(entry.by)}</span>`);
+      (entry.tags || []).forEach(t => meta.push(`<span class="update-log-tag">${escapeHtml(t)}</span>`));
+      if(meta.length) html += `<div class="update-log-meta">${meta.join('')}</div>`;
+      return `<div class="update-log-item">${html}</div>`;
+    }).join('');
     row.appendChild(body);
 
     table.appendChild(row);
