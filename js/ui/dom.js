@@ -80,3 +80,37 @@ export function burstConfetti(count){
   }
 }
 
+
+
+/**
+ * Replaces a "Loading…" placeholder when a fetch fails or stalls.
+ *
+ * The important part is the retry button: a page that hangs used to stay on
+ * "Loading…" even after the connection came back, so the only way out was to
+ * switch tab and return. This gives it a way out in place.
+ */
+export function renderLoadFailure(container, { message, onRetry }){
+  container.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'load-failure';
+
+  const text = document.createElement('div');
+  text.className = 'load-failure-text';
+  text.textContent = navigator.onLine === false
+    ? 'You’re offline — this needs a connection.'
+    : (message || 'Couldn’t load that just now.');
+  box.appendChild(text);
+
+  const btn = document.createElement('button');
+  btn.className = 'load-failure-retry';
+  btn.type = 'button';
+  btn.textContent = 'Try again';
+  btn.onclick = () => {
+    btn.disabled = true;
+    btn.textContent = 'Retrying…';
+    onRetry();
+  };
+  box.appendChild(btn);
+
+  container.appendChild(box);
+}

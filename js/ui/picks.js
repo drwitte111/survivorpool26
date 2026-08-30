@@ -15,7 +15,7 @@ import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
 import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
-import { escapeHtml } from './dom.js';
+import { escapeHtml, renderLoadFailure } from './dom.js';
 import { formatInZone } from '../core/tz.js';
 
 let picksWeek = null;
@@ -64,7 +64,17 @@ export async function renderPicksPage(){
   }
 
   grid.innerHTML = '<div class="empty">Loading everyone’s picks…</div>';
-  const members = await fetchLeagueTeams();
+  let members;
+  try{
+    members = await fetchLeagueTeams();
+  }catch(e){
+    // A stalled read used to leave this on "Loading…" with no way back.
+    renderLoadFailure(grid, {
+      message: 'Couldn’t load everyone’s picks.',
+      onRetry: () => renderPicksPage(),
+    });
+    return;
+  }
   if(!survivorMode && picksWeek !== parseInt(weekSelect.value, 10)) return; // week changed mid-load
 
   const me = store.state.account.teamName;

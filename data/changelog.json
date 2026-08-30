@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T03:48:48Z",
+      "title": "Fixed tabs getting stuck on “Loading…”",
+      "detail": "On a weak connection a page could hang on “Loading…” forever — and stay stuck even once the signal came back, so the only fix was switching tabs and returning. Requests now give up after 12 seconds and show a Try again button, and a stalled page reloads itself when you come back online or reopen the app.",
+      "by": "Claude",
+      "tags": [
+        "fix"
+      ]
+    },
+    {
       "at": "2026-08-30T03:34:09Z",
       "title": "Games whose spread moved are highlighted",
       "detail": "If the line changes after you pick, the whole game box turns yellow and shows both numbers — the spread you took and the current one — with a button to switch to the current one if you want it. Your pick is judged against the line you took unless you press it.",

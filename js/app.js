@@ -8,6 +8,7 @@ import { applyTeamTheme } from './core/theme.js';
 import { saveState } from './core/persist.js';
 import { createLeague, joinLeague } from './core/league.js';
 import { refreshWeek } from './core/refresh.js';
+import { onBackOnline } from './core/net.js';
 import { loadState, enterApp } from './core/session.js';
 import {
   render, showPage, showWeekPage, showAccountPage,
@@ -294,6 +295,26 @@ function wireAuth(){
   });
 }
 
+// ---------- Recover a stalled page ----------
+// A read that stalls leaves a page on its loading state. Each page offers a
+// retry button, but coming back online should fix it without being asked.
+function wireStallRecovery(){
+  onBackOnline(() => {
+    if(!store.currentUser || !store.state.account.leagueSlug) return;
+    const visible = ['standingsPage', 'picksPage', 'trashTalkPage', 'adminPage']
+      .find(id => { const el = $(id); return el && el.style.display !== 'none'; });
+    if(!visible) return;
+    // Only re-run for a page still showing a loading or failure state; a page
+    // that loaded fine shouldn't flicker every time the app is foregrounded.
+    const el = $(visible);
+    if(!/Loading|Couldn’t load|You’re offline/.test(el.textContent)) return;
+    if(visible === 'standingsPage') showStandingsPage();
+    else if(visible === 'picksPage') showPicksPage();
+    else if(visible === 'trashTalkPage') showTrashTalkPage();
+    else if(visible === 'adminPage') showAdminPage();
+  });
+}
+
 // ---------- Background refresh ----------
 function startPolling(){
   setInterval(() => { updateSeasonRank().catch(() => {}); }, RANK_REFRESH_MS);
@@ -328,4 +349,5 @@ wireProfile();
 wireLeagueControls();
 wireLeagueGate();
 wireAuth();
+wireStallRecovery();
 startPolling();

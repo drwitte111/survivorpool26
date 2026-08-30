@@ -5,7 +5,7 @@ import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
 import { weekScore } from '../core/scoring.js';
 import { getSurvivorStatus } from '../core/survivor.js';
 import { fetchLeagueTeams, slugifyTeam, loadGlobalSpreads, syncToLeague } from '../core/league.js';
-import { escapeHtml, ordinal, rankBadge, placeNickname, timeAgo } from './dom.js';
+import { escapeHtml, ordinal, rankBadge, placeNickname, timeAgo, renderLoadFailure } from './dom.js';
 
 // Staying alive in Survivor is worth a flat bonus on the Total column.
 // Being eliminated never costs points -- it just means no bonus.
@@ -234,7 +234,10 @@ export async function renderStandingsPage(){
     teams = await fetchLeagueTeams();
   }catch(e){
     console.error('standings load failed', e);
-    listEl.innerHTML = '<div class="empty">Couldn\u2019t load league standings right now.</div>';
+    renderLoadFailure(listEl, {
+      message: 'Couldn\u2019t load the standings.',
+      onRetry: () => renderStandingsPage(),
+    });
     return;
   }
 

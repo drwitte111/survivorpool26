@@ -10,6 +10,7 @@
 // The league password is a shared secret, not real auth -- enough to keep a
 // friend group's pool tidy, nothing more.
 import { db, saveUserState } from './firebase.js';
+import { withTimeout } from './net.js';
 import { store, getWeek, peekWeek } from './state.js';
 import { saveState } from './persist.js';
 import { TOTAL_WEEKS } from './data.js';
@@ -95,7 +96,8 @@ async function removeStaleMemberDocs(currentId){
 
 export async function loadGlobalSpreads(n){
   try{
-    const docSnap = await db.collection('schedule').doc('week' + n).get();
+    const docSnap = await withTimeout(
+      db.collection('schedule').doc('week' + n).get(), undefined, 'Loading spreads');
     if(docSnap.exists) return docSnap.data();
   }catch(e){ console.error('loadGlobalSpreads failed', e); }
   return null;
@@ -174,7 +176,8 @@ export async function ensureSpreadsLoaded(n){
 
 export async function getLeagueMeta(slug){
   try{
-    const docSnap = await db.collection('leagues').doc(slug).get();
+    const docSnap = await withTimeout(
+      db.collection('leagues').doc(slug).get(), undefined, 'Loading league');
     if(docSnap.exists) return docSnap.data();
   }catch(e){ console.error('getLeagueMeta failed', e); }
   return null;
@@ -369,13 +372,23 @@ export async function syncToLeague(){
   }catch(e){ console.error('league sync failed', e); }
 }
 
+/**
+ * The league roster. Throws on failure rather than returning an empty array --
+ * "couldn't load" and "nobody has joined" look identical otherwise, and the
+ * caller needs to tell them apart to offer a retry.
+ */
 export async function fetchLeagueTeams(){
   const teams = [];
   if(!store.state.account.leagueSlug) return teams;
   try{
-    const snap = await db.collection('leagues').doc(store.state.account.leagueSlug).collection('members').get();
+    const snap = await withTimeout(
+      db.collection('leagues').doc(store.state.account.leagueSlug).collection('members').get(),
+      undefined, 'Loading roster');
     snap.forEach(docSnap => { teams.push({ key: docSnap.id, ...docSnap.data() }); });
-  }catch(e){ console.error('fetchLeagueTeams failed', e); }
+  }catch(e){
+    console.error('fetchLeagueTeams failed', e);
+    throw e;
+  }
   return teams;
 }
 

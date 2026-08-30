@@ -83,6 +83,61 @@ for(const file of jsFiles){
 }
 if(!failures) pass(`${importCount} named imports across ${jsFiles.length} modules all resolve`);
 
+// ---------- 1b. Nothing calls a helper it forgot to import ----------
+//
+// The check above verifies imports point at something real. This is the other
+// direction: a function that exists elsewhere in the project, is called here,
+// and was never imported. That reaches the browser as a ReferenceError at the
+// exact moment the code runs -- which for an error handler means the first time
+// something goes wrong. It has happened twice.
+const importsBefore = failures;
+const exportedAnywhere = new Map();       // name -> module that exports it
+for(const [file, names] of exportsOf){
+  for(const n of names) if(!exportedAnywhere.has(n)) exportedAnywhere.set(n, file);
+}
+
+// Comments and string literals mention function names constantly; scanning them
+// produces noise, not findings. Blank them out but keep newlines so reported
+// line numbers still line up with the real file.
+const stripNonCode = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+  .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + ' '.repeat(Math.max(0, m.length - p.length)))
+  .replace(/`(?:\\.|[^`\\])*`/g, (m) => m.replace(/[^\n]/g, ' '))
+  .replace(/'(?:\\.|[^'\\\n])*'/g, (m) => ' '.repeat(m.length))
+  .replace(/"(?:\\.|[^"\\\n])*"/g, (m) => ' '.repeat(m.length));
+
+for(const file of jsFiles){
+  const src = stripNonCode(readFileSync(file, 'utf8'));
+  const mine = exportsOf.get(resolve(file)) || new Set();
+
+  const imported = new Set();
+  for(const m of src.matchAll(/import\s*\{([^}]*)\}\s*from/g)){
+    for(const raw of m[1].split(',')){
+      const parts = raw.trim().split(/\s+as\s+/);
+      const local = (parts[1] || parts[0] || '').trim();
+      if(local) imported.add(local);
+    }
+  }
+  // Anything declared in this file under any of the usual forms.
+  const declared = new Set();
+  for(const re of [/\b(?:function|class)\s+(\w+)/g, /\b(?:const|let|var)\s+(\w+)/g,
+                   /\b(\w+)\s*(?:=|:)\s*(?:async\s*)?\(/g]){
+    for(const m of src.matchAll(re)) declared.add(m[1]);
+  }
+
+  for(const m of src.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g)){
+    const name = m[1];
+    if(imported.has(name) || declared.has(name) || mine.has(name)) continue;
+    const home = exportedAnywhere.get(name);
+    if(home && resolve(file) !== home){
+      const line = src.slice(0, m.index).split('\n').length;
+      fail(`${relative(process.cwd(), file)}:${line}: calls ${name}(), exported by `
+         + `${relative(process.cwd(), home)}, but never imports it`);
+    }
+  }
+}
+if(failures === importsBefore) pass('no module calls a helper it forgot to import');
+
 // ---------- 2. Data files parse and hold what the app expects ----------
 section('Data files');
 const before = failures;

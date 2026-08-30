@@ -526,3 +526,26 @@
 /* A confidence value another game already holds. Greyed as a reference, but
    still selectable -- picking it reorders the week. */
 .conf-select option.in-use{ color: var(--chalk-dim); }
+
+/* ---------- Failed / stalled load ---------- */
+.load-failure{
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 14px 16px; border-radius: 10px;
+  border: 1px solid var(--incorrect);
+  background: rgba(230,57,70,0.08);
+}
+.load-failure-text{ font-size: 13px; color: var(--chalk); }
+.load-failure-retry{
+  background: transparent; border: 1px solid var(--chalk-dim); border-radius: 6px;
+  color: var(--chalk); cursor: pointer;
+  font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; padding: 9px 16px; min-height: 40px;
+  transition: all .12s ease;
+}
+.load-failure-retry:hover:not(:disabled){ border-color: var(--amber); color: var(--amber); }
+.load-failure-retry:disabled{ opacity: 0.6; cursor: wait; }
+
+@media (max-width: 720px){
+  .load-failure-retry{ width: 100%; }
+}

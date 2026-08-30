@@ -1,8 +1,9 @@
 // The league trash-talk board: posts, reactions and the feed.
 import { store } from '../core/state.js';
 import { db } from '../core/firebase.js';
+import { withTimeout } from '../core/net.js';
 import { slugifyTeam } from '../core/league.js';
-import { escapeHtml, timeAgo } from './dom.js';
+import { escapeHtml, timeAgo, renderLoadFailure } from './dom.js';
 
 const REACTION_EMOJIS = ['🔥', '💀', '😂'];
 // Matches the maxlength on #trashTalkInput in index.html.
@@ -50,7 +51,9 @@ export async function renderTrashTalkFeed(){
   const feedEl = document.getElementById('trashTalkFeed');
   feedEl.innerHTML = '<div class="empty">Loading the feed…</div>';
   try{
-    const snap = await db.collection('leagues').doc(store.state.account.leagueSlug).collection('trashtalk').get();
+    const snap = await withTimeout(
+      db.collection('leagues').doc(store.state.account.leagueSlug).collection('trashtalk').get(),
+      undefined, 'Loading trash talk');
     const posts = [];
     snap.forEach(docSnap => { posts.push({ key: docSnap.id, ...docSnap.data() }); });
     posts.sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
@@ -108,7 +111,10 @@ export async function renderTrashTalkFeed(){
     });
   }catch(e){
     console.error('trash talk load failed', e);
-    feedEl.innerHTML = '<div class="empty">Couldn\u2019t load the feed right now.</div>';
+    renderLoadFailure(feedEl, {
+      message: 'Couldn\u2019t load the feed.',
+      onRetry: () => renderTrashTalkFeed(),
+    });
   }
 }
 
