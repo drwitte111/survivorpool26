@@ -58,6 +58,18 @@ function rememberMemberDocId(){
   return seen;
 }
 
+// Cleanup reads the whole members collection, so it must not run on every sync
+// -- syncToLeague fires on each save. It only has to happen when the id this
+// account writes under could have changed: once per session, and after a rename.
+let cleanupDoneFor = null;
+
+function cleanupNeeded(){
+  const signature = `${store.state.account.leagueSlug}|${slugifyTeam(store.state.account.teamName)}`;
+  if(cleanupDoneFor === signature) return false;
+  cleanupDoneFor = signature;
+  return true;
+}
+
 // Deletes roster rows this account left behind under a previous id.
 async function removeStaleMemberDocs(currentId){
   const slug = store.state.account.leagueSlug;
@@ -340,7 +352,8 @@ export async function syncToLeague(){
     rememberMemberDocId();
     await ref.set(payload);
     // A rename (or the move off the old team-name keying) leaves an orphan row.
-    await removeStaleMemberDocs(ref.id);
+    // Guarded, because this scans every member and syncToLeague runs on save.
+    if(cleanupNeeded()) await removeStaleMemberDocs(ref.id);
   }catch(e){ console.error('league sync failed', e); }
 }
 

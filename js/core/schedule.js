@@ -1,17 +1,21 @@
 // Seeds the board from data/schedule.csv and works out which week is "now".
 import { DEFAULT_SCHEDULE, WEEK_DATES, TOTAL_WEEKS } from './data.js';
 import { getWeek, gameId } from './state.js';
+import { zonedDateToUtc } from './tz.js';
 import { saveState } from './persist.js';
 
 export function getActiveWeekByDate(){
   const now = new Date();
   for(let n=1;n<=TOTAL_WEEKS;n++){
     const [s,e] = WEEK_DATES[n];
-    const start = new Date(s+'T00:00:00Z');
-    const end = new Date(e+'T23:59:59Z');
+    // Boundaries on the league's clock. Using UTC midnight meant the board
+    // rolled over to next week at about 8pm Eastern -- in the middle of Monday
+    // Night Football.
+    const start = zonedDateToUtc(s, 0, 0);
+    const end = new Date(zonedDateToUtc(e, 0, 0).getTime() + 24 * 60 * 60 * 1000 - 1);
     if(now >= start && now <= end) return n;
   }
-  if(now < new Date(WEEK_DATES[1][0]+'T00:00:00Z')) return 1;
+  if(now < zonedDateToUtc(WEEK_DATES[1][0], 0, 0)) return 1;
   return TOTAL_WEEKS;
 }
 

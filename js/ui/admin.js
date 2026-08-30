@@ -9,7 +9,8 @@ import { fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults }
 import { isWeekFullyLocked } from '../core/locks.js';
 import { isAdmin } from '../core/roles.js';
 import { saveState } from '../core/persist.js';
-import { escapeHtml, isoToLocalInput, localInputToIso } from './dom.js';
+import { escapeHtml } from './dom.js';
+import { isoToZonedInput as isoToLocalInput, zonedInputToIso as localInputToIso, formatInZone, zoneLabel } from '../core/tz.js';
 import { render, setSyncStatus } from './router.js';
 
 
@@ -283,7 +284,7 @@ export function renderSpreadEditor(panel, weekNum){
         <label>${escapeHtml(g.away)} Spread<input type="number" step="0.5" class="se-away-spread" placeholder="e.g. 3.5" value="${awayVal}"></label>
         <label>${escapeHtml(g.home)} Spread<input type="number" step="0.5" class="se-home-spread" placeholder="e.g. -3.5" value="${homeVal}"></label>
         <label>Over/Under<input type="number" step="0.5" class="se-over-under" placeholder="e.g. 47.5" value="${ouVal}"></label>
-        <label>Kickoff<input type="datetime-local" class="se-kickoff" value="${isoToLocalInput(g.kickoff)}"></label>
+        <label>Kickoff (${zoneLabel()})<input type="datetime-local" class="se-kickoff" value="${isoToLocalInput(g.kickoff)}"></label>
       </div>`;
     const awayInput = row.querySelector('.se-away-spread');
     const homeInput = row.querySelector('.se-home-spread');

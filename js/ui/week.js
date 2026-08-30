@@ -17,6 +17,7 @@ import {
   getSurvivorChoices, survivorPickError,
 } from '../core/survivor.js';
 import { escapeHtml, burstConfetti } from './dom.js';
+import { formatInZone, zoneLabel } from '../core/tz.js';
 import { render } from './router.js';
 
 export function coverStatus(game, side){
@@ -160,7 +161,7 @@ export function teamButtonRow(game, mode, locked){
     const ko = document.createElement('div');
     ko.className = 'kickoff';
     try{
-      ko.textContent = new Date(game.kickoff).toLocaleString('en-US', { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' });
+      ko.textContent = formatInZone(game.kickoff, { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' ' + zoneLabel();
     }catch(e){ ko.textContent = ''; }
     wrap.appendChild(ko);
   }
@@ -444,12 +445,12 @@ export function renderGames(){
   const nextLock = nextLockTime(week);
   const stillOpen = openGames(week).length;
   const lockedCount = week.games.length - stillOpen;
-  const fmtLock = (d) => d.toLocaleString('en-US', { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' });
+  const fmtLock = (d) => formatInZone(d, { weekday:'short', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' ' + zoneLabel();
   if(notOpenYet){
     const unlockAt = weekUnlockTime(store.currentWeek);
     const banner = document.createElement('div');
     banner.className = 'lock-banner opens-soon';
-    banner.innerHTML = `🕐 <b>Week ${store.currentWeek} hasn’t opened yet</b> — picks unlock ${unlockAt.toLocaleString('en-US', { weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' })}.`;
+    banner.innerHTML = `🕐 <b>Week ${store.currentWeek} hasn’t opened yet</b> — picks unlock ${formatInZone(unlockAt, { weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' ' + zoneLabel()}.`;
     footer.appendChild(banner);
   } else if(locked){
     const banner = document.createElement('div');

@@ -6,6 +6,7 @@
 // stays editable.
 import { CONFIG, WEEK_DATES } from './data.js';
 import { peekWeek } from './state.js';
+import { zonedDateToUtc, zonedToUtc, leagueZone } from './tz.js';
 
 export function earliestKickoff(week){
   let earliest = null;
@@ -101,10 +102,16 @@ export function weekUnlockTime(n){
   if(n === 1) return null;
   const range = WEEK_DATES[n];
   if(!range) return null;
-  const boundary = new Date(range[0] + 'T00:00:00');
-  const unlock = new Date(boundary.getTime() - CONFIG.weekUnlockHoursBeforeStart * 60 * 60 * 1000);
-  unlock.setHours(6, 0, 0, 0);
-  return unlock;
+  // Built on the league's clock, not the viewer's. setHours() used to mean 6am
+  // wherever the device happened to be, so the week opened at different moments
+  // for people in different timezones.
+  const boundary = zonedDateToUtc(range[0]);
+  const dayBefore = new Date(boundary.getTime() - CONFIG.weekUnlockHoursBeforeStart * 60 * 60 * 1000);
+  const parts = {};
+  for(const p of new Intl.DateTimeFormat('en-US', {
+    timeZone: leagueZone(), year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(dayBefore)) parts[p.type] = p.value;
+  return zonedToUtc(Number(parts.year), Number(parts.month), Number(parts.day), 6, 0);
 }
 export function isWeekOpen(n){
   const t = weekUnlockTime(n);

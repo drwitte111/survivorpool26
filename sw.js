@@ -47,6 +47,7 @@ const SHELL_ASSETS = [
   'js/core/state.js',
   'js/core/survivor.js',
   'js/core/teams.js',
+  'js/core/tz.js',
   'js/core/theme.js',
   'js/ui/account.js',
   'js/ui/admin.js',

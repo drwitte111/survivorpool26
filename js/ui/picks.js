@@ -16,6 +16,7 @@ import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
 import { escapeHtml } from './dom.js';
+import { formatInZone } from '../core/tz.js';
 
 let picksWeek = null;
 let picksMode = 'confidence';   // 'confidence' | 'survivor'
@@ -128,7 +129,7 @@ export async function renderPicksPage(){
     const gameCell = document.createElement('th');
     gameCell.className = 'picks-game';
     const kickoff = game.kickoff
-      ? new Date(game.kickoff).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+      ? formatInZone(game.kickoff, { weekday: 'short', hour: 'numeric', minute: '2-digit' })
       : '';
     gameCell.innerHTML =
       `<span class="picks-game-teams">${escapeHtml(getTeamAbbr(game.away)?.toUpperCase() || game.away)}`

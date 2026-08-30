@@ -1,5 +1,6 @@
 {
   "seasonYear": 2026,
+  "timezone": "America/New_York",
   "totalWeeks": 18,
   "pickLockMinutesBeforeKickoff": 0,
   "weekUnlockHoursBeforeStart": 24,
