@@ -164,9 +164,17 @@ header.board{
   .spread-edit-fields{ grid-template-columns: 1fr 1fr; }
   .row-actions{ justify-content: space-between; }
   .standings-highlight-row{ grid-template-columns: 1fr; }
+  /* Rank, name and points on the first line; the survivor status tucks under
+     the name on the second. No grid-template-areas here: nothing in the row
+     ever carried a grid-area, so the named layout that used to sit here did
+     nothing at all and the cells just auto-flowed. */
   .standings-row.cols-full{
     grid-template-columns: 40px 1fr auto;
-    grid-template-areas: "rank team pts" "rank survivor total";
+    row-gap: 4px;
+  }
+  .standings-row.cols-full .survivor-cell{
+    grid-column: 2 / 3;
+    text-align: left;
   }
   .standings-col-header{ display: none; }
 }

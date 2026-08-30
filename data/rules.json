@@ -26,7 +26,7 @@
     "heading": "Survivor 🔒",
     "body": [
       "<p>Each week, lock in one team you think will win straight-up — separate from your confidence picks. You can only use each team as a lock <b>once per season</b>.</p>",
-      "<p><b>Double elimination.</b> Your first losing lock is a strike and you stay in. The second one ends your Survivor season. Your confidence picks keep going either way.</p>",
+      "<p><b>Double elimination.</b> Your first losing lock is a strike and you stay in. The second one ends your Survivor season. Your confidence picks keep going either way. Survivor is its own contest — winning or losing it has no effect on your points.</p>",
       "<p>Your lock stays open <b>all week</b>, but you can only choose from teams that <b>haven't played yet</b>. Once the team you locked kicks off, you're committed for that week — no watching them fall behind and swapping out.</p>"
     ]
   },
@@ -36,7 +36,7 @@
       "<ul>",
       "<li><b>Points</b> — your season total from correct confidence picks.</li>",
       "<li><b>Survivor</b> — Alive, alive with a strike, or eliminated (❌) after two losing locks. Tracked independently of your points.</li>",
-      "<li><b>Total</b> — your points, <b>plus 50 bonus points if you're still alive in Survivor</b>. Being eliminated never costs you points — it just means no bonus.</li>",
+      "<li><b>Survivor is scored separately</b> and never adds to or subtracts from your points. It used to be worth a 50-point bonus on a combined total; it isn't any more, so the standings rank on confidence points alone.</li>",
       "</ul>"
     ]
   },

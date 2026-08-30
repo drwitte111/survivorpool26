@@ -52,10 +52,10 @@
   animation: fadeUp .3s ease both;
 }
 .standings-row.cols-full{
-  grid-template-columns: 50px 1.4fr 0.7fr 0.8fr 0.8fr;
+  grid-template-columns: 50px 1.6fr 0.8fr 0.9fr;
 }
 .standings-col-header{
-  display:grid; grid-template-columns: 50px 1.4fr 0.7fr 0.8fr 0.8fr; gap: 14px;
+  display:grid; grid-template-columns: 50px 1.6fr 0.8fr 0.9fr; gap: 14px;
   padding: 0 18px 10px 18px;
   font-family:'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
   color: var(--chalk-dim);
@@ -65,11 +65,6 @@
 .survivor-col{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 13px; }
 .survivor-col.alive{ color: var(--correct); }
 .survivor-col.out{ color: var(--incorrect); font-size: 16px; }
-.total-cell{ text-align:center; }
-.total-pts{
-  display:block; font-family:'JetBrains Mono', monospace; color: var(--amber); font-weight:700; font-size: 22px;
-  text-shadow: 0 0 10px rgba(var(--amber-rgb),0.3);
-}
 .standings-row:hover{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.35); border-color: var(--amber-dim); }
 .crown-badge{ font-size: 15px; }
 .toilet-badge{ font-size: 14px; }

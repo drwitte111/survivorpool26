@@ -9,9 +9,12 @@ import {
 } from '../core/league.js';
 import { escapeHtml, ordinal, rankBadge, placeNickname, timeAgo, renderLoadFailure } from './dom.js';
 
-// Staying alive in Survivor is worth a flat bonus on the Total column.
-// Being eliminated never costs points -- it just means no bonus.
-const SURVIVOR_BONUS = 50;
+// Survivor is its own contest. It used to add a flat 50 to a "Total" column,
+// which meant the board could rank someone above a player with more points, and
+// the 50 was there from Week 1 before anybody had locked anything. It's now
+// tracked alongside the points and never mixed into them -- so the standings
+// rank on points, full stop, and the Survivor column says where you stand in
+// the other game.
 
 // Members flagged on the Admin page as playing for money, by team name. Stored
 // on the league document rather than the member row: a member's own sync writes
@@ -22,14 +25,6 @@ let moneyNames = new Set();
 /** True if this team is flagged as playing for money. */
 export function playsForMoney(teamName){ return moneyNames.has(teamName); }
 
-/**
- * Season points: the sum of the weeks, added up here rather than read from the
- * stored `total`.
- *
- * The two should agree -- the same client writes both -- but only one of them is
- * what the weekly tabs show. Summing what's displayed means the Overall column
- * can always be checked against the weeks it came from.
- */
 /**
  * Standard competition ranking: equal scores share a place, and the next
  * distinct score skips the places the tie used up -- 1, 1, 3, 4 rather than
@@ -63,6 +58,14 @@ export function placeShape(ranks){
   };
 }
 
+/**
+ * Season points: the sum of the weeks, added up here rather than read from the
+ * stored `total`.
+ *
+ * The two should agree -- the same client writes both -- but only one of them is
+ * what the weekly tabs show. Summing what's displayed means the Overall column
+ * can always be checked against the weeks it came from.
+ */
 export function seasonPoints(team){
   const weekly = team.weeklyPoints || {};
   return Object.keys(weekly).reduce((sum, w) => sum + (weekly[w] || 0), 0);
@@ -193,11 +196,9 @@ export function buildStandingsRow({
     const survivorHtml = survivorAlive
       ? '<span class="survivor-col alive">Alive</span>'
       : '<span class="survivor-col out">\u274c</span>';
-    const bonus = survivorAlive ? SURVIVOR_BONUS : 0;
-    const grandTotal = pts + bonus;
-    extraCols = `
-    <div class="survivor-cell">${survivorHtml}</div>
-    <div class="total-cell"><span class="total-pts">${grandTotal}</span><span class="pts-label">TOTAL</span></div>`;
+    // No Total column any more: with the bonus gone it only ever repeated the
+    // Points column beside it.
+    extraCols = `<div class="survivor-cell">${survivorHtml}</div>`;
   }
 
   const badgesHtml = (badges && badges.length)
@@ -227,13 +228,12 @@ export function updateHeaderRank(teams){
   const el = document.getElementById('seasonRank');
   if(!el) return;
   if(!store.state.account.teamName || !teams.length){ el.textContent = ''; return; }
-  // Must rank by the same number the Overall table shows, or the header claims
+  // Must rank on the same number the Overall table shows, or the header claims
   // a place the table contradicts.
-  const grand = (t) => seasonPoints(t) + (t.survivorAlive ? SURVIVOR_BONUS : 0);
-  const sorted = teams.slice().sort((a, b) => grand(b) - grand(a));
+  const sorted = teams.slice().sort((a, b) => seasonPoints(b) - seasonPoints(a));
   const idx = sorted.findIndex(t => t.teamName === store.state.account.teamName);
   if(idx === -1){ el.textContent = ''; return; }
-  const ranks = competitionRanks(sorted, grand);
+  const ranks = competitionRanks(sorted, seasonPoints);
   const myRank = ranks[idx];
   // "2nd place" reads as sole possession of it. Say so when it isn't.
   const shared = ranks.filter(r => r === myRank).length > 1;
@@ -418,18 +418,15 @@ export async function renderStandingsPage(){
 
   if(ui.standingsFilter === 'overall'){
     document.getElementById('weekRecapCard').innerHTML = '';
-    teams.forEach(t => {
-      t._seasonPoints = seasonPoints(t);
-      t._grandTotal = t._seasonPoints + (t.survivorAlive ? SURVIVOR_BONUS : 0);
-    });
-    teams.sort((a, b) => b._grandTotal - a._grandTotal);
+    teams.forEach(t => { t._seasonPoints = seasonPoints(t); });
+    teams.sort((a, b) => b._seasonPoints - a._seasonPoints);
     renderBestWeeks(highlightEl, teams);
     const achievements = computeAchievements(teams);
     const colHeader = document.createElement('div');
     colHeader.className = 'standings-col-header';
-    colHeader.innerHTML = `<span></span><span>Team</span><span>Points</span><span>Survivor</span><span>Total</span>`;
+    colHeader.innerHTML = `<span></span><span>Team</span><span>Points</span><span>Survivor</span>`;
     listEl.appendChild(colHeader);
-    const ranks = competitionRanks(teams, t => t._grandTotal);
+    const ranks = competitionRanks(teams, t => t._seasonPoints);
     const shape = placeShape(ranks);
     teams.forEach((t, i) => {
       listEl.appendChild(buildStandingsRow({
