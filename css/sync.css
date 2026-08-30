@@ -170,3 +170,10 @@
 }
 /* Still in progress -- shown, but visibly not a final result. */
 .results-score.pending{ background: transparent; color: var(--chalk-dim); border: 1px dashed var(--line); }
+
+/* The line a pick was made against, when the market has moved since. */
+.odds-locked-line{
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--chalk-dim); letter-spacing: 0.5px; margin-top: 2px;
+}
+.odds-locked-line b{ color: var(--amber); font-weight: 700; }

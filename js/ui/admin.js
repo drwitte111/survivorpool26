@@ -370,6 +370,10 @@ export function renderSpreadEditor(panel, weekNum){
         home: g.home,
         homeSpread: homeVal !== '' ? parseFloat(homeVal) : null,
         overUnder: ouVal !== '' ? parseFloat(ouVal) : null,
+        // Preserved so the league keeps one agreed record of what each game
+        // closed at, rather than a different copy on every device.
+        closingSpread: g.closingSpread ?? null,
+        closingOverUnder: g.closingOverUnder ?? null,
         kickoff: kickoffVal ? localInputToIso(kickoffVal) : g.kickoff
       };
     });

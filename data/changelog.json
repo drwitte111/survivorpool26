@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T02:39:14Z",
+      "title": "Spreads refresh again, and your pick remembers the line you took",
+      "detail": "Spreads had stopped updating entirely once every game had a number — hence “2 days ago”. They now re-check about once an hour while anyone has the app open. Each pick also records the spread and over/under showing when you made it, and whether you covered is judged against that number rather than wherever the line drifted to afterwards.",
+      "by": "Claude",
+      "tags": [
+        "fix",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-08-30T02:24:22Z",
       "title": "Points already in use are marked, and reordering asks first",
       "detail": "The points dropdown now shows which numbers are taken — “13 (used)” — as a reference, while still letting you pick them. Choosing one asks before it moves the other games, naming which game currently holds that number and how many will shift.",

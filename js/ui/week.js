@@ -22,11 +22,21 @@ import { render } from './router.js';
 import { refreshWeek } from '../core/refresh.js';
 import { confirmDialog } from './confirm.js';
 
+/**
+ * The spread this pick is judged against: the line showing when it was made.
+ * Falls back to what the game closed at, then to the current number, so picks
+ * from before this was recorded still work.
+ */
+export function spreadForPick(game){
+  return game.pickedSpread ?? game.closingSpread ?? game.homeSpread ?? null;
+}
+
 export function coverStatus(game, side){
-  if(game.homeSpread == null) return null;
+  const spread = spreadForPick(game);
+  if(spread == null) return null;
   if(game.liveAway == null || game.liveHome == null || isNaN(game.liveAway) || isNaN(game.liveHome)) return null;
   const margin = side === 'home' ? (game.liveHome - game.liveAway) : (game.liveAway - game.liveHome);
-  const spreadForSide = side === 'home' ? game.homeSpread : -game.homeSpread;
+  const spreadForSide = side === 'home' ? spread : -spread;
   const value = margin + spreadForSide;
   if(value > 0) return 'cover';
   if(value < 0) return 'no-cover';
@@ -91,7 +101,26 @@ export function teamButtonRow(game, mode, locked){
     txt.textContent = label;
     btn.appendChild(txt);
     btn.disabled = disablePicks;
-    btn.onclick = () => { if(disablePicks) return; game[field] = game[field] === side ? null : side; saveState(); render(); };
+    btn.onclick = () => {
+      if(disablePicks) return;
+      const clearing = game[field] === side;
+      game[field] = clearing ? null : side;
+      // Record the line as it stood the moment the pick was made. This is the
+      // number that actually matters -- it's what the person was looking at --
+      // and capturing it here means nothing has to be raced against kickoff.
+      if(mode === 'pick'){
+        if(clearing){
+          game.pickedSpread = null;
+          game.pickedOverUnder = null;
+          game.pickedAt = null;
+        } else {
+          game.pickedSpread = game.homeSpread ?? null;
+          game.pickedOverUnder = game.overUnder ?? null;
+          game.pickedAt = new Date().toISOString();
+        }
+      }
+      saveState(); render();
+    };
   });
   wrap.appendChild(awayBtn);
   const vs = document.createElement('span'); vs.className='vs'; vs.textContent='@';
@@ -112,6 +141,13 @@ export function teamButtonRow(game, mode, locked){
     // scoring, especially for the MNF tiebreaker. Nothing scores off it.
     if(game.overUnder != null){
       html += `<div class="odds-total-line">O/U <b>${game.overUnder}</b></div>`;
+    }
+    // If the line moved after this pick was made, say so and name the number
+    // the pick is actually judged against.
+    if(mode === 'pick' && game.pick && game.pickedSpread != null
+       && game.homeSpread != null && game.pickedSpread !== game.homeSpread){
+      html += `<div class="odds-locked-line">You took <b>${fmt(game.pick === 'home' ? game.pickedSpread : -game.pickedSpread)}</b>`
+            + ` · line has since moved</div>`;
     }
     oddsBar.innerHTML = html;
     wrap.appendChild(oddsBar);

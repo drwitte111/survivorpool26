@@ -152,6 +152,10 @@ export async function ensureSpreadsLoaded(n){
     if(local){
       local.homeSpread = gs.homeSpread != null ? gs.homeSpread : local.homeSpread;
       local.overUnder = gs.overUnder != null ? gs.overUnder : local.overUnder;
+      // Closing lines are write-once: the first value recorded is the one that
+      // stands, whether it came from this device or the admin's publish.
+      if(local.closingSpread == null && gs.closingSpread != null) local.closingSpread = gs.closingSpread;
+      if(local.closingOverUnder == null && gs.closingOverUnder != null) local.closingOverUnder = gs.closingOverUnder;
       if(gs.kickoff) local.kickoff = gs.kickoff;
       if(gs.isMNF !== undefined) local.isMNF = gs.isMNF;
       if(gs.actualWinner) local.actualWinner = gs.actualWinner;

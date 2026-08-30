@@ -4,6 +4,7 @@
   "totalWeeks": 18,
   "pickLockMinutesBeforeKickoff": 0,
   "weekUnlockHoursBeforeStart": 24,
+  "oddsRefreshMinutes": 60,
   "firebase": {
     "apiKey": "AIzaSyDbT7xh23HeSbZIUZZp0DNhGs0ExaPA4ig",
     "authDomain": "nfl-confidence-pool-d6888.firebaseapp.com",

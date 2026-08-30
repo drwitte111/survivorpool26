@@ -7,6 +7,7 @@
 // half-finished merge, malformed data.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 let failures = 0;
 const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++; };
@@ -23,6 +24,29 @@ function walk(dir, out = []){
 }
 
 const jsFiles = existsSync('js') ? walk('js').filter(f => f.endsWith('.js')) : [];
+
+// ---------- 0. Every file actually parses ----------
+//
+// The rest of this file works by regex, which catches a renamed module or a
+// stale import but will happily wave through a syntax error. Node parses each
+// file properly here, without executing it -- a duplicate `const` reached the
+// browser once, which is why this exists.
+//
+// The source goes in on stdin with --input-type=module rather than passing the
+// path: `node --check file.js` parses a .js as CommonJS first and, on these
+// files, reported success on code that genuinely doesn't parse as a module.
+section('Syntax');
+for(const file of jsFiles){
+  try{
+    execFileSync(process.execPath, ['--input-type=module', '--check'],
+      { input: readFileSync(file), stdio: ['pipe', 'pipe', 'pipe'] });
+  }catch(e){
+    const detail = (e.stderr ? e.stderr.toString() : e.message)
+      .split(/\r?\n/).filter(l => l.trim()).slice(0, 3).join(' | ');
+    fail(`${relative(process.cwd(), file)}: ${detail}`);
+  }
+}
+if(!failures) pass(`${jsFiles.length} modules parse cleanly`);
 
 // ---------- 1. Imports resolve, and the names they ask for are exported ----------
 section('Module imports');
