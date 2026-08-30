@@ -1,0 +1,107 @@
+{
+  "_INSTRUCTIONS_FOR_ANY_AI_OR_DEVELOPER_EDITING_THIS_REPO": [
+    "READ THIS BEFORE YOU COMMIT.",
+    "",
+    "Every time you change this app, add ONE entry to the top of the 'entries'",
+    "array below. It renders as the Update Log on the League Admin page, and it",
+    "is how the two people running this pool keep track of what changed and when.",
+    "",
+    "Do not skip it for small changes. A one-line CSS fix still gets an entry.",
+    "",
+    "Format, newest first:",
+    "  {",
+    "    \"at\":     ISO 8601 UTC timestamp, e.g. \"2026-08-30T01:45:00Z\".",
+    "               Use the real current date and time. Do not invent one and do",
+    "               not copy the timestamp from the entry above.",
+    "    \"title\":  Short plain-English summary. What changed, not how.",
+    "    \"detail\": One or two sentences. Say why, and name anything a league",
+    "               member would actually notice. Optional but strongly preferred.",
+    "    \"by\":     Who made the change: \"Dave\", \"Caleb\", or the AI's name.",
+    "    \"tags\":   Optional array from: \"fix\", \"feature\", \"data\", \"admin\",",
+    "               \"mobile\", \"scoring\", \"infra\".",
+    "  }",
+    "",
+    "Keep entries factual. This log is read by people deciding whether something",
+    "broke, so do not describe work that was not actually finished and shipped."
+  ],
+
+  "entries": [
+    {
+      "at": "2026-08-30T01:45:00Z",
+      "title": "Fixed renaming your team creating a second roster entry",
+      "detail": "Roster rows were filed under your team name, so changing it wrote a brand new row and left the old one behind — you appeared twice in the standings. Rows are now filed under your account id, which never changes, and any duplicate left by the old behaviour is cleaned up automatically on your next sync.",
+      "by": "Claude",
+      "tags": ["fix", "admin"]
+    },
+    {
+      "at": "2026-08-30T01:45:00Z",
+      "title": "Added this Update Log",
+      "detail": "A running, timestamped list of what has changed, shown on the League Admin page so both admins can see what shipped and when.",
+      "by": "Claude",
+      "tags": ["feature", "admin"]
+    },
+    {
+      "at": "2026-08-29T22:10:00Z",
+      "title": "Added a Research tab and a finish-your-profile gate",
+      "detail": "New Research tab, plus a prompt to complete your profile before picking.",
+      "by": "Caleb",
+      "tags": ["feature"]
+    },
+    {
+      "at": "2026-08-29T21:30:00Z",
+      "title": "Moved the spread and results editors onto the Admin page",
+      "detail": "Both editors now live on League Admin with a week selector, instead of being buried in the week view.",
+      "by": "Caleb",
+      "tags": ["admin"]
+    },
+    {
+      "at": "2026-08-29T20:15:00Z",
+      "title": "Results editor pulls final scores from ESPN",
+      "detail": "A Fetch results from ESPN button fills in each finished game's winner, shows the final score, and works out the Monday Night combined total. You still review and press Save & Publish.",
+      "by": "Claude",
+      "tags": ["feature", "admin", "scoring"]
+    },
+    {
+      "at": "2026-08-29T19:40:00Z",
+      "title": "Fixed the page only scrolling from the scrollbar",
+      "detail": "An overflow rule turned the page into a container that sized to its own content, so there was nothing for a wheel or touch drag to scroll.",
+      "by": "Claude",
+      "tags": ["fix", "mobile"]
+    },
+    {
+      "at": "2026-08-29T19:40:00Z",
+      "title": "Spreads and over/unders now appear without an admin publishing them",
+      "detail": "Any game missing a line fills itself in from ESPN. An admin-published number still overrides it.",
+      "by": "Claude",
+      "tags": ["feature", "scoring"]
+    },
+    {
+      "at": "2026-08-29T18:30:00Z",
+      "title": "Live scores and automatic grading",
+      "detail": "Each game shows its score and who won by how much, and finished games grade themselves. An admin correction still wins.",
+      "by": "Claude",
+      "tags": ["feature", "scoring"]
+    },
+    {
+      "at": "2026-08-29T17:00:00Z",
+      "title": "Installable on a phone, and usable on one",
+      "detail": "Add to Home Screen support with offline loading, plus a mobile layout — the page used to scroll sideways and most buttons were too small to tap.",
+      "by": "Claude",
+      "tags": ["feature", "mobile"]
+    },
+    {
+      "at": "2026-08-29T15:30:00Z",
+      "title": "Games lock at their own kickoff instead of all at once",
+      "detail": "Missing Thursday night no longer costs you the rest of the week, and submitting a lineup no longer freezes it. Survivor stays open all week but only lets you pick teams that have not played yet.",
+      "by": "Claude",
+      "tags": ["feature", "scoring"]
+    },
+    {
+      "at": "2026-08-29T13:00:00Z",
+      "title": "Rebuilt the app from one file into modules",
+      "detail": "The whole board was a single 4,226-line HTML file. Schedule, teams, week dates and rules moved into data files, the code split into modules, and a 249 KB image came out of the stylesheet.",
+      "by": "Claude",
+      "tags": ["infra"]
+    }
+  ]
+}

@@ -298,3 +298,41 @@
   font-family:'Oswald', sans-serif; font-weight:700; font-size: 13px; color: var(--chalk); margin-bottom: 10px;
 }
 .league-info-row b{ color: var(--amber); }
+
+/* ---------- Update Log (League Admin) ----------
+   Rendered from data/changelog.json. If you change anything in this app, add an
+   entry to that file -- the format and rules are documented at the top of it. */
+.update-log-intro{
+  margin: 0 0 12px 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim);
+}
+.update-log{ display: flex; flex-direction: column; }
+.update-log-row{
+  display: grid; grid-template-columns: 72px 1fr; gap: 14px;
+  padding: 12px 0; border-top: 1px solid var(--line);
+}
+.update-log-row:first-child{ border-top: none; padding-top: 0; }
+.update-log-when{
+  display: flex; flex-direction: column; gap: 2px;
+  font-family: 'JetBrains Mono', monospace; line-height: 1.2;
+}
+.ul-date{ font-size: 12px; font-weight: 700; color: var(--amber); }
+.ul-time{ font-size: 10px; color: var(--chalk-dim); }
+.update-log-title{ font-size: 15px; font-weight: 600; color: var(--chalk); }
+.update-log-detail{
+  margin-top: 3px; font-size: 13px; line-height: 1.45; color: var(--chalk-dim);
+}
+.update-log-meta{ margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.update-log-by, .update-log-tag{
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px;
+}
+.update-log-by{ background: rgba(var(--amber-rgb),0.15); color: var(--amber); }
+.update-log-tag{ border: 1px solid var(--line); color: var(--chalk-dim); }
+
+@media (max-width: 720px){
+  .update-log-row{ grid-template-columns: 58px 1fr; gap: 10px; }
+  .update-log-title{ font-size: 14px; }
+  .update-log-detail{ font-size: 12px; }
+}

@@ -45,19 +45,25 @@ export let TEAM_LIST = [];
 export let WEEK_DATES = {};
 export let DEFAULT_SCHEDULE = {};
 export let RULES = [];
+export let CHANGELOG = [];
 export let TOTAL_WEEKS = 18;
 
 export async function loadAppData(){
-  const [configText, teamsText, scheduleText, weeksText, rulesText] = await Promise.all([
+  const [configText, teamsText, scheduleText, weeksText, rulesText, changelogText] = await Promise.all([
     fetchText('data/config.json'),
     fetchText('data/teams.csv'),
     fetchText('data/schedule.csv'),
     fetchText('data/weeks.csv'),
     fetchText('data/rules.json'),
+    fetchText('data/changelog.json'),
   ]);
 
   CONFIG = JSON.parse(configText);
   RULES = JSON.parse(rulesText);
+  // Newest first, whatever order the file happens to be in.
+  CHANGELOG = (JSON.parse(changelogText).entries || [])
+    .slice()
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   TOTAL_WEEKS = CONFIG.totalWeeks;
 
   TEAMS = parseCsvObjects(teamsText).map(t => ({

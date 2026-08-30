@@ -2,7 +2,7 @@
 // point them at, and roster management. Admin-only -- who counts as an admin is
 // the fixed email list in core/roles.js, not anything a league can grant.
 import { store, ui, getWeek } from '../core/state.js';
-import { TOTAL_WEEKS, CONFIG } from '../core/data.js';
+import { TOTAL_WEEKS, CONFIG, CHANGELOG } from '../core/data.js';
 import { db } from '../core/firebase.js';
 import { fetchWeekOdds, fetchWeekScores } from '../core/espn.js';
 import { fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults } from '../core/league.js';
@@ -13,8 +13,17 @@ import { escapeHtml, isoToLocalInput, localInputToIso } from './dom.js';
 import { render, setSyncStatus } from './router.js';
 
 
+// This render clears the page, then awaits Firestore before appending the
+// roster. Two overlapping calls -- easy to trigger by toggling the editors or
+// the week selector twice in quick succession -- would both append after their
+// await and duplicate every panel. Each run takes a ticket and abandons its
+// work if a newer run has started since.
+let adminRenderToken = 0;
+
 export async function renderAdminPage(){
   const el = document.getElementById('adminContent');
+  const myToken = ++adminRenderToken;
+  const superseded = () => myToken !== adminRenderToken;
 
   if(!isAdmin()){
     el.innerHTML = `
@@ -117,8 +126,10 @@ export async function renderAdminPage(){
     const meta = await getLeagueMeta(store.state.account.leagueSlug);
     if(meta && meta.password) leaguePassword = meta.password;
   }catch(e){ /* leave placeholder */ }
+  if(superseded()) return;
 
   const teams = await fetchLeagueTeams();
+  if(superseded()) return;
   const aliveCount = teams.filter(t => t.survivorAlive).length;
 
   rosterPanel.innerHTML = `
@@ -133,6 +144,7 @@ export async function renderAdminPage(){
   const listEl = rosterPanel.querySelector('#adminMemberList');
   if(!teams.length){
     listEl.innerHTML = '<div class="empty">No one has joined yet — share the league name and password to get your friends in.</div>';
+    renderUpdateLog(el); // an empty roster shouldn't hide the log
     return;
   }
   teams.sort((a, b) => new Date(a.joinedAt || 0) - new Date(b.joinedAt || 0));
@@ -159,6 +171,74 @@ export async function renderAdminPage(){
     }
     listEl.appendChild(row);
   });
+
+  renderUpdateLog(el);
+}
+
+
+// ---------------------------------------------------------------------------
+// Update Log
+//
+// ⚠️  IF YOU ARE AN AI AGENT (OR A PERSON) CHANGING ANYTHING IN THIS REPO:
+//     add an entry to data/changelog.json before you commit. Every change gets
+//     one, including small ones. The file itself carries the format and the
+//     rules; this table just renders it.
+//
+// The log is deliberately a hand-maintained data file rather than something
+// derived from git. Commit messages describe code; this is for the two people
+// running the pool, who want to know what changed for *them* and when.
+// ---------------------------------------------------------------------------
+function renderUpdateLog(el){
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.innerHTML = `<div class="section-label"><span>📋 Update Log</span></div>`;
+
+  if(!CHANGELOG.length){
+    panel.innerHTML += '<div class="empty">No updates recorded yet.</div>';
+    el.appendChild(panel);
+    return;
+  }
+
+  const intro = document.createElement('p');
+  intro.className = 'update-log-intro';
+  intro.textContent = `${CHANGELOG.length} update${CHANGELOG.length === 1 ? '' : 's'}, newest first. Times are shown in your local timezone.`;
+  panel.appendChild(intro);
+
+  const table = document.createElement('div');
+  table.className = 'update-log';
+
+  CHANGELOG.forEach(entry => {
+    const when = new Date(entry.at);
+    const validDate = !isNaN(when.getTime());
+
+    const row = document.createElement('div');
+    row.className = 'update-log-row';
+
+    const stamp = document.createElement('div');
+    stamp.className = 'update-log-when';
+    stamp.innerHTML = validDate
+      ? `<span class="ul-date">${when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`
+        + `<span class="ul-time">${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>`
+      : `<span class="ul-date">—</span>`;
+    if(validDate) stamp.title = when.toLocaleString();
+    row.appendChild(stamp);
+
+    const body = document.createElement('div');
+    body.className = 'update-log-body';
+    let html = `<div class="update-log-title">${escapeHtml(entry.title || 'Untitled update')}</div>`;
+    if(entry.detail) html += `<div class="update-log-detail">${escapeHtml(entry.detail)}</div>`;
+    const meta = [];
+    if(entry.by) meta.push(`<span class="update-log-by">${escapeHtml(entry.by)}</span>`);
+    (entry.tags || []).forEach(t => meta.push(`<span class="update-log-tag">${escapeHtml(t)}</span>`));
+    if(meta.length) html += `<div class="update-log-meta">${meta.join('')}</div>`;
+    body.innerHTML = html;
+    row.appendChild(body);
+
+    table.appendChild(row);
+  });
+
+  panel.appendChild(table);
+  el.appendChild(panel);
 }
 
 

@@ -23,10 +23,54 @@ export function slugifyTeam(name){
   return (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'team';
 }
 
+// Your roster entry is keyed by Firebase uid, which never changes.
+//
+// It used to be keyed by slugifyTeam(teamName). Renaming your team therefore
+// wrote to a brand new document and left the old one behind, so the standings
+// showed you twice -- a rename looked like a second person joining. Keying on
+// uid makes a rename just an edit to the same row.
 export function leagueMemberDocRef(){
-  if(!store.state.account.leagueSlug || !store.state.account.teamName) return null;
+  const uid = store.currentUser && store.currentUser.uid;
+  if(!store.state.account.leagueSlug || !uid) return null;
   return db.collection('leagues').doc(store.state.account.leagueSlug)
-    .collection('members').doc(slugifyTeam(store.state.account.teamName));
+    .collection('members').doc(uid);
+}
+
+// Every document id this account has written in the current league. Used to
+// clear up rows left behind by the old team-name keying, including ones written
+// before this change existed.
+function rememberMemberDocId(){
+  const slug = store.state.account.leagueSlug;
+  if(!slug) return [];
+  if(!store.state.leagueMemberKeys) store.state.leagueMemberKeys = {};
+  const seen = store.state.leagueMemberKeys[slug] || (store.state.leagueMemberKeys[slug] = []);
+  // The id the old scheme would have used for the name currently on the account.
+  const legacyId = slugifyTeam(store.state.account.teamName);
+  if(legacyId && !seen.includes(legacyId)) seen.push(legacyId);
+  return seen;
+}
+
+// Deletes roster rows this account left behind under a previous id.
+async function removeStaleMemberDocs(currentId){
+  const slug = store.state.account.leagueSlug;
+  const uid = store.currentUser && store.currentUser.uid;
+  if(!slug || !uid) return;
+  const seen = rememberMemberDocId();
+  try{
+    const col = db.collection('leagues').doc(slug).collection('members');
+    const snap = await col.get();
+    const doomed = [];
+    snap.forEach(docSnap => {
+      if(docSnap.id === currentId) return;
+      const data = docSnap.data() || {};
+      // Ours if it carries our uid, or -- for rows written before uid was
+      // recorded -- if it sits under a team-name id this account has used.
+      if(data.uid === uid || (!data.uid && seen.includes(docSnap.id))){
+        doomed.push(docSnap.ref.delete());
+      }
+    });
+    await Promise.all(doomed);
+  }catch(e){ console.error('stale member cleanup failed', e); }
 }
 
 export async function loadGlobalSpreads(n){
@@ -239,10 +283,16 @@ export async function syncToLeague(){
       currentLockWeek: store.currentWeek,
       currentLockTeam: currentLock,
       superBowlPick: isSuperBowlPickLocked() ? (store.state.account.superBowlPick || null) : null,
+      // Recorded so a row can always be traced back to the account that wrote
+      // it, no matter how many times the team gets renamed.
+      uid: store.currentUser ? store.currentUser.uid : null,
       joinedAt: store.state.account.leagueJoinedAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    rememberMemberDocId();
     await ref.set(payload);
+    // A rename (or the move off the old team-name keying) leaves an orphan row.
+    await removeStaleMemberDocs(ref.id);
   }catch(e){ console.error('league sync failed', e); }
 }
 

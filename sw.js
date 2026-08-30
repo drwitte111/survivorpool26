@@ -71,6 +71,7 @@ const DATA_ASSETS = [
   'data/schedule.csv',
   'data/weeks.csv',
   'data/rules.json',
+  'data/changelog.json',
 ];
 
 self.addEventListener('install', (event) => {

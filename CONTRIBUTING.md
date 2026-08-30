@@ -107,6 +107,20 @@ untangling it afterwards:
 | `README.md` | Everybody appends to the end |
 | `data/schedule.csv` | Fine for scattered rows, painful if we both re-sort it |
 
+## Log every change
+
+Add an entry to `data/changelog.json` whenever you change the app — including
+small ones. It renders as the **Update Log** on the League Admin page, which is
+how we both see what shipped and when, without reading commit messages.
+
+The file documents its own format at the top. Newest entries go first, and the
+timestamp must be the real UTC time of the change.
+
+**If you are handing this repo to an AI assistant, tell it to read that file.**
+The instruction is also embedded at the top of `data/changelog.json` itself and
+above `renderUpdateLog()` in `js/ui/admin.js`, so an agent working in either
+place should trip over it.
+
 ## Before you push
 
 ```bash
