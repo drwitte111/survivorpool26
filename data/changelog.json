@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-08-30T16:37:47Z",
+      "title": "Tied scores share a place",
+      "detail": "The standings numbered every row 1, 2, 3, 4 even when two people were level. Equal scores now share a place and the next distinct score skips the ones the tie used up — 1, 1, 3, 4 — and everyone on a shared top or bottom score gets the crown or the toilet, not just whichever row happened to sort first. The header says \"tied for 2nd\" when you are. Same rule on the Best Weeks card and on the King streak badge, which previously crowned one team on a tied week and quietly broke the other’s streak.",
+      "by": "Claude",
+      "tags": [
+        "fix"
+      ]
+    },
+    {
       "at": "2026-08-30T16:10:57Z",
       "title": "Nobody banks a zero for forgetting any more",
       "detail": "A game that kicks off with nothing on it is now filled in for you: the home team to win, and the lowest points value you haven’t used that week. It works for one blank game or a week you never opened at all, and it’s marked \"Auto-filled\" on the board so you can always see it wasn’t your pick. Every device fills an abandoned week identically, so nobody’s copy of the standings disagrees.",

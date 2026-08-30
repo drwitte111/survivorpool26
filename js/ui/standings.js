@@ -30,6 +30,39 @@ export function playsForMoney(teamName){ return moneyNames.has(teamName); }
  * what the weekly tabs show. Summing what's displayed means the Overall column
  * can always be checked against the weeks it came from.
  */
+/**
+ * Standard competition ranking: equal scores share a place, and the next
+ * distinct score skips the places the tie used up -- 1, 1, 3, 4 rather than
+ * 1, 2, 3, 4.
+ *
+ * `rows` must already be sorted best-first. Returns one rank per row, in the
+ * same order.
+ */
+export function competitionRanks(rows, valueOf){
+  const ranks = [];
+  rows.forEach((row, i) => {
+    const tiedWithPrevious = i > 0 && valueOf(row) === valueOf(rows[i - 1]);
+    ranks.push(tiedWithPrevious ? ranks[i - 1] : i + 1);
+  });
+  return ranks;
+}
+
+/**
+ * Where each place sits in the table, given a list of ranks.
+ *
+ * Last place can't be found by comparing a rank to the number of rows once ties
+ * exist -- in 1, 1, 3, 3 nobody holds rank 4 -- so the bottom two places are
+ * worked out from the distinct ranks actually present.
+ */
+export function placeShape(ranks){
+  const distinct = [...new Set(ranks)];
+  return {
+    lastRank: distinct[distinct.length - 1],
+    secondLastRank: distinct.length > 1 ? distinct[distinct.length - 2] : null,
+    places: distinct.length,
+  };
+}
+
 export function seasonPoints(team){
   const weekly = team.weeklyPoints || {};
   return Object.keys(weekly).reduce((sum, w) => sum + (weekly[w] || 0), 0);
@@ -61,7 +94,11 @@ export function bestWeeks(teams, limit = 3){
   // Ties go to the earlier week, then alphabetically, so the order is stable
   // rather than dependent on whatever order the roster came back in.
   rows.sort((a, b) => b.pts - a.pts || a.week - b.week || a.teamName.localeCompare(b.teamName));
-  return rows.slice(0, limit);
+  if(rows.length <= limit) return rows;
+  // Two weeks on the same score are the same placing, so a tie at the cutoff
+  // shows both rather than dropping one on a coin flip.
+  const cutoff = rows[limit - 1].pts;
+  return rows.filter((r, i) => i < limit || r.pts === cutoff);
 }
 
 export function computeAchievements(teams){
@@ -80,21 +117,25 @@ export function computeAchievements(teams){
     if(!missedAny) badges[t.teamName].push({ icon: '📅', label: 'Never Missed a Week' });
   });
 
-  // King-of-the-week streaks (3+ in a row)
-  const kingPerWeek = {};
+  // King-of-the-week streaks (3+ in a row). A tied top score crowns everyone on
+  // it -- keeping only the first team found would have quietly broken someone's
+  // streak on a week they didn't lose.
+  const kingsPerWeek = {};
   sortedWeeks.forEach(w => {
-    let best = null;
+    let bestPts = null;
     teams.forEach(t => {
-      if(t.weeklyPoints && t.weeklyPoints[w] != null){
-        if(!best || t.weeklyPoints[w] > best.pts) best = { teamName: t.teamName, pts: t.weeklyPoints[w] };
-      }
+      const pts = t.weeklyPoints && t.weeklyPoints[w];
+      if(pts == null) return;
+      if(bestPts === null || pts > bestPts) bestPts = pts;
     });
-    if(best) kingPerWeek[w] = best.teamName;
+    if(bestPts === null) return;
+    kingsPerWeek[w] = new Set(
+      teams.filter(t => t.weeklyPoints && t.weeklyPoints[w] === bestPts).map(t => t.teamName));
   });
   teams.forEach(t => {
     let streak = 0, maxStreak = 0;
     sortedWeeks.forEach(w => {
-      if(kingPerWeek[w] === t.teamName){ streak++; maxStreak = Math.max(maxStreak, streak); }
+      if(kingsPerWeek[w] && kingsPerWeek[w].has(t.teamName)){ streak++; maxStreak = Math.max(maxStreak, streak); }
       else streak = 0;
     });
     if(maxStreak >= 3) badges[t.teamName].push({ icon: '👑', label: maxStreak + '-peat King' });
@@ -112,14 +153,24 @@ export function computeAchievements(teams){
   return badges;
 }
 
-export function buildStandingsRow(teamName, pts, rank, total, survivorAlive, isWeekly, badges){
+/**
+ * One standings row.
+ *
+ * Takes an options object rather than eight positional arguments: `rank` and
+ * "is this last place" stopped being the same question once ties could share a
+ * place, and the call sites are clearer for naming what they mean.
+ */
+export function buildStandingsRow({
+  teamName, pts, rank, total, survivorAlive, isWeekly, badges,
+  isLast = false, isSecondLast = false,
+}){
   const row = document.createElement('div');
   const isMe = teamName === store.state.account.teamName;
   let cls = 'standings-row';
   if(survivorAlive !== undefined) cls += ' cols-full';
   if(isMe) cls += ' me';
   if(rank === 1) cls += ' first';
-  if(total > 1 && rank === total) cls += ' last';
+  if(total > 1 && isLast) cls += ' last';
   row.className = cls;
 
   let avatarHtml = '';
@@ -133,8 +184,9 @@ export function buildStandingsRow(teamName, pts, rank, total, survivorAlive, isW
   if(playsForMoney(teamName)){
     teamLabel = '<span class="money-badge" title="Playing for money">$</span> ' + teamLabel;
   }
+  // A shared top or bottom score means everyone on it gets the badge.
   if(isWeekly && rank === 1) teamLabel = `<span class="crown-badge" title="King of the Week">\ud83d\udc51</span> ${teamLabel}`;
-  if(isWeekly && total > 1 && rank === total) teamLabel = `${teamLabel} <span class="toilet-badge" title="Bottom of the week">\ud83d\udebd</span>`;
+  if(isWeekly && total > 1 && isLast) teamLabel = `${teamLabel} <span class="toilet-badge" title="Bottom of the week">\ud83d\udebd</span>`;
 
   let extraCols = '';
   if(survivorAlive !== undefined){
@@ -159,7 +211,7 @@ export function buildStandingsRow(teamName, pts, rank, total, survivorAlive, isW
         ${avatarHtml}
         <div>
           <div class="team">${teamLabel}${badgesHtml}</div>
-          <div class="nick">${placeNickname(rank, total)}</div>
+          <div class="nick">${placeNickname(rank, total, isLast, isSecondLast)}</div>
         </div>
       </div>
     </div>
@@ -181,8 +233,14 @@ export function updateHeaderRank(teams){
   const sorted = teams.slice().sort((a, b) => grand(b) - grand(a));
   const idx = sorted.findIndex(t => t.teamName === store.state.account.teamName);
   if(idx === -1){ el.textContent = ''; return; }
-  el.textContent = 'You\u2019re in ' + ordinal(idx + 1) + ' place';
-  el.classList.toggle('top', idx === 0);
+  const ranks = competitionRanks(sorted, grand);
+  const myRank = ranks[idx];
+  // "2nd place" reads as sole possession of it. Say so when it isn't.
+  const shared = ranks.filter(r => r === myRank).length > 1;
+  el.textContent = shared
+    ? 'You\u2019re tied for ' + ordinal(myRank) + ' place'
+    : 'You\u2019re in ' + ordinal(myRank) + ' place';
+  el.classList.toggle('top', myRank === 1);
 }
 
 export async function updateSeasonRank(){
@@ -209,8 +267,14 @@ export async function renderWeekRecap(n, teams){
   const rows = teams.filter(t => t.weeklyPoints && t.weeklyPoints[n] != null)
     .map(t => ({ teamName: t.teamName, pts: t.weeklyPoints[n] }));
   rows.sort((a, b) => b.pts - a.pts);
-  const king = rows[0];
-  const toilet = rows.length > 1 ? rows[rows.length - 1] : null;
+  // A shared top score means joint kings, not whichever row happened to sort
+  // first. And if everybody is level there is no bottom of the week.
+  const topPts = rows.length ? rows[0].pts : null;
+  const bottomPts = rows.length ? rows[rows.length - 1].pts : null;
+  const kings = rows.filter(r => r.pts === topPts);
+  const bottoms = (rows.length > 1 && bottomPts !== topPts)
+    ? rows.filter(r => r.pts === bottomPts) : [];
+  const names = (list) => list.map(r => escapeHtml(r.teamName)).join(' & ');
 
   const casualties = teams.filter(t => t.survivorEliminatedWeek === n);
 
@@ -253,8 +317,8 @@ export async function renderWeekRecap(n, teams){
   el.innerHTML = `
     <div class="week-recap">
       <div class="week-recap-title">📋 Week ${n} Recap</div>
-      ${king ? `<div class="recap-line">👑 <b>King of the Week:</b> ${escapeHtml(king.teamName)} (${king.pts} pts)</div>` : ''}
-      ${toilet ? `<div class="recap-line">🚽 <b>Bottom of the Week:</b> ${escapeHtml(toilet.teamName)} (${toilet.pts} pts)</div>` : ''}
+      ${kings.length ? `<div class="recap-line">👑 <b>King${kings.length > 1 ? 's' : ''} of the Week:</b> ${names(kings)} (${topPts} pts)</div>` : ''}
+      ${bottoms.length ? `<div class="recap-line">🚽 <b>Bottom of the Week:</b> ${names(bottoms)} (${bottomPts} pts)</div>` : ''}
       ${casualtyLine}
       ${closestLine}
       ${upsetLine}
@@ -285,13 +349,16 @@ function renderBestWeeks(el, teams){
   const best = bestWeeks(teams, 3);
   if(!best.length) return;
   const medals = ['🥇', '🥈', '🥉'];
+  // Equal scores share a medal, so two 91s are both silver and nothing is
+  // bronze -- the same rule as the standings.
+  const ranks = competitionRanks(best, b => b.pts);
   el.innerHTML = `
     <div class="best-weeks">
       <div class="best-weeks-title">🔥 Best Weeks of the Season</div>
       <div class="best-weeks-list">
         ${best.map((b, i) => `
           <div class="best-week-row${b.teamName === store.state.account.teamName ? ' me' : ''}">
-            <span class="bw-medal">${medals[i] || ''}</span>
+            <span class="bw-medal">${medals[ranks[i] - 1] || ''}</span>
             <span class="bw-team">${escapeHtml(b.teamName)}</span>
             <span class="bw-week">Week ${b.week}</span>
             <span class="bw-pts">${b.pts}<span class="bw-pts-label">pts</span></span>
@@ -362,8 +429,21 @@ export async function renderStandingsPage(){
     colHeader.className = 'standings-col-header';
     colHeader.innerHTML = `<span></span><span>Team</span><span>Points</span><span>Survivor</span><span>Total</span>`;
     listEl.appendChild(colHeader);
+    const ranks = competitionRanks(teams, t => t._grandTotal);
+    const shape = placeShape(ranks);
     teams.forEach((t, i) => {
-      listEl.appendChild(buildStandingsRow(t.teamName, t._seasonPoints, i + 1, teams.length, !!t.survivorAlive, false, achievements[t.teamName]));
+      listEl.appendChild(buildStandingsRow({
+        teamName: t.teamName,
+        pts: t._seasonPoints,
+        rank: ranks[i],
+        total: teams.length,
+        survivorAlive: !!t.survivorAlive,
+        isWeekly: false,
+        badges: achievements[t.teamName],
+        isLast: ranks[i] === shape.lastRank,
+        // Only meaningful once there are more than two places to be in.
+        isSecondLast: shape.places > 2 && ranks[i] === shape.secondLastRank,
+      }));
     });
   } else {
     const n = ui.standingsFilter;
@@ -393,8 +473,19 @@ export async function renderStandingsPage(){
     if(!rows.length){
       listEl.innerHTML = `<div class="empty">No team has points logged for Week ${n} yet.</div>`;
     } else {
+      const ranks = competitionRanks(rows, r => r.pts);
+      const shape = placeShape(ranks);
       rows.forEach((t, i) => {
-        listEl.appendChild(buildStandingsRow(t.teamName, t.pts, i + 1, rows.length, undefined, true));
+        listEl.appendChild(buildStandingsRow({
+          teamName: t.teamName,
+          pts: t.pts,
+          rank: ranks[i],
+          total: rows.length,
+          survivorAlive: undefined,
+          isWeekly: true,
+          isLast: ranks[i] === shape.lastRank,
+          isSecondLast: shape.places > 2 && ranks[i] === shape.secondLastRank,
+        }));
       });
     }
   }

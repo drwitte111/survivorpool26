@@ -52,12 +52,19 @@ export function rankBadge(i){
   return '#' + (i + 1);
 }
 
-export function placeNickname(rank, total){
+/**
+ * The label under a name in the standings.
+ *
+ * Last and second-to-last come in as flags rather than being derived from the
+ * rank: once tied scores share a place, `rank === total` stops meaning "bottom
+ * of the table" -- in a field of four ranked 1, 1, 3, 3 nobody holds rank 4.
+ */
+export function placeNickname(rank, total, isLast = false, isSecondLast = false){
   if(rank === 1) return 'Top Dog';
-  if(total > 1 && rank === total) return 'Average Browns Season';
+  if(total > 1 && isLast) return 'Average Browns Season';
   if(rank === 2) return 'Runner-Up Royalty';
   if(rank === 3) return 'Bronze Baller';
-  if(total > 3 && rank === total - 1) return 'On the Clock';
+  if(total > 3 && isSecondLast) return 'On the Clock';
   if(rank <= Math.ceil(total / 2)) return 'Playoff Hopeful';
   return 'Rebuilding Year';
 }
