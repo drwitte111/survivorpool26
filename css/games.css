@@ -213,3 +213,31 @@
 /* "Lineup submitted" note -- informational, not a lock. */
 .lock-banner.submitted-note{ background: rgba(82,183,136,0.08); border-color: var(--correct); }
 .lock-banner.submitted-note b{ color: var(--correct); }
+
+/* ---------- Spread / over-under freshness ----------
+   Sits under the week heading on the picks page. A stale line is the one thing
+   that would quietly mislead someone mid-week, so it says how old it is. */
+.odds-freshness{
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+  margin: -4px 0 12px 0; padding-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.odds-freshness-text{
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.5px; color: var(--chalk-dim);
+}
+.odds-refresh-btn{
+  background: transparent; border: 1px solid var(--line); border-radius: 6px;
+  color: var(--chalk-dim); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px;
+  transition: all .12s ease;
+}
+.odds-refresh-btn:hover:not(:disabled){ border-color: var(--amber); color: var(--amber); }
+.odds-refresh-btn:disabled{ opacity: 0.5; cursor: wait; }
+
+@media (max-width: 720px){
+  .odds-freshness{ margin-bottom: 10px; }
+  .odds-refresh-btn{ min-height: 36px; }
+}

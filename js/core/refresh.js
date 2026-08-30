@@ -38,6 +38,13 @@ async function fillMissingOdds(n, week){
     if(game.homeSpread == null && row.homeSpread != null){ game.homeSpread = row.homeSpread; filled++; }
     if(game.overUnder == null && row.overUnder != null){ game.overUnder = row.overUnder; filled++; }
   });
+
+  // Only stamp the week if numbers actually changed. A fetch that found nothing
+  // new shouldn't make the board claim it just refreshed.
+  if(filled){
+    week.oddsUpdatedAt = new Date().toISOString();
+    week.oddsSource = 'espn';
+  }
   return filled;
 }
 

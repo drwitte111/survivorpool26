@@ -158,6 +158,14 @@ export async function ensureSpreadsLoaded(n){
     }
   });
   if(data.mnfFinalScore != null) week.mnfActualTotal = data.mnfFinalScore;
+
+  // When an admin last published spreads for this week. Takes precedence over a
+  // local ESPN fill if it's newer -- published numbers are the shared truth.
+  if(data.updatedAt && (!week.oddsUpdatedAt || data.updatedAt > week.oddsUpdatedAt)){
+    week.oddsUpdatedAt = data.updatedAt;
+    week.oddsSource = 'published';
+    week.oddsUpdatedBy = data.updatedBy || null;
+  }
 }
 
 export async function getLeagueMeta(slug){

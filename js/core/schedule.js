@@ -27,6 +27,8 @@ export function seedDefaultSchedule(){
   Object.keys(DEFAULT_SCHEDULE).forEach(wk => {
     const week = getWeek(parseInt(wk));
     if(week.games.length) return; // don't clobber anything already there
+    week.oddsUpdatedAt = week.oddsUpdatedAt || null;
+    week.oddsSource = week.oddsSource || null;
     week.games = DEFAULT_SCHEDULE[wk].map(({ away, home, kickoff, isMNF }) => ({
       id: gameId(), away, home, kickoff, isMNF,
       pick: null, confidence: null, actualWinner: null, tiebreakGuess: null,

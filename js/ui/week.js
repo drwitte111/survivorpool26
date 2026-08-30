@@ -16,9 +16,10 @@ import {
   getLockStatusForWeek, getUsedLockTeams, getSurvivorStatus,
   getSurvivorChoices, survivorPickError,
 } from '../core/survivor.js';
-import { escapeHtml, burstConfetti } from './dom.js';
+import { escapeHtml, burstConfetti, timeAgo } from './dom.js';
 import { formatInZone, zoneLabel } from '../core/tz.js';
 import { render } from './router.js';
+import { refreshWeek } from '../core/refresh.js';
 
 export function coverStatus(game, side){
   if(game.homeSpread == null) return null;
@@ -328,6 +329,55 @@ export function renderLockPanel(){
 }
 
 
+// When the spreads and over/unders on this page were last updated, and where
+// they came from -- an admin publishing them, or the automatic ESPN pull. Worth
+// showing on the picks page because a stale line is the one thing that would
+// quietly mislead someone mid-week.
+function oddsFreshnessRow(week){
+  const bar = document.createElement('div');
+  bar.className = 'odds-freshness';
+
+  const withOdds = week.games.filter(g => g.homeSpread != null || g.overUnder != null).length;
+  const info = document.createElement('span');
+  info.className = 'odds-freshness-text';
+
+  if(!week.oddsUpdatedAt){
+    info.textContent = withOdds
+      ? 'Spreads & O/U — source unknown'
+      : 'Spreads & O/U not loaded yet';
+  } else {
+    const when = new Date(week.oddsUpdatedAt);
+    const source = week.oddsSource === 'published' ? 'published by an admin' : 'pulled from ESPN';
+    info.textContent = `Spreads & O/U ${source} ${timeAgo(week.oddsUpdatedAt)}`;
+    info.title = `${withOdds} of ${week.games.length} games have a line · `
+      + formatInZone(when, { dateStyle: 'medium', timeStyle: 'short' }) + ' ' + zoneLabel(when);
+  }
+  bar.appendChild(info);
+
+  // Manual re-check, for when a line has clearly moved and you don't want to
+  // wait for the next automatic poll.
+  const btn = document.createElement('button');
+  btn.className = 'odds-refresh-btn';
+  btn.textContent = 'Refresh';
+  btn.title = 'Check ESPN for updated spreads, over/unders and scores';
+  btn.onclick = async () => {
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Checking…';
+    try{
+      await refreshWeek(store.currentWeek);
+      saveState();
+      render();
+    }catch(e){
+      btn.textContent = original;
+      btn.disabled = false;
+      info.textContent = 'Couldn’t reach ESPN just now — showing the last known numbers.';
+    }
+  };
+  bar.appendChild(btn);
+  return bar;
+}
+
 export function renderGames(){
   const week = getWeek(store.currentWeek);
   const panel = document.getElementById('gamesPanel');
@@ -376,6 +426,8 @@ export function renderGames(){
     label.appendChild(clearAllBtn);
   }
   panel.appendChild(label);
+
+  if(week.games.length) panel.appendChild(oddsFreshnessRow(week));
 
   if(!week.games.length){
     const empty = document.createElement('div');
