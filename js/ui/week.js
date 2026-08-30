@@ -111,6 +111,15 @@ export function teamButtonRow(game, mode, locked){
       btn.appendChild(fb);
     }
 
+    // Which side is at home. The stacked order already says it -- away on top,
+    // the way every board lists it -- but only if you know the convention, and
+    // the spread's sign is read against the home team.
+    const sideTag = document.createElement('span');
+    sideTag.className = 'team-side ' + side;
+    sideTag.textContent = side === 'home' ? 'H' : 'A';
+    sideTag.title = side === 'home' ? 'Home team' : 'Away team';
+    btn.appendChild(sideTag);
+
     // Both spellings are rendered; CSS shows one, so a narrow screen falls back
     // to the abbreviation without a second render pass.
     const name = document.createElement('span');

@@ -109,6 +109,22 @@
   border-color: var(--correct); border-left-color: var(--correct); font-weight: 700;
 }
 
+/* Home / away. The home badge reads solid because the spread's sign is quoted
+   against it -- -2.5 on the H row means that team is laying 2.5. */
+.team-side{
+  flex: 0 0 auto;
+  width: 16px; height: 16px; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family:'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+  border: 1px solid var(--line); color: var(--chalk-dim);
+  background: rgba(0,0,0,0.3);
+}
+.team-side.home{
+  background: var(--chalk-dim); color: var(--night); border-color: var(--chalk-dim);
+}
+.team-pick.picked .team-side{ border-color: rgba(255,255,255,0.4); color: #fff; }
+.team-pick.picked .team-side.home{ background: rgba(255,255,255,0.85); color: var(--night); }
+
 .team-name{
   flex: 1 1 auto; min-width: 0; letter-spacing: 0.3px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
