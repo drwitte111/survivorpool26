@@ -53,6 +53,7 @@ const SHELL_ASSETS = [
   'js/ui/dom.js',
   'js/ui/onboarding.js',
   'js/ui/research.js',
+  'js/ui/picks.js',
   'js/ui/router.js',
   'js/ui/rules.js',
   'js/ui/standings.js',

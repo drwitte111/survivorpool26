@@ -16,8 +16,16 @@ import { TOTAL_WEEKS } from './data.js';
 import { isGameLocked, isSuperBowlPickLocked } from './locks.js';
 import { weekScore } from './scoring.js';
 import { getSurvivorStatus } from './survivor.js';
-import { teamAbbrEquals } from './teams.js';
+import { teamAbbrEquals, getTeamAbbr } from './teams.js';
 import { isAdmin } from './roles.js';
+
+// Stable id for a matchup, used as the key for synced picks. Team abbreviations
+// rather than names so a display-name tweak can't orphan everyone's picks.
+export function gamePickKey(game){
+  const away = getTeamAbbr(game.away) || slugifyTeam(game.away);
+  const home = getTeamAbbr(game.home) || slugifyTeam(game.home);
+  return `${away}@${home}`;
+}
 
 export function slugifyTeam(name){
   return (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'team';
@@ -263,6 +271,25 @@ export async function syncToLeague(){
       const mnfGame = week.games.find(g => g.isMNF);
       if(mnfGame && mnfGame.tiebreakGuess != null) tiebreakGuesses[n] = mnfGame.tiebreakGuess;
     }
+    // Everyone's picks, for the group picks grid.
+    //
+    // A pick is only written once its own game has kicked off. This is the
+    // privacy rule, and it has to live here rather than in the UI: the Firebase
+    // config ships in the page, so anything written to Firestore is readable by
+    // anyone signed in. Not writing it is the only way it's genuinely hidden.
+    const picks = {};
+    for(let n = 1; n <= TOTAL_WEEKS; n++){
+      const week = peekWeek(n);
+      if(!week.games.length) continue;
+      const weekPicks = {};
+      week.games.forEach(g => {
+        if(!isGameLocked(g)) return;         // still in play -- stays private
+        if(!g.pick && g.confidence == null) return;
+        weekPicks[gamePickKey(g)] = { p: g.pick || null, c: g.confidence ?? null };
+      });
+      if(Object.keys(weekPicks).length) picks[n] = weekPicks;
+    }
+
     const survivor = getSurvivorStatus();
     const curWeek = peekWeek(store.currentWeek);
     // Your Survivor pick stays hidden from the league until the team you locked
@@ -283,6 +310,7 @@ export async function syncToLeague(){
       currentLockWeek: store.currentWeek,
       currentLockTeam: currentLock,
       superBowlPick: isSuperBowlPickLocked() ? (store.state.account.superBowlPick || null) : null,
+      picks,
       // Recorded so a row can always be traced back to the account that wrote
       // it, no matter how many times the team gets renamed.
       uid: store.currentUser ? store.currentUser.uid : null,

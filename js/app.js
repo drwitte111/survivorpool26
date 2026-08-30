@@ -11,7 +11,7 @@ import { refreshWeek } from './core/refresh.js';
 import { loadState, enterApp } from './core/session.js';
 import {
   render, showPage, showWeekPage, showAccountPage,
-  showStandingsPage, showTrashTalkPage, showRulesPage, showAdminPage,
+  showStandingsPage, showTrashTalkPage, showRulesPage, showAdminPage, showPicksPage,
   showResearchPage,
 } from './ui/router.js';
 import { hideProfileGate } from './ui/onboarding.js';
@@ -66,6 +66,7 @@ function wireNav(closeAccount){
   const go = (id, fn) => { $(id).onclick = () => { closeAccount(); fn(); }; };
   go('navAccountBtn', showAccountPage);
   go('navStandingsBtn', showStandingsPage);
+  go('navPicksBtn', showPicksPage);
   go('navTrashTalkBtn', showTrashTalkPage);
   go('navRulesBtn', showRulesPage);
   go('navResearchBtn', showResearchPage);
@@ -76,6 +77,7 @@ function wireNav(closeAccount){
   $('backFromResearchBtn').onclick = () => showWeekPage();
   $('backFromAdminBtn').onclick = () => showWeekPage();
   $('backFromStandingsBtn').onclick = () => showWeekPage();
+  $('backFromPicksBtn').onclick = () => showWeekPage();
   $('backFromAccountBtn').onclick = () => { ui.accountFormDirty = false; showWeekPage(); };
 }
 

@@ -168,6 +168,7 @@
         <div class="dropdown-panel" id="accountPanel" style="display:none;">
           <button class="menu-nav-link" id="navAccountBtn" type="button">👤 Account</button>
           <button class="menu-nav-link" id="navStandingsBtn" type="button">🏆 Standings</button>
+          <button class="menu-nav-link" id="navPicksBtn" type="button">🗓️ Group Picks</button>
           <button class="menu-nav-link" id="navTrashTalkBtn" type="button">💬 Trash Talk</button>
           <button class="menu-nav-link" id="navRulesBtn" type="button">📜 Rules</button>
           <button class="menu-nav-link" id="navResearchBtn" type="button">📊 Research</button>
@@ -340,6 +341,20 @@
       <button class="sync-btn small" id="backFromResearchBtn">← Back to Picks</button>
     </div>
     <div id="researchContent"></div>
+  </div>
+
+  <div id="picksPage" style="display:none;">
+    <div class="week-header">
+      <h2>🗓️ Group Picks</h2>
+      <button class="sync-btn small" id="backFromPicksBtn">← Back to Picks</button>
+    </div>
+    <div class="panel">
+      <div class="picks-toolbar">
+        <label for="picksWeekSelect">Week</label>
+        <select id="picksWeekSelect" class="standings-select"></select>
+      </div>
+      <div id="picksGrid"></div>
+    </div>
   </div>
 
   <div id="adminPage" style="display:none;">

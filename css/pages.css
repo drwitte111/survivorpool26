@@ -336,3 +336,106 @@
   .update-log-title{ font-size: 14px; }
   .update-log-detail{ font-size: 12px; }
 }
+
+/* ---------- Group Picks grid ---------- */
+.picks-toolbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;
+}
+.picks-toolbar label{
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  letter-spacing:1px; text-transform:uppercase; color:var(--chalk-dim);
+}
+.picks-note{
+  margin:0 0 12px 0;
+  font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--chalk-dim);
+}
+/* The grid is wider than a phone; it scrolls inside its own box, never the page. */
+.picks-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+.picks-table{ border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; }
+.picks-table th, .picks-table td{ padding:6px; }
+
+/* Matchup column stays put while the member columns scroll under it. */
+.picks-corner, .picks-game{
+  position:sticky; left:0; z-index:2;
+  background:linear-gradient(180deg, var(--night-2), var(--night));
+  text-align:left; border-right:1px solid var(--line);
+}
+.picks-corner{
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  letter-spacing:1px; text-transform:uppercase; color:var(--amber);
+  border-bottom:1px solid var(--line);
+}
+.picks-game{ min-width:96px; }
+.picks-game-teams{
+  display:block; font-family:'JetBrains Mono', monospace;
+  font-size:12px; font-weight:700; color:var(--chalk); white-space:nowrap;
+}
+.picks-at{ color:var(--chalk-dim); margin:0 3px; font-weight:400; }
+.picks-game-when{
+  display:block; font-size:10px; color:var(--chalk-dim); white-space:nowrap; margin-top:1px;
+}
+.picks-row-open .picks-game-teams{ color:var(--chalk-dim); }
+
+.picks-member{
+  min-width:62px; max-width:82px;
+  border-bottom:1px solid var(--line); vertical-align:bottom;
+}
+.picks-member-name{
+  display:block; font-size:11px; font-weight:600; color:var(--chalk);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.picks-member-pts{
+  display:block; font-family:'JetBrains Mono', monospace;
+  font-size:9px; color:var(--chalk-dim);
+}
+.picks-member.is-me .picks-member-name{ color:var(--amber); }
+
+.picks-cell{ text-align:center; }
+
+/* A pick: the logo, dimmed, with the wager printed over it. */
+.pick-chip{
+  position:relative; width:42px; height:42px; margin:0 auto;
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.06);
+  border:2px solid transparent;
+}
+.pick-logo{
+  width:100%; height:100%; object-fit:contain; padding:4px;
+  box-sizing:border-box; border-radius:50%;
+  opacity:0.45;                      /* dimmed so the number reads over it */
+}
+.pick-logo-fallback{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--chalk-dim); opacity:0.5;
+}
+.pick-points{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono', monospace; font-size:16px; font-weight:700;
+  color:var(--chalk);
+  text-shadow:0 1px 3px rgba(0,0,0,0.95), 0 0 10px rgba(0,0,0,0.8);
+  pointer-events:none;
+}
+.pick-chip.is-me{ background:rgba(var(--amber-rgb),0.10); }
+
+/* Graded: green ring for a correct pick, red for a wrong one. */
+.pick-chip.correct{ border-color:var(--correct); box-shadow:0 0 8px rgba(82,183,136,0.45); }
+.pick-chip.correct .pick-logo{ opacity:0.6; }
+.pick-chip.wrong{ border-color:var(--incorrect); box-shadow:0 0 8px rgba(230,57,70,0.4); }
+.pick-chip.wrong .pick-points{ color:var(--chalk-dim); }
+
+.pick-empty{
+  width:42px; height:42px; margin:0 auto;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; color:var(--chalk-dim); opacity:0.45;
+}
+
+@media (max-width: 720px){
+  .picks-game{ min-width:78px; }
+  .picks-member{ min-width:54px; }
+  .pick-chip, .pick-empty{ width:38px; height:38px; }
+  .pick-points{ font-size:14px; }
+  .picks-table th, .picks-table td{ padding:4px; }
+}
