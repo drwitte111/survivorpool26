@@ -10,6 +10,20 @@ export function initFirebase(){
   firebase.initializeApp(CONFIG.firebase);
   db = firebase.firestore();
   auth = firebase.auth();
+
+  // Offline durability, and it has to be switched on before any other Firestore
+  // call. With this, a pick made on a bad connection is written to IndexedDB
+  // immediately and replayed when the signal comes back -- including across a
+  // reload or a phone locking. Without it, a failed write was simply lost.
+  //
+  // Neither failure mode is fatal: the app just behaves as it did before.
+  //   failed-precondition -- another tab already holds persistence
+  //   unimplemented       -- browser has no IndexedDB (private mode, old iOS)
+  db.enablePersistence({ synchronizeTabs: true }).catch(e => {
+    if(e.code !== 'failed-precondition' && e.code !== 'unimplemented'){
+      console.error('offline persistence failed', e);
+    }
+  });
   // Stay signed in on this device until the person explicitly logs out. The app
   // is meant to live on a phone home screen, where SESSION persistence meant
   // retyping a password every single launch. "Log Out" on the Account page is
@@ -26,9 +40,15 @@ export async function loadUserState(uid){
   return null;
 }
 
-export async function saveUserState(uid, stateObj){
-  try{
-    await db.collection('users').doc(uid).set(stateObj);
-    return true;
-  }catch(e){ console.error('saveUserState failed', e); return false; }
+/**
+ * Writes personal state.
+ *
+ * The returned promise settles when the SERVER has the write, which offline
+ * means not for a long time. The write itself is already durable well before
+ * then -- persistence above puts it in IndexedDB synchronously -- so a caller
+ * that only cares whether the pick is safe does not need to wait on this. What
+ * it's good for is telling someone whether they're caught up.
+ */
+export function saveUserState(uid, stateObj){
+  return db.collection('users').doc(uid).set(stateObj);
 }

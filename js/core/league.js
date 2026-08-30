@@ -183,6 +183,28 @@ export async function getLeagueMeta(slug){
   return null;
 }
 
+/**
+ * Flags a member as playing for money (or clears the flag).
+ *
+ * Kept on the league document, keyed by member doc id. It can't live on the
+ * member row: syncToLeague writes that row wholesale on every save, so the flag
+ * would survive until the member next touched a pick and then vanish. Keying by
+ * doc id rather than team name means a rename doesn't lose it.
+ *
+ * Read-modify-write of a map this small is fine -- only an admin can call it,
+ * and only when someone's status actually changes.
+ */
+export async function setPlaysForMoney(memberKey, on){
+  const slug = store.state.account.leagueSlug;
+  if(!slug) throw new Error('No active league');
+  const ref = db.collection('leagues').doc(slug);
+  const snap = await withTimeout(ref.get(), undefined, 'Loading league');
+  const map = { ...((snap.exists && snap.data().playsForMoney) || {}) };
+  if(on) map[memberKey] = true; else delete map[memberKey];
+  await ref.set({ playsForMoney: map }, { merge: true });
+  return map;
+}
+
 // Sets which league is currently active for this account.
 // Admin is not league-specific -- it's the fixed email list in roles.js -- so
 // this takes no admin argument and just re-derives the flag.

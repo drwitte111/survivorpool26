@@ -392,3 +392,24 @@
 
 /* The line-moved notice renders full width below the subtext line. */
 .line-moved-row{ margin-top: 6px; padding-top: 6px; }
+
+/* A pick nobody made: the game kicked off blank and the house rule filled it.
+   Deliberately not styled as an error -- it's a valid, scoring pick -- but it
+   must never be mistaken for one that was chosen. */
+.sub-auto{
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px;
+  border: 1px dashed rgba(var(--amber-rgb),0.55);
+  color: var(--amber);
+}
+
+/* Save state. Absent when everything is up to date -- it only ever shows up
+   when there's something worth knowing. */
+.save-status{
+  font-family:'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.5px; margin-top: 4px;
+}
+.save-status:empty{ display: none; }
+.save-status.offline{ color: var(--amber); }
+.save-status.saving{ color: var(--chalk-dim); }
+.save-status.error{ color: var(--incorrect); }

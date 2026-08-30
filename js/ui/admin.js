@@ -5,7 +5,9 @@ import { store, ui, getWeek } from '../core/state.js';
 import { TOTAL_WEEKS, CONFIG, CHANGELOG } from '../core/data.js';
 import { db } from '../core/firebase.js';
 import { fetchWeekOdds, fetchWeekScores } from '../core/espn.js';
-import { fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults } from '../core/league.js';
+import {
+  fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults, setPlaysForMoney,
+} from '../core/league.js';
 import { isWeekFullyLocked } from '../core/locks.js';
 import { isAdmin } from '../core/roles.js';
 import { saveState } from '../core/persist.js';
@@ -123,8 +125,9 @@ export async function renderAdminPage(){
   el.appendChild(rosterPanel);
 
   let leaguePassword = '••••••';
+  let meta = null;
   try{
-    const meta = await getLeagueMeta(store.state.account.leagueSlug);
+    meta = await getLeagueMeta(store.state.account.leagueSlug);
     if(meta && meta.password) leaguePassword = meta.password;
   }catch(e){ /* leave placeholder */ }
   if(superseded()) return;
@@ -132,6 +135,10 @@ export async function renderAdminPage(){
   const teams = await fetchLeagueTeams();
   if(superseded()) return;
   const aliveCount = teams.filter(t => t.survivorAlive).length;
+  // Read once here rather than per row -- it all comes off the one league doc
+  // that was just fetched for the password.
+  const moneyFlags = (meta && meta.playsForMoney) || {};
+  const moneyCount = teams.filter(t => moneyFlags[t.key]).length;
 
   rosterPanel.innerHTML = `
     <div class="league-info-row">League: <b>${escapeHtml(store.state.account.leagueName || '')}</b> &nbsp;·&nbsp; Password: <b>${escapeHtml(leaguePassword)}</b></div>
@@ -139,6 +146,7 @@ export async function renderAdminPage(){
       <div class="admin-stat-card"><div class="admin-stat-num">${teams.length}</div><div class="admin-stat-label">Members</div></div>
       <div class="admin-stat-card"><div class="admin-stat-num">${aliveCount}</div><div class="admin-stat-label">Alive in Survivor</div></div>
       <div class="admin-stat-card"><div class="admin-stat-num">${teams.length - aliveCount}</div><div class="admin-stat-label">Eliminated</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num">${moneyCount}</div><div class="admin-stat-label">Playing for Money</div></div>
     </div>
     <div id="adminMemberList"></div>`;
 
@@ -158,6 +166,32 @@ export async function renderAdminPage(){
         <div class="admin-member-name">${escapeHtml(t.teamName)}${t.yourName ? ' — ' + escapeHtml(t.yourName) : ''}</div>
         <div class="admin-member-sub">${t.total || 0} pts · ${t.survivorAlive ? (t.survivorStrikes ? t.survivorStrikes + ' strike' + (t.survivorStrikes === 1 ? '' : 's') : 'Alive') : 'Eliminated Wk ' + (t.survivorEliminatedWeek || '?')} · joined ${joined}</div>
       </div>`;
+
+    // Playing for money. Puts a $ beside their name on the standings board and
+    // nothing else -- it's a note about who's in the pot, not a scoring rule.
+    const moneyLabel = document.createElement('label');
+    moneyLabel.className = 'admin-money-toggle';
+    moneyLabel.title = 'Show a $ beside this player on the standings board';
+    const moneyBox = document.createElement('input');
+    moneyBox.type = 'checkbox';
+    moneyBox.checked = !!moneyFlags[t.key];
+    moneyBox.onchange = async () => {
+      const want = moneyBox.checked;
+      moneyBox.disabled = true;
+      try{
+        await setPlaysForMoney(t.key, want);
+        moneyFlags[t.key] = want || undefined;
+      }catch(e){
+        console.error('money flag failed', e);
+        moneyBox.checked = !want;          // put the switch back if it didn't take
+        setSyncStatus('Couldn’t update who’s playing for money — try again.');
+      }
+      moneyBox.disabled = false;
+    };
+    moneyLabel.appendChild(moneyBox);
+    moneyLabel.appendChild(document.createTextNode('$'));
+    row.appendChild(moneyLabel);
+
     if(t.teamName !== store.state.account.teamName){
       const kickBtn = document.createElement('button');
       kickBtn.className = 'admin-kick-btn';

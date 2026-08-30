@@ -6,6 +6,7 @@ import { loadUserState } from './firebase.js';
 import { applyTeamTheme } from './theme.js';
 import { getActiveWeekByDate, seedDefaultSchedule } from './schedule.js';
 import { syncToLeague } from './league.js';
+import { saveState } from './persist.js';
 import { refreshWeek } from './refresh.js';
 import { isAdmin } from './roles.js';
 import { render } from '../ui/router.js';
@@ -45,8 +46,10 @@ export async function enterApp(){
   // New (or half-set-up) member: block the board until they're on the leaderboard.
   maybeShowProfileGate();
 
-  // A first-load refresh can fill in live scores and ESPN lines; paint them.
-  if(await refreshWeek(store.currentWeek)) render();
+  // A first-load refresh can fill in live scores and ESPN lines, and auto-fill
+  // any locked game left blank. Paint it, and write it -- an auto-filled pick
+  // that only ever exists in memory scores nothing.
+  if(await refreshWeek(store.currentWeek)){ render(); saveState(); }
   syncToLeague().catch(() => {});
   updateSeasonRank().catch(() => {});
 }

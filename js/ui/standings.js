@@ -2,14 +2,67 @@
 import { store, ui, peekWeek } from '../core/state.js';
 import { TOTAL_WEEKS, CONFIG } from '../core/data.js';
 import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
-import { weekScore } from '../core/scoring.js';
+import { weekScore, isWeekFullyGraded } from '../core/scoring.js';
 import { getSurvivorStatus } from '../core/survivor.js';
-import { fetchLeagueTeams, slugifyTeam, loadGlobalSpreads, syncToLeague } from '../core/league.js';
+import {
+  fetchLeagueTeams, slugifyTeam, loadGlobalSpreads, syncToLeague, getLeagueMeta,
+} from '../core/league.js';
 import { escapeHtml, ordinal, rankBadge, placeNickname, timeAgo, renderLoadFailure } from './dom.js';
 
 // Staying alive in Survivor is worth a flat bonus on the Total column.
 // Being eliminated never costs points -- it just means no bonus.
 const SURVIVOR_BONUS = 50;
+
+// Members flagged on the Admin page as playing for money, by team name. Stored
+// on the league document rather than the member row: a member's own sync writes
+// their row wholesale, so a flag kept there would be wiped every time they
+// touched a pick.
+let moneyNames = new Set();
+
+/** True if this team is flagged as playing for money. */
+export function playsForMoney(teamName){ return moneyNames.has(teamName); }
+
+/**
+ * Season points: the sum of the weeks, added up here rather than read from the
+ * stored `total`.
+ *
+ * The two should agree -- the same client writes both -- but only one of them is
+ * what the weekly tabs show. Summing what's displayed means the Overall column
+ * can always be checked against the weeks it came from.
+ */
+export function seasonPoints(team){
+  const weekly = team.weeklyPoints || {};
+  return Object.keys(weekly).reduce((sum, w) => sum + (weekly[w] || 0), 0);
+}
+
+/**
+ * The season's highest single-week scores, whoever posted them.
+ *
+ * Not one per person -- these are the best weeks, so the same player can hold
+ * more than one place. Only fully graded weeks count: a week still in progress
+ * carries a partial score that isn't comparable to a finished one.
+ */
+export function bestWeeks(teams, limit = 3){
+  const graded = new Set();
+  for(let n = 1; n <= TOTAL_WEEKS; n++){
+    const w = peekWeek(n);
+    if(w.games.length && isWeekFullyGraded(w)) graded.add(n);
+  }
+  const rows = [];
+  teams.forEach(t => {
+    const weekly = t.weeklyPoints || {};
+    Object.keys(weekly).forEach(key => {
+      const week = parseInt(key, 10);
+      const pts = weekly[key];
+      if(pts == null || !graded.has(week)) return;
+      rows.push({ teamName: t.teamName, week, pts });
+    });
+  });
+  // Ties go to the earlier week, then alphabetically, so the order is stable
+  // rather than dependent on whatever order the roster came back in.
+  rows.sort((a, b) => b.pts - a.pts || a.week - b.week || a.teamName.localeCompare(b.teamName));
+  return rows.slice(0, limit);
+}
 
 export function computeAchievements(teams){
   const badges = {};
@@ -77,6 +130,9 @@ export function buildStandingsRow(teamName, pts, rank, total, survivorAlive, isW
   }
 
   let teamLabel = escapeHtml(teamName);
+  if(playsForMoney(teamName)){
+    teamLabel = '<span class="money-badge" title="Playing for money">$</span> ' + teamLabel;
+  }
   if(isWeekly && rank === 1) teamLabel = `<span class="crown-badge" title="King of the Week">\ud83d\udc51</span> ${teamLabel}`;
   if(isWeekly && total > 1 && rank === total) teamLabel = `${teamLabel} <span class="toilet-badge" title="Bottom of the week">\ud83d\udebd</span>`;
 
@@ -119,7 +175,10 @@ export function updateHeaderRank(teams){
   const el = document.getElementById('seasonRank');
   if(!el) return;
   if(!store.state.account.teamName || !teams.length){ el.textContent = ''; return; }
-  const sorted = teams.slice().sort((a, b) => (b.total || 0) - (a.total || 0));
+  // Must rank by the same number the Overall table shows, or the header claims
+  // a place the table contradicts.
+  const grand = (t) => seasonPoints(t) + (t.survivorAlive ? SURVIVOR_BONUS : 0);
+  const sorted = teams.slice().sort((a, b) => grand(b) - grand(a));
   const idx = sorted.findIndex(t => t.teamName === store.state.account.teamName);
   if(idx === -1){ el.textContent = ''; return; }
   el.textContent = 'You\u2019re in ' + ordinal(idx + 1) + ' place';
@@ -203,6 +262,44 @@ export async function renderWeekRecap(n, teams){
 }
 
 
+/**
+ * Reads the money flags off the league doc and resolves them to team names.
+ *
+ * Stored by member doc id rather than team name, so a rename doesn't drop the
+ * flag; resolved to names here because this is the one place the roster and the
+ * league document are both in hand.
+ */
+async function loadMoneyFlags(teams){
+  try{
+    const meta = await getLeagueMeta(store.state.account.leagueSlug);
+    const flags = (meta && meta.playsForMoney) || {};
+    moneyNames = new Set(teams.filter(t => flags[t.key]).map(t => t.teamName));
+  }catch(e){
+    // A league doc we couldn't read just means no dollar signs on this render.
+    moneyNames = new Set();
+  }
+}
+
+/** The season's three best single weeks, shown above the Overall table. */
+function renderBestWeeks(el, teams){
+  const best = bestWeeks(teams, 3);
+  if(!best.length) return;
+  const medals = ['🥇', '🥈', '🥉'];
+  el.innerHTML = `
+    <div class="best-weeks">
+      <div class="best-weeks-title">🔥 Best Weeks of the Season</div>
+      <div class="best-weeks-list">
+        ${best.map((b, i) => `
+          <div class="best-week-row${b.teamName === store.state.account.teamName ? ' me' : ''}">
+            <span class="bw-medal">${medals[i] || ''}</span>
+            <span class="bw-team">${escapeHtml(b.teamName)}</span>
+            <span class="bw-week">Week ${b.week}</span>
+            <span class="bw-pts">${b.pts}<span class="bw-pts-label">pts</span></span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 export async function renderStandingsPage(){
   const selectEl = document.getElementById('standingsFilterSelect');
   if(!selectEl.dataset.built){
@@ -241,6 +338,7 @@ export async function renderStandingsPage(){
     return;
   }
 
+  await loadMoneyFlags(teams);
   updateHeaderRank(teams);
   renderSurvivorList(teams);
 
@@ -253,15 +351,19 @@ export async function renderStandingsPage(){
 
   if(ui.standingsFilter === 'overall'){
     document.getElementById('weekRecapCard').innerHTML = '';
-    teams.forEach(t => { t._grandTotal = (t.total || 0) + (t.survivorAlive ? SURVIVOR_BONUS : 0); });
+    teams.forEach(t => {
+      t._seasonPoints = seasonPoints(t);
+      t._grandTotal = t._seasonPoints + (t.survivorAlive ? SURVIVOR_BONUS : 0);
+    });
     teams.sort((a, b) => b._grandTotal - a._grandTotal);
+    renderBestWeeks(highlightEl, teams);
     const achievements = computeAchievements(teams);
     const colHeader = document.createElement('div');
     colHeader.className = 'standings-col-header';
     colHeader.innerHTML = `<span></span><span>Team</span><span>Points</span><span>Survivor</span><span>Total</span>`;
     listEl.appendChild(colHeader);
     teams.forEach((t, i) => {
-      listEl.appendChild(buildStandingsRow(t.teamName, t.total || 0, i + 1, teams.length, !!t.survivorAlive, false, achievements[t.teamName]));
+      listEl.appendChild(buildStandingsRow(t.teamName, t._seasonPoints, i + 1, teams.length, !!t.survivorAlive, false, achievements[t.teamName]));
     });
   } else {
     const n = ui.standingsFilter;

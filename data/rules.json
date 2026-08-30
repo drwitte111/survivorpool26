@@ -16,7 +16,8 @@
     "body": [
       "<ul>",
       "<li>Each week opens for picks the <b>Tuesday at 6:00 AM</b> following the previous week's Monday Night Football (Week 1 is always open).</li>",
-      "<li><b>Every game locks at its own kickoff</b> — not all at once. Miss Thursday night and you simply score zero on that one; the rest of the week stays open.</li>",
+      "<li><b>Every game locks at its own kickoff</b> — not all at once. Miss Thursday night and the rest of the week stays open.</li>",
+      "<li><b>A game that locks with nothing on it gets filled in for you:</b> the home team to win, and the lowest points value you haven't used that week. It counts the same as any other pick, and it's marked <i>Auto-filled</i> on the board so you can see it wasn't yours. This applies to a single blank game or a week you never opened at all — nobody banks a zero for forgetting.</li>",
       "<li><b>Submitting doesn't freeze anything.</b> It just marks your lineup as done for the standings. You can keep changing any game that hasn't kicked off.</li>",
       "</ul>"
     ]

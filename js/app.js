@@ -5,7 +5,7 @@ import { loadAppData } from './core/data.js';
 import { initFirebase, auth } from './core/firebase.js';
 import { store, ui, peekWeek } from './core/state.js';
 import { applyTeamTheme } from './core/theme.js';
-import { saveState } from './core/persist.js';
+import { saveState, onSaveStatus } from './core/persist.js';
 import { createLeague, joinLeague } from './core/league.js';
 import { refreshWeek } from './core/refresh.js';
 import { onBackOnline } from './core/net.js';
@@ -328,7 +328,8 @@ function startPolling(){
     const week = peekWeek(store.currentWeek);
     if(!week.games.length) return;
     const snapshot = () => JSON.stringify(
-      week.games.map(g => [g.actualWinner, g.liveAway, g.liveHome, g.gameState]));
+      week.games.map(g => [g.actualWinner, g.liveAway, g.liveHome, g.gameState,
+                           g.pick, g.confidence]));
     const before = snapshot();
     await refreshWeek(store.currentWeek);
     if(snapshot() !== before){
@@ -338,9 +339,28 @@ function startPolling(){
   }, RESULTS_POLL_MS);
 }
 
+// ---------- Save status ----------
+// Silent while everything is up to date. It exists for the case where a pick was
+// made on a bad connection: the pick is safe -- Firestore has it on disk and
+// replays it -- but people reasonably want to be told that, not left guessing.
+function wireSaveStatus(){
+  const el = $('saveStatus');
+  if(!el) return;
+  const text = {
+    saving:  'Saving…',
+    offline: 'Offline — your picks are saved on this device and will sync when you’re back.',
+    error:   'Couldn’t reach the server — your picks are saved here and will retry.',
+  };
+  onSaveStatus(status => {
+    el.className = 'save-status' + (status === 'saved' ? '' : ' ' + status);
+    el.textContent = text[status] || '';
+  });
+}
+
 // ---------- Boot ----------
 await loadAppData();
 initFirebase();
+wireSaveStatus();
 
 const { closeAccount } = wireDropdowns();
 wireNav(closeAccount);

@@ -14,6 +14,7 @@ import { getWeek } from './state.js';
 import { syncWeekScores, fetchWeekOdds } from './espn.js';
 import { ensureSpreadsLoaded } from './league.js';
 import { isGameLocked } from './locks.js';
+import { autoFillAllWeeks } from './autofill.js';
 
 // Odds cost one request per game, so unlike scores they aren't worth pulling on
 // every poll, so it runs on a timer instead -- by default once an hour while
@@ -126,5 +127,13 @@ export async function refreshWeek(n){
   }
 
   await ensureSpreadsLoaded(n);
+
+  // Last, so it fills against the final picture: scores in, lines frozen, and
+  // whatever the admin published applied. Every week rather than just this one
+  // -- a week nobody opened is exactly the one with blanks in it -- and every
+  // caller of refreshWeek goes through here, so boot, a week change and the
+  // background poll all cover it.
+  changed += autoFillAllWeeks();
+
   return changed > 0;
 }

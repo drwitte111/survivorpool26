@@ -549,3 +549,76 @@
 @media (max-width: 720px){
   .load-failure-retry{ width: 100%; }
 }
+
+/* ---------- Best weeks of the season ----------
+   Sits above the Overall table. These are the three highest single weeks
+   anybody has posted, so the same name can appear more than once. */
+.best-weeks{
+  background: linear-gradient(180deg, var(--night-2), var(--turf));
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.best-weeks-title{
+  font-family:'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 10px;
+}
+.best-weeks-list{ display: flex; flex-direction: column; gap: 6px; }
+.best-week-row{
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid transparent;
+}
+.best-week-row.me{ border-color: var(--amber-dim); background: rgba(var(--amber-rgb),0.1); }
+.bw-medal{ font-size: 15px; line-height: 1; }
+.bw-team{
+  font-family:'Oswald', sans-serif; font-weight: 600; font-size: 15px;
+  color: var(--chalk);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bw-week{
+  font-family:'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.5px; color: var(--chalk-dim); white-space: nowrap;
+}
+.bw-pts{
+  font-family:'JetBrains Mono', monospace; font-size: 17px; font-weight: 700;
+  color: var(--amber); font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: baseline; gap: 3px;
+}
+.bw-pts-label{ font-size: 9px; color: var(--chalk-dim); font-weight: 400; }
+
+/* Playing for money -- a note about who's in the pot, not a score. */
+.money-badge{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; border-radius: 4px;
+  font-family:'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  background: var(--correct); color: var(--night);
+  vertical-align: 1px;
+}
+
+/* The admin's switch for the badge above. */
+.admin-money-toggle{
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family:'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+  color: var(--chalk-dim); cursor: pointer; user-select: none;
+  padding: 6px 9px; margin-left: auto;
+  border: 1px solid var(--line); border-radius: 6px;
+  min-height: 40px;
+}
+.admin-money-toggle:hover{ border-color: var(--correct); color: var(--correct); }
+.admin-money-toggle input{ accent-color: var(--correct); margin: 0; }
+.admin-money-toggle:has(input:checked){ border-color: var(--correct); color: var(--correct); }
+
+@media (max-width: 560px){
+  .best-week-row{ grid-template-columns: 22px 1fr auto; row-gap: 2px; }
+  .bw-week{ grid-column: 2 / 3; }
+  .bw-pts{ grid-row: 1 / span 2; grid-column: 3 / 4; }
+}

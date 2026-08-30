@@ -162,6 +162,7 @@ export function teamButtonRow(game, mode, locked){
       if(disablePicks) return;
       const clearing = game[field] === side;
       game[field] = clearing ? null : side;
+      if(mode === 'pick') game.autoPick = false;
       // The line as it stood when the pick was made -- what the person was
       // actually looking at, so nothing has to be raced against kickoff.
       if(mode === 'pick'){
@@ -189,6 +190,20 @@ export function teamButtonRow(game, mode, locked){
     lock.className = 'sub-lock';
     lock.textContent = 'Locked';
     sub.appendChild(lock);
+  }
+
+  // Nobody should discover at the end of the season that a pick they never made
+  // was scored as theirs. Say so on the row itself.
+  if(mode === 'pick' && (game.autoPick || game.autoPoints)){
+    const auto = document.createElement('span');
+    auto.className = 'sub-auto';
+    auto.textContent = game.autoPick && game.autoPoints ? 'Auto-filled'
+      : game.autoPick ? 'Auto pick' : 'Auto points';
+    auto.title = game.autoPick
+      ? 'This game kicked off with no pick, so it was filled with the home team'
+        + (game.autoPoints ? ' and the lowest points left.' : '.')
+      : 'This game kicked off with no points on it, so it got the lowest value left.';
+    sub.appendChild(auto);
   }
 
   if(game.gameState === 'in' || game.gameState === 'post'){

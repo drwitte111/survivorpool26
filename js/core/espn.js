@@ -1,9 +1,13 @@
 // Pulls spreads and over/unders from ESPN's public endpoints.
 //
-// Two calls per week: one scoreboard request for the slate, then one odds
-// request per game (fired in parallel). No API key and no account -- these are
-// the same public endpoints the site itself uses, and both send CORS headers,
-// so the browser can read them directly with no proxy.
+// One call per week. The scoreboard request carries the slate, the live scores
+// AND the betting line for each game, so spreads and totals come back in the
+// same response as everything else. A per-game odds endpoint exists and is still
+// used as a fallback, but only for a game the scoreboard had no line for.
+//
+// No API key and no account -- these are the same public endpoints the site
+// itself uses, and both send CORS headers, so the browser can read them directly
+// with no proxy.
 //
 // Nothing here writes anything. It returns a plain list and lets the admin
 // review it in the spread editor before publishing.
@@ -61,20 +65,33 @@ export async function fetchWeekOdds(week, seasonYear){
     const away = teamNameFromAbbr(awaySide.team && awaySide.team.abbreviation);
     if(!home || !away) return null; // an abbreviation we don't recognise
 
-    let homeSpread = null, overUnder = null, provider = null;
-    try{
-      const odds = await getJson(ODDS(event.id));
-      // Providers vary by game (DraftKings, ESPN BET, ...); take the first,
-      // which is the one ESPN ranks highest.
-      const line = (odds.items || [])[0];
-      if(line){
-        if(typeof line.spread === 'number') homeSpread = line.spread;
-        if(typeof line.overUnder === 'number') overUnder = line.overUnder;
-        provider = line.provider ? line.provider.name : null;
+    // The scoreboard response already carries the line on each competition, so
+    // the normal case costs no extra request at all. This used to hit the
+    // per-game odds endpoint for every game -- 17 requests a refresh instead of
+    // 1 -- which is also what made a refresh slow enough to notice on a phone.
+    //
+    // Providers vary by game (DraftKings, ESPN BET, ...); take the first, which
+    // is the one ESPN ranks highest. Both sources report `spread` from the home
+    // team's perspective, so nothing downstream changes.
+    let line = (comp.odds || [])[0] || null;
+
+    if(!line || (typeof line.spread !== 'number' && typeof line.overUnder !== 'number')){
+      // Only a game the scoreboard had no line for falls back to the per-game
+      // endpoint. Keeping the fallback means a mid-season gap still resolves.
+      try{
+        const odds = await getJson(ODDS(event.id));
+        line = (odds.items || [])[0] || null;
+      }catch(e){
+        // A missing line for one game shouldn't sink the whole fetch.
+        console.warn('ESPN odds unavailable for', away, '@', home, e.message);
       }
-    }catch(e){
-      // A missing line for one game shouldn't sink the whole fetch.
-      console.warn('ESPN odds unavailable for', away, '@', home, e.message);
+    }
+
+    let homeSpread = null, overUnder = null, provider = null;
+    if(line){
+      if(typeof line.spread === 'number') homeSpread = line.spread;
+      if(typeof line.overUnder === 'number') overUnder = line.overUnder;
+      provider = line.provider ? line.provider.name : null;
     }
 
     return { away, home, kickoff: event.date, homeSpread, overUnder, provider };
