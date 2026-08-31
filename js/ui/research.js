@@ -28,7 +28,7 @@ export async function renderResearchPage(){
       </div>
       <p class="research-note">Straight-up standings and against-the-spread records, from ESPN's
         closing lines and final scores. ${isCurrent ? 'Fills in as the season goes on.' : `Final ${season} regular season.`}</p>
-      <div id="researchTable"><div class="empty">Loading ${season} results…</div></div>
+      <div id="researchTable"><div class="empty">Loading ${season} results…${isCurrent ? '' : ' Pulling last season’s closing lines can take a few seconds the first time.'}</div></div>
     </div>`;
 
   el.querySelectorAll('.research-season-btn').forEach(btn => {

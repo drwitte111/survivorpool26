@@ -31,6 +31,24 @@ async function getJson(url){
   }
 }
 
+/**
+ * Home-relative closing spread for one event, from the per-game odds endpoint
+ * (negative = home favoured), or null. Used for past seasons, whose scoreboard
+ * responses no longer carry a line at all. ESPN has reported `spread` as either
+ * a number or a numeric string over time, so both are accepted.
+ */
+export async function fetchEventSpread(eventId){
+  try{
+    const odds = await getJson(ODDS(eventId));
+    const line = (odds.items || [])[0];
+    if(!line || line.spread == null) return null;
+    const n = parseFloat(line.spread);
+    return isNaN(n) ? null : n;
+  }catch(e){
+    return null;
+  }
+}
+
 /** ESPN abbreviations line up with the espn_abbr column in teams.csv. */
 function teamNameFromAbbr(abbr){
   if(!abbr) return null;
