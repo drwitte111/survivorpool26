@@ -2,10 +2,12 @@
 // overriding the CSS custom properties on :root.
 import { getTeamColors } from './teams.js';
 
-const DEFAULT_THEME = {
-  amber: '#FFB703', amberDim: '#8A6A1F', amberRgb: '255,183,3',
-  turf: '#141B2E', turf2: '#0F1524', night: '#0A1628', night2: '#0F2036'
-};
+// The eight CSS custom properties team theming overrides. Listed once so the
+// "no favourite team" reset can't drift out of sync with what apply sets.
+const THEME_VARS = [
+  '--amber', '--amber-dim', '--amber-rgb',
+  '--turf', '--turf-2', '--night', '--night-2', '--night-rgb',
+];
 
 export function hexToRgb(hex){
   hex = hex.replace('#', '');
@@ -68,33 +70,59 @@ export function applyTeamTheme(teamName){
   const root = document.documentElement.style;
   const colors = getTeamColors(teamName);
   if(!colors){
-    root.removeProperty('--amber'); root.removeProperty('--amber-dim'); root.removeProperty('--amber-rgb');
-    root.removeProperty('--turf'); root.removeProperty('--turf-2');
-    root.removeProperty('--night'); root.removeProperty('--night-2'); root.removeProperty('--night-rgb');
+    THEME_VARS.forEach(v => root.removeProperty(v));
     return;
   }
   const [c1, c2] = colors;
-  const l1 = luminance(hexToRgb(c1)), l2 = luminance(hexToRgb(c2));
-  let accent = l1 >= l2 ? c1 : c2;
-  let dim = l1 >= l2 ? c2 : c1;
-  // Force the accent into a bold, saturated, unmistakably "team-colored" range,
-  // regardless of how close the raw hex is to the app's default amber.
-  accent = vibrant(accent, 70, 58);
-  dim = vibrant(dim, 45, 30);
-  const accentRgb = hexToRgb(accent).join(',');
+  const hsl1 = rgbToHsl(hexToRgb(c1));
+  const hsl2 = rgbToHsl(hexToRgb(c2));
+
+  // Every NFL team is one colour of identity paired with a near-neutral (black,
+  // white, silver, navy). The accent is the one that carries the identity: the
+  // more saturated of the two, or -- when they're similarly saturated, like the
+  // Browns' brown and orange -- the lighter one. The other becomes the base for
+  // the background.
+  let accentRaw, darkRaw;
+  if(Math.abs(hsl1[1] - hsl2[1]) < 12){
+    const c1Lighter = hsl1[2] >= hsl2[2];
+    accentRaw = c1Lighter ? c1 : c2;
+    darkRaw   = c1Lighter ? c2 : c1;
+  } else {
+    const c1MoreSaturated = hsl1[1] > hsl2[1];
+    accentRaw = c1MoreSaturated ? c1 : c2;
+    darkRaw   = c1MoreSaturated ? c2 : c1;
+  }
+
+  // Accent: the team's hue, forced bright and vivid so it reads as an accent on
+  // a dark UI whatever the raw hex is. Steelers gold stays gold; Cowboys navy
+  // comes up to a usable royal blue.
+  const accent = vibrant(accentRaw, 68, 60);
+  const [accentHue, accentSat] = rgbToHsl(hexToRgb(accent));
+  // amber-dim is the panel/border colour -- a dimmer shade of the SAME hue, not
+  // the team's other colour (which is where the muddy borders came from).
+  const accentDim = rgbToHex(hslToRgb(accentHue, Math.max(accentSat - 8, 32), 33));
 
   root.setProperty('--amber', accent);
-  root.setProperty('--amber-dim', dim);
-  root.setProperty('--amber-rgb', accentRgb);
-  // Blend BOTH team colors into the panel/background bases, much more heavily than
-  // before, so the whole app clearly reads as that team's colors, not just a tint.
-  const base = luminance(hexToRgb(colors[0])) <= luminance(hexToRgb(colors[1])) ? colors[0] : colors[1];
-  const boldBase = vibrant(base, 35, 18);
-  const newNight = mixHex(boldBase, DEFAULT_THEME.night, 0.4);
-  root.setProperty('--turf', mixHex(boldBase, DEFAULT_THEME.turf, 0.7));
-  root.setProperty('--turf-2', mixHex(boldBase, DEFAULT_THEME.turf2, 0.7));
-  root.setProperty('--night', newNight);
-  root.setProperty('--night-2', mixHex(boldBase, DEFAULT_THEME.night2, 0.4));
-  root.setProperty('--night-rgb', hexToRgb(newNight).join(','));
+  root.setProperty('--amber-dim', accentDim);
+  root.setProperty('--amber-rgb', hexToRgb(accent).join(','));
+
+  // Background: the team's dark colour, driven hard -- the whole app should read
+  // as that colour, not the default navy with a tint. A near-black team colour
+  // (Steelers, Ravens, Raiders) borrows a whisper of the accent hue so the
+  // panels don't flatten into a single #000.
+  let [bgHue, bgSat] = rgbToHsl(hexToRgb(darkRaw));
+  if(bgSat < 12){
+    bgHue = accentHue;
+    bgSat = 20;
+  } else {
+    bgSat = Math.min(Math.max(bgSat, 30), 62);
+  }
+  const shade = (l) => rgbToHex(hslToRgb(bgHue, bgSat, l));
+  const night = shade(7);
+  root.setProperty('--night', night);
+  root.setProperty('--night-2', shade(13));
+  root.setProperty('--turf', shade(10));
+  root.setProperty('--turf-2', shade(5));
+  root.setProperty('--night-rgb', hexToRgb(night).join(','));
 }
 
