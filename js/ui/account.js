@@ -89,18 +89,36 @@ export function renderAccount(){
   const idEl = document.getElementById('headerIdentity');
   idEl.innerHTML = acct.teamName ? `Welcome, <b style="color:var(--amber)">${escapeHtml(acct.teamName)}</b>` : '';
 
-  // Menu button avatar
+  // Menu button avatar. A bad link just falls back to no avatar rather than a
+  // broken-image icon in the header.
   const menuAvatar = document.getElementById('menuAvatarImg');
-  if(acct.profilePic){ menuAvatar.src = acct.profilePic; menuAvatar.classList.add('show'); }
-  else { menuAvatar.classList.remove('show'); menuAvatar.src=''; }
+  if(acct.profilePic){
+    menuAvatar.onerror = () => menuAvatar.classList.remove('show');
+    menuAvatar.src = acct.profilePic; menuAvatar.classList.add('show');
+  } else {
+    menuAvatar.onerror = null; menuAvatar.classList.remove('show'); menuAvatar.src = '';
+  }
 
-  // Dropdown avatar preview
+  // Dropdown avatar preview + the paste-a-link field and its status line.
   const preview = document.getElementById('avatarPreview');
   const placeholder = document.getElementById('avatarPlaceholder');
+  const avatarStatus = document.getElementById('avatarStatus');
+  const urlInput = document.getElementById('avatarUrlInput');
+  if(urlInput && document.activeElement !== urlInput){
+    // A legacy uploaded picture is a data: URI -- don't dump that into the field.
+    urlInput.value = /^https?:\/\//i.test(acct.profilePic || '') ? acct.profilePic : '';
+  }
   if(acct.profilePic){
+    preview.onload = () => { if(avatarStatus) avatarStatus.textContent = ''; };
+    preview.onerror = () => {
+      preview.style.display = 'none'; placeholder.style.display = 'flex';
+      if(avatarStatus) avatarStatus.textContent = 'That link didn’t load as an image — make sure it’s a direct link to the image file.';
+    };
     preview.src = acct.profilePic; preview.style.display = 'block'; placeholder.style.display = 'none';
   } else {
+    preview.onload = null; preview.onerror = null;
     preview.style.display = 'none'; placeholder.style.display = 'flex';
+    if(avatarStatus) avatarStatus.textContent = '';
   }
 
   // Text field values (only set if not currently focused/dirty, to avoid clobbering unsaved edits)

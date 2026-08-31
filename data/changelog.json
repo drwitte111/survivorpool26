@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-08-31T01:45:00Z",
+      "title": "Profile picture is a pasted link, not an upload",
+      "detail": "The Account page now takes a direct link to an image instead of an uploaded file — paste the image address from Google Photos (or anywhere). The picture stays where it lives and only the link is stored, so it no longer bloats your saved data. A link that doesn't load quietly falls back to the football placeholder instead of a broken-image icon.",
+      "by": "Caleb",
+      "tags": [
+        "feature"
+      ]
+    },
+    {
       "at": "2026-08-31T01:43:00Z",
       "title": "Favorite-team colours actually take over the board",
       "detail": "Picking your team now recolours the whole app to that team, not a faint tint of the default gold-on-navy. The accent is the team's identity colour forced bright (Steelers gold, Cowboys a usable royal blue), panel borders are a dim shade of that same colour instead of a muddy mix, and the background is driven down to the team's dark colour — so the Steelers really do read black and gold.",

@@ -24,7 +24,6 @@ const $ = (id) => document.getElementById(id);
 
 const RANK_REFRESH_MS = 60000;
 const RESULTS_POLL_MS = 30000;
-const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
 const AUTH_SPLASH_TIMEOUT_MS = 8000;
 
 // ---------- Dropdown panels (week picker + account menu) ----------
@@ -128,25 +127,24 @@ function wireProfile(){
     setTimeout(() => statusEl.classList.remove('show'), 2500);
   };
 
-  $('avatarInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if(!file) return;
-    if(file.size > MAX_AVATAR_BYTES){
-      alert('Please choose an image smaller than 3MB.');
-      e.target.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      store.state.account.profilePic = reader.result;
-      saveState(); renderAccount();
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+  // Profile picture is a link the person pastes -- a direct URL to the image,
+  // typically copied out of Google Photos -- not an uploaded file. The image
+  // itself stays on Google's servers; we only store the string.
+  const applyAvatarUrl = () => {
+    const url = $('avatarUrlInput').value.trim();
+    $('avatarStatus').textContent = url ? 'Checking the link…' : '';
+    store.state.account.profilePic = url || null;
+    saveState(); renderAccount();
+  };
+  $('setAvatarBtn').onclick = applyAvatarUrl;
+  $('avatarUrlInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); applyAvatarUrl(); }
   });
 
   $('removeAvatarBtn').onclick = () => {
     store.state.account.profilePic = null;
+    $('avatarUrlInput').value = '';
+    $('avatarStatus').textContent = '';
     saveState(); renderAccount();
   };
 }

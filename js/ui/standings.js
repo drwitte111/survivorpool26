@@ -179,7 +179,7 @@ export function buildStandingsRow({
   let avatarHtml = '';
   if(isMe){
     avatarHtml = store.state.account.profilePic
-      ? `<img class="standings-avatar" src="${store.state.account.profilePic}" alt="">`
+      ? `<img class="standings-avatar" src="${escapeHtml(store.state.account.profilePic)}" alt="" onerror="this.remove()">`
       : `<div class="standings-avatar placeholder">\ud83c\udfc8</div>`;
   }
 

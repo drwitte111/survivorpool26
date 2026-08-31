@@ -236,11 +236,15 @@
           <img class="avatar-preview" id="avatarPreview" src="" alt="" style="display:none;">
           <div class="avatar-preview placeholder" id="avatarPlaceholder">🏈</div>
           <div class="avatar-actions">
-            <label class="file-btn" for="avatarInput">Upload photo</label>
-            <input type="file" id="avatarInput" accept="image/*" style="display:none;">
-            <button class="file-btn remove" id="removeAvatarBtn">Remove</button>
+            <input type="url" id="avatarUrlInput" class="avatar-url-input" placeholder="Paste an image link" autocomplete="off" inputmode="url">
+            <div class="avatar-btn-row">
+              <button class="file-btn" id="setAvatarBtn" type="button">Use photo</button>
+              <button class="file-btn remove" id="removeAvatarBtn" type="button">Remove</button>
+            </div>
           </div>
         </div>
+        <p class="avatar-hint">Paste a direct link to the image itself. In Google Photos: open the photo, tap it, then copy the image address — it should look like <code>lh3.googleusercontent.com/…</code>. A share link (<code>photos.app.goo.gl/…</code>) points at a page, not an image, so it won't work.</p>
+        <div class="avatar-status" id="avatarStatus"></div>
       </div>
       <div class="field">
         <label>Team Name</label>

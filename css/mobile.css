@@ -55,6 +55,7 @@ button, .team-pick, .week-item, .menu-nav-link, .file-btn, .sync-btn, .lbl, .eye
   .sb-pick-select,
   .conf-select,
   .re-mnf-score,
+  .avatar-url-input,
   .se-away-spread, .se-home-spread, .se-kickoff{
     font-size: 16px;
   }
