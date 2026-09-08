@@ -118,3 +118,16 @@ export async function retireOldPassword(email, oldPassword){
   const credential = await auth.signInWithEmailAndPassword(email, oldPassword);
   await credential.user.updatePassword(SHARED_PASSWORD);
 }
+
+/**
+ * Sends Firebase's standard "reset your password" email.
+ *
+ * The way back in for someone whose account predates the shared-password login
+ * and who's forgotten their old one -- a static app can't delete or re-key
+ * another person's sign-in, but it can ask Firebase to email them a reset link.
+ * They follow it, set any password, and on their next sign-in enterWithEmail's
+ * retirement flow swaps it for the shared one for good.
+ */
+export async function sendResetEmail(email){
+  await auth.sendPasswordResetEmail(String(email || '').trim());
+}

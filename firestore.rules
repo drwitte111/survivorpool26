@@ -21,9 +21,11 @@ service cloud.firestore {
         && request.auth.token.email in ['cbower683@gmail.com', 'drwitte111@gmail.com'];
     }
 
-    // Personal state (picks, points, profile): only its owner.
+    // Personal state (picks, points, profile): only its owner -- except an admin
+    // can delete it, so a member who's locked out can be wiped and start clean.
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+      allow delete: if isAdmin();
     }
 
     // A league: anyone signed in can read it (joining needs to check the

@@ -183,11 +183,38 @@
 }
 .admin-member-name{ font-family:'Oswald', sans-serif; font-weight:700; color: var(--chalk); font-size: 14px; }
 .admin-member-sub{ font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim); margin-top: 2px; }
+.admin-member-email{
+  font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim);
+  margin-top: 3px; word-break: break-all;
+}
+.admin-member-row > div:first-child{ min-width: 0; }
 .admin-kick-btn{
   background: transparent; border: 1px solid var(--incorrect); color: var(--incorrect);
   font-family:'JetBrains Mono', monospace; font-size: 11px; padding: 6px 12px; border-radius: 6px; cursor:pointer;
+  white-space: nowrap; flex-shrink: 0;
 }
 .admin-kick-btn:hover{ background: rgba(230,57,70,0.12); }
+.admin-kick-btn.confirm-armed{ background: var(--incorrect); color: var(--night); }
+
+/* Admin: reset-a-login panel */
+.account-tools-note{
+  font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim);
+  line-height: 1.5; margin: 4px 0 12px;
+}
+.account-tools-row{ display:flex; gap: 8px; flex-wrap: wrap; }
+.account-tools-input{
+  flex: 1 1 200px; min-width: 0; background: var(--night); border: 1px solid var(--line);
+  color: var(--chalk); border-radius: 6px; padding: 10px 12px;
+  font-family:'JetBrains Mono', monospace; font-size: 13px;
+}
+.account-tools-input:focus{ outline: none; border-color: var(--amber); }
+.account-tools-row .submit-btn{ flex: 0 0 auto; }
+.account-tools-status{
+  font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--chalk-dim);
+  min-height: 14px; margin-top: 8px; line-height: 1.5;
+}
+.account-tools-status.ok{ color: var(--correct); }
+.account-tools-status.err{ color: var(--incorrect); }
 .admin-locked-msg{
   font-family:'Oswald', sans-serif; font-size: 14px; color: var(--chalk); text-align:center; padding: 30px 20px;
 }

@@ -3,10 +3,11 @@
 // the fixed email list in core/roles.js, not anything a league can grant.
 import { store, ui, getWeek } from '../core/state.js';
 import { TOTAL_WEEKS, CONFIG, CHANGELOG } from '../core/data.js';
-import { db } from '../core/firebase.js';
+import { sendResetEmail } from '../core/firebase.js';
 import { fetchWeekOdds, fetchWeekScores } from '../core/espn.js';
 import {
   fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults, setPlaysForMoney,
+  removeMemberAccount,
 } from '../core/league.js';
 import { isWeekFullyLocked } from '../core/locks.js';
 import { isAdmin } from '../core/roles.js';
@@ -153,6 +154,7 @@ export async function renderAdminPage(){
   const listEl = rosterPanel.querySelector('#adminMemberList');
   if(!teams.length){
     listEl.innerHTML = '<div class="empty">No one has joined yet — share the league name and password to get your friends in.</div>';
+    renderAccountTools(el);
     renderUpdateLog(el); // an empty roster shouldn't hide the log
     return;
   }
@@ -165,6 +167,7 @@ export async function renderAdminPage(){
       <div>
         <div class="admin-member-name">${escapeHtml(t.teamName)}${t.yourName ? ' — ' + escapeHtml(t.yourName) : ''}</div>
         <div class="admin-member-sub">${t.total || 0} pts · ${t.survivorAlive ? (t.survivorStrikes ? t.survivorStrikes + ' strike' + (t.survivorStrikes === 1 ? '' : 's') : 'Alive') : 'Eliminated Wk ' + (t.survivorEliminatedWeek || '?')} · joined ${joined}</div>
+        <div class="admin-member-email">${t.email ? escapeHtml(t.email) : 'email not synced yet'}</div>
       </div>`;
 
     // Playing for money. Puts a $ beside their name on the standings board and
@@ -193,13 +196,33 @@ export async function renderAdminPage(){
     row.appendChild(moneyLabel);
 
     if(t.teamName !== store.state.account.teamName){
+      // Two-step: the first click arms it for 3s, matching the other destructive
+      // controls. Removing wipes their roster row and their saved picks/profile;
+      // their sign-in is untouched, so they can re-join with the same email.
       const kickBtn = document.createElement('button');
       kickBtn.className = 'admin-kick-btn';
       kickBtn.textContent = 'Remove';
+      kickBtn.title = 'Remove from the pool and clear their picks — they can sign back in with the same email and start over';
+      let armed = false, armTimer = null;
       kickBtn.onclick = async () => {
+        if(!armed){
+          armed = true;
+          kickBtn.textContent = 'Confirm remove?';
+          kickBtn.classList.add('confirm-armed');
+          armTimer = setTimeout(() => {
+            armed = false; kickBtn.textContent = 'Remove'; kickBtn.classList.remove('confirm-armed');
+          }, 3000);
+          return;
+        }
+        clearTimeout(armTimer);
         kickBtn.disabled = true; kickBtn.textContent = 'Removing…';
-        try{ await db.collection('leagues').doc(store.state.account.leagueSlug).collection('members').doc(t.key).delete(); }
-        catch(e){ console.error('kick failed', e); }
+        try{
+          await removeMemberAccount(t.key, t.uid || null);
+          setSyncStatus(`Removed ${t.teamName}. If they can’t sign back in, send a reset link below.`);
+        }catch(e){
+          console.error('remove member failed', e);
+          setSyncStatus('Couldn’t remove that member — try again.');
+        }
         renderAdminPage();
       };
       row.appendChild(kickBtn);
@@ -207,7 +230,59 @@ export async function renderAdminPage(){
     listEl.appendChild(row);
   });
 
+  renderAccountTools(el);
   renderUpdateLog(el);
+}
+
+
+// ---------------------------------------------------------------------------
+// Account help. A static site can't delete another person's Firebase sign-in,
+// but it can email them a reset link -- the only way back in for someone whose
+// account predates the shared-password login and who's forgotten their old
+// password. "Remove" on a member row handles their pool data; this handles the
+// login.
+// ---------------------------------------------------------------------------
+function renderAccountTools(el){
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.innerHTML = `
+    <div class="section-label"><span>🔑 Reset a member's login</span></div>
+    <p class="account-tools-note">Sends Firebase's "reset your password" email. Use it when someone
+      can't sign in — usually an older account from before the pool switched to email-only login.
+      They follow the link, pick any password, and they're back in.</p>
+    <div class="account-tools-row">
+      <input type="email" id="resetEmailInput" class="account-tools-input" placeholder="their@email.com" autocomplete="off" inputmode="email">
+      <button class="submit-btn complete" id="resetEmailBtn" type="button">Send reset link</button>
+    </div>
+    <div class="account-tools-status" id="resetEmailStatus"></div>`;
+  el.appendChild(panel);
+
+  const input = panel.querySelector('#resetEmailInput');
+  const btn = panel.querySelector('#resetEmailBtn');
+  const status = panel.querySelector('#resetEmailStatus');
+  btn.onclick = async () => {
+    const email = input.value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+      status.className = 'account-tools-status err';
+      status.textContent = 'Enter a valid email address.';
+      return;
+    }
+    btn.disabled = true;
+    status.className = 'account-tools-status';
+    status.textContent = 'Sending…';
+    try{
+      await sendResetEmail(email);
+      status.className = 'account-tools-status ok';
+      status.textContent = `Reset link sent to ${email}. It can take a minute, and may land in spam.`;
+      input.value = '';
+    }catch(e){
+      status.className = 'account-tools-status err';
+      status.textContent = e && e.code === 'auth/user-not-found'
+        ? 'No account with that email.'
+        : 'Couldn’t send it — check the address and try again.';
+    }
+    btn.disabled = false;
+  };
 }
 
 

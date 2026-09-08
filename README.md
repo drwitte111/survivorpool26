@@ -60,9 +60,16 @@ and a first-time email creates its own account.
 
 An account made before this change still has its own password. The gate asks for
 it once, swaps it for the shared one (`retireOldPassword()`), and never asks
-again. Anyone who has genuinely forgotten theirs isn't stuck: an admin sets it to
-anything from the Firebase console (Authentication → Users → edit), they type
-that once, and it retires the same way.
+again. Anyone who has genuinely forgotten theirs isn't stuck: on the **League
+Admin** page, *Reset a member's login* emails them a Firebase reset link
+(`sendResetEmail()`) — they set any password, and it retires to the shared one on
+their next sign-in. (Setting it by hand from the Firebase console still works
+too.)
+
+The same page's roster has a **Remove** on each member: it deletes their roster
+row and their saved picks/profile (`removeMemberAccount()`), so they can sign
+back in with the same email and start clean. A static site can't delete the
+Firebase sign-in itself — that's why removal is paired with the reset link.
 
 This is deliberately not security. Anyone who knows a member's email can sign in
 as them, admins included. It's a football pool between friends and it holds
@@ -198,9 +205,11 @@ the admin-only spread and results editors and their week selector), and `dom.js`
 
 Admin is exactly two people — the emails in `js/core/roles.js` — and nothing in the
 app grants it. That client check is mirrored by `firestore.rules`, which is the real
-gate: it restricts `schedule/*` writes and league edits to those addresses. The
-rules file is only enforced once pasted into the Firebase console
-(Firestore → Rules → Publish); keep the two email lists identical.
+gate: it restricts `schedule/*` writes and league edits to those addresses, and lets
+an admin delete a `users/{uid}` doc (the *Remove* button). The rules file is only
+enforced once pasted into the Firebase console (Firestore → Rules → Publish); keep
+the two email lists identical. Until it's published, *Remove* still clears the
+roster row — only the picks/profile wipe is skipped.
 
 ## Working on this with someone else
 

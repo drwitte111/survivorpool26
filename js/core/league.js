@@ -368,6 +368,11 @@ export async function syncToLeague(){
     const payload = {
       teamName: store.state.account.teamName,
       yourName: store.state.account.yourName || '',
+      // Shown on the admin roster so an admin can identify and, if needed, reset
+      // or remove the right account. Anyone signed in can already read every
+      // member row, and knowing an email is enough to sign in as that person
+      // anyway, so this exposes nothing the login model didn't already.
+      email: (store.currentUser && store.currentUser.email) || null,
       weeklyPoints, total,
       tiebreakGuesses,
       submittedWeeks,
@@ -392,6 +397,32 @@ export async function syncToLeague(){
     // Guarded, because this scans every member and syncToLeague runs on save.
     if(cleanupNeeded()) await removeStaleMemberDocs(ref.id);
   }catch(e){ console.error('league sync failed', e); }
+}
+
+/**
+ * Admin-only: removes a member from the pool. Deletes their roster row and,
+ * where the rules allow it, their saved picks/profile at users/{uid} so a
+ * re-join starts clean.
+ *
+ * Their Firebase sign-in account is left alone -- a static app can't delete
+ * another person's auth user. Pair this with sendResetEmail() when the reason
+ * they're being removed is that they can't get in.
+ */
+export async function removeMemberAccount(memberKey, uid){
+  if(!isAdmin()) throw new Error('Admins only');
+  const slug = store.state.account.leagueSlug;
+  if(!slug) throw new Error('No active league');
+  await db.collection('leagues').doc(slug).collection('members').doc(memberKey).delete();
+  if(uid){
+    try{
+      await db.collection('users').doc(uid).delete();
+    }catch(e){
+      // firestore.rules may not grant admins delete on users/{uid} yet -- the
+      // roster removal still stands; their stored picks just linger until they
+      // overwrite them on a fresh join.
+      console.warn('could not delete user doc', e && e.message);
+    }
+  }
 }
 
 /**
