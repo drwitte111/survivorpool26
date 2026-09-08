@@ -2,7 +2,7 @@
 // the auth listener. Everything below is event wiring -- the actual work lives
 // in the core/ and ui/ modules.
 import { loadAppData } from './core/data.js';
-import { initFirebase, auth, resetPassword } from './core/firebase.js';
+import { initFirebase, auth, enterWithEmail, retireOldPassword } from './core/firebase.js';
 import { store, ui, peekWeek } from './core/state.js';
 import { applyTeamTheme } from './core/theme.js';
 import { saveState, onSaveStatus } from './core/persist.js';
@@ -230,108 +230,62 @@ function wireLeagueGate(){
   wireForm('joinLeagueBtn', 'joinLeagueNameInput', 'joinLeaguePasswordInput', 'joinLeagueError', joinLeague);
 }
 
-// ---------- Login / sign up ----------
+// ---------- Logging in ----------
+// There's no password: an email is the whole login (see enterWithEmail). The
+// only wrinkle is an account made back when this app had real passwords, which
+// asks for that password once so it can retire it.
 function friendlyAuthError(e){
   const code = e && e.code;
-  if(code === 'auth/email-already-in-use') return 'An account with that email already exists — try logging in instead.';
-  if(code === 'auth/invalid-email') return 'That doesn’t look like a valid email address.';
-  if(code === 'auth/weak-password') return 'Password should be at least 6 characters.';
-  if(code === 'auth/wrong-password' || code === 'auth/user-not-found' || code === 'auth/invalid-credential') return 'Incorrect email or password.';
-  return (e && e.message) ? e.message : 'Something went wrong — try again.';
+  if(code === 'auth/invalid-email') return 'That doesn\u2019t look like a valid email address.';
+  if(code === 'auth/wrong-password' || code === 'auth/invalid-credential'
+     || code === 'auth/invalid-login-credentials') return 'That password doesn\u2019t match \u2014 ask an admin to reset it for you.';
+  if(code === 'auth/too-many-requests') return 'Too many tries. Wait a minute and go again.';
+  if(code === 'auth/network-request-failed') return 'Couldn\u2019t reach the server \u2014 check your connection.';
+  return (e && e.message) ? e.message : 'Something went wrong \u2014 try again.';
 }
 
-// ---------- Forgot password ----------
-// Deliberately no verification step: enter the email, set a new password, done.
-// The reset itself happens server-side (netlify/functions/reset-password.mjs)
-// because the Firebase client SDK can only change a password for someone who
-// can already sign in, or by emailing a link to click.
-function showLoginCard(which){
-  $('loginCard').style.display = which === 'login' ? '' : 'none';
-  $('forgotCard').style.display = which === 'forgot' ? '' : 'none';
-}
-
-function wireForgotPassword(){
-  $('forgotPasswordBtn').onclick = () => {
-    // Carry over whatever they'd already typed, so the email isn't retyped.
-    $('forgotEmailInput').value = $('loginEmailInput').value.trim();
-    $('forgotPasswordInput').value = '';
-    $('forgotError').textContent = '';
-    $('loginError').textContent = '';
-    showLoginCard('forgot');
-    $('forgotEmailInput').focus();
-  };
-
-  $('backToLoginBtn').onclick = () => {
-    $('loginEmailInput').value = $('forgotEmailInput').value.trim() || $('loginEmailInput').value;
-    $('forgotError').textContent = '';
-    showLoginCard('login');
-  };
-
-  $('forgotForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = $('forgotEmailInput').value.trim();
-    const password = $('forgotPasswordInput').value;
-    const errorEl = $('forgotError');
-    const btn = $('forgotBtn');
-    errorEl.textContent = '';
-    if(!email || !password){
-      errorEl.textContent = 'Enter your email and a new password.';
-      return;
-    }
-    if(password.length < MIN_PASSWORD_LENGTH){
-      errorEl.textContent = 'Password should be at least ' + MIN_PASSWORD_LENGTH + ' characters.';
-      return;
-    }
-    const label = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-    try{
-      const result = await resetPassword(email, password);
-      if(!result.ok){ errorEl.textContent = result.error; return; }
-      // The password is already changed at this point, so a failure here is
-      // only a failed sign-in -- send them back to the form to type it in.
-      await auth.signInWithEmailAndPassword(email, password);
-      // onAuthStateChanged takes it from here.
-      $('forgotPasswordInput').value = '';
-      showLoginCard('login');
-    }catch(err){
-      errorEl.textContent = 'Password changed, but signing in failed: ' + friendlyAuthError(err);
-    }finally{
-      btn.disabled = false;
-      btn.textContent = label;
-    }
-  });
+function showMigrateStep(on){
+  $('migrateBlock').style.display = on ? '' : 'none';
+  if(!on) $('migratePasswordInput').value = '';
 }
 
 function wireAuth(){
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const isSignup = e.submitter && e.submitter.id === 'signupBtn';
     const email = $('loginEmailInput').value.trim();
-    const password = $('loginPasswordInput').value;
     const errorEl = $('loginError');
-    const btn = isSignup ? $('signupBtn') : $('loginBtn');
+    const btn = $('loginBtn');
+    const migrating = $('migrateBlock').style.display !== 'none';
     errorEl.textContent = '';
-    if(!email || !password){
-      errorEl.textContent = isSignup
-        ? 'Enter an email and password to create an account.'
-        : 'Enter your email and password.';
-      return;
-    }
+    if(!email){ errorEl.textContent = 'Enter your email.'; return; }
+
+    const label = btn.textContent;
     btn.disabled = true;
+    btn.textContent = 'Hold on\u2026';
     try{
-      if(isSignup) await auth.createUserWithEmailAndPassword(email, password);
-      else await auth.signInWithEmailAndPassword(email, password);
+      if(migrating){
+        const oldPassword = $('migratePasswordInput').value;
+        if(!oldPassword){ errorEl.textContent = 'Enter the password you used to use.'; return; }
+        await retireOldPassword(email, oldPassword);
+      }else{
+        const { needsOldPassword } = await enterWithEmail(email);
+        if(needsOldPassword){
+          showMigrateStep(true);
+          $('migratePasswordInput').focus();
+          return;
+        }
+      }
       // onAuthStateChanged picks up from here. A real <form> submit (rather than
       // a plain button click) is what lets the browser reliably offer to save
-      // these credentials and autofill them next visit.
+      // and autofill the address next visit.
+      showMigrateStep(false);
     }catch(err){
       errorEl.textContent = friendlyAuthError(err);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = label;
     }
-    btn.disabled = false;
   });
-
-  wireForgotPassword();
 
   $('logoutBtn').onclick = () => auth.signOut();
 
@@ -350,7 +304,7 @@ function wireAuth(){
       clearAuthPending();
     } else {
       store.currentUser = null;
-      showLoginCard('login');
+      showMigrateStep(false);
       $('loginGate').style.display = 'flex';
       $('leagueGate').style.display = 'none';
       hideProfileGate();

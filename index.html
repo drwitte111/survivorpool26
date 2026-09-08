@@ -66,44 +66,30 @@
 <div id="loginGate" class="league-gate">
   <div class="league-gate-stack">
     <div class="league-gate-eyebrow">🏈 Hungry Dawgs Run Faster</div>
-    <div class="league-gate-card" id="loginCard">
+    <div class="league-gate-card">
       <h1 class="league-gate-title">Log In</h1>
-      <p class="league-gate-sub">Your account, league, and picks follow you to any device once you're logged in.</p>
+      <p class="league-gate-sub">Just your email — there’s no password. Your league and picks follow you to any device.</p>
       <form id="loginForm" autocomplete="on">
-        <div class="field">
+        <div class="field" style="margin-bottom:0;">
           <label>Email</label>
           <input type="email" id="loginEmailInput" name="email" placeholder="you@example.com" autocomplete="username" required>
         </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>Password</label>
-          <input type="password" id="loginPasswordInput" name="password" placeholder="Password" autocomplete="current-password" required>
-        </div>
-        <div class="league-gate-error" id="loginError"></div>
-        <button class="submit-btn complete league-gate-btn" id="loginBtn" type="submit">Log In</button>
-        <div class="league-gate-divider"><span>new here?</span></div>
-        <button class="league-gate-btn secondary" id="signupBtn" type="submit">Create Account</button>
-        <button class="league-gate-link" id="forgotPasswordBtn" type="button">Forgot your password?</button>
-      </form>
-    </div>
 
-    <!-- Reset with no email link to click: give the address, pick a new
-         password, and app.js logs you straight back in. -->
-    <div class="league-gate-card" id="forgotCard" style="display:none;">
-      <h1 class="league-gate-title">Reset Password</h1>
-      <p class="league-gate-sub">Enter your email and choose a new password. We’ll log you straight in — no email to check.</p>
-      <form id="forgotForm" autocomplete="on">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="forgotEmailInput" name="email" placeholder="you@example.com" autocomplete="username" required>
+        <!-- Only ever shown to an account left over from when this app had real
+             passwords. Typing it once retires it; see retireOldPassword(). -->
+        <div id="migrateBlock" style="display:none;">
+          <div class="league-gate-divider"><span>just this once</span></div>
+          <p class="league-gate-sub">This account still has a password from the old login. Type it one last time and we’ll retire it.</p>
+          <div class="field" style="margin-bottom:0;">
+            <label>Old Password</label>
+            <input type="password" id="migratePasswordInput" name="password" placeholder="Your old password" autocomplete="current-password">
+          </div>
         </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>New Password</label>
-          <input type="password" id="forgotPasswordInput" name="new-password" placeholder="At least 6 characters" autocomplete="new-password" required>
-        </div>
-        <div class="league-gate-error" id="forgotError"></div>
-        <button class="submit-btn complete league-gate-btn" id="forgotBtn" type="submit">Set New Password</button>
-        <button class="league-gate-link" id="backToLoginBtn" type="button">Back to log in</button>
+
+        <div class="league-gate-error" id="loginError"></div>
+        <button class="submit-btn complete league-gate-btn" id="loginBtn" type="submit">Let Me In</button>
       </form>
+      <p class="league-gate-note">First time? Just enter your email — the account makes itself.</p>
     </div>
   </div>
 </div>

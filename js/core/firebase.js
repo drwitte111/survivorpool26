@@ -53,31 +53,68 @@ export function saveUserState(uid, stateObj){
   return db.collection('users').doc(uid).set(stateObj);
 }
 
+// ---------- Signing in with nothing but an email ----------
+//
+// There is no password on this pool. You type your email and you're in.
+//
+// Firebase Auth always needs a credential, so every account carries the same
+// one and the app supplies it -- nobody types it, nobody remembers it, nobody
+// can forget it. It sits here in the open on purpose: publishing it changes
+// nothing, because the app would hand it over to anyone who asked anyway.
+//
+// This is not security and is not meant to be. Anyone who knows a member's
+// email address can sign in as them. That is the deal for a pool that holds
+// nothing but football picks, and it is why the league password (a separate
+// thing, in Firestore) is still what keeps a group's board tidy.
+const SHARED_PASSWORD = 'NFL2026';
+
+// Sign-in failures that all mean "that email + our shared password didn't
+// work". Which one comes back depends on whether the project has email
+// enumeration protection switched on, so don't rely on telling them apart --
+// createUserWithEmailAndPassword below settles whether the account exists.
+const SIGN_IN_MISSES = [
+  'auth/invalid-credential',
+  'auth/invalid-login-credentials',
+  'auth/wrong-password',
+  'auth/user-not-found',
+];
+
 /**
- * Sets a new password for an account, with no email link to click.
+ * Gets someone in from an email alone, creating the account if it's their
+ * first time.
  *
- * The Firebase client SDK can't do this -- changing a password needs either the
- * old one or a signed-in session, and its only other route is an emailed reset
- * link. So this posts to the Netlify Function in netlify/functions, which holds
- * the privileged credentials and does it through Firebase's admin API.
- *
- * Resolves to { ok } or { ok: false, error } -- never throws, so the gate can
- * just print the message.
+ * Returns { needsOldPassword: true } for an account left over from when this
+ * app had real passwords -- the shared credential won't open it until it has
+ * been retired by retireOldPassword below. Anything genuinely wrong (a bad
+ * address, no connection) throws, so the gate can report it.
  */
-export async function resetPassword(email, newPassword){
+export async function enterWithEmail(email){
   try{
-    const res = await fetch('/.netlify/functions/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: newPassword })
-    });
-    const data = await res.json().catch(() => ({}));
-    if(!res.ok || !data.ok){
-      return { ok: false, error: data.error || 'Couldn’t reset the password — try again.' };
-    }
-    return { ok: true };
+    await auth.signInWithEmailAndPassword(email, SHARED_PASSWORD);
+    return { needsOldPassword: false };
   }catch(e){
-    console.error('resetPassword failed', e);
-    return { ok: false, error: 'Couldn’t reach the server — check your connection and try again.' };
+    if(!SIGN_IN_MISSES.includes(e.code)) throw e;
   }
+  try{
+    await auth.createUserWithEmailAndPassword(email, SHARED_PASSWORD);
+    return { needsOldPassword: false };
+  }catch(e){
+    // The account is real, it just still has its own password.
+    if(e.code === 'auth/email-already-in-use') return { needsOldPassword: true };
+    throw e;
+  }
+}
+
+/**
+ * One-time migration for an account created under the old email + password
+ * login: sign in with the password they still remember, then swap it for the
+ * shared one so they never see this again.
+ *
+ * Someone who has genuinely forgotten it isn't stuck -- an admin sets theirs to
+ * anything from the Firebase console (Authentication -> Users), they type that
+ * once, and it's retired the same way.
+ */
+export async function retireOldPassword(email, oldPassword){
+  const credential = await auth.signInWithEmailAndPassword(email, oldPassword);
+  await credential.user.updatePassword(SHARED_PASSWORD);
 }

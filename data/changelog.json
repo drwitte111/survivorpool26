@@ -27,9 +27,9 @@
   ],
   "entries": [
     {
-      "at": "2026-09-08T12:45:00Z",
-      "title": "Forgot your password? Reset it right on the login screen",
-      "detail": "The login gate now has a \u201cForgot your password?\u201d link. Enter your email, type a new password, and you\u2019re logged straight back in \u2014 no email to check and no code to type. Deliberately no verification: it\u2019s a friend group, not a bank.",
+      "at": "2026-09-08T13:30:00Z",
+      "title": "No more passwords \u2014 just type your email",
+      "detail": "Logging in is one field now. Enter your email and you\u2019re in; a new email makes its own account. Nothing to remember means nothing to forget, so the reset link that briefly appeared here is gone. If your account predates this, it asks for your old password one last time and then retires it \u2014 forgotten it? An admin can set it to anything from the Firebase console and you type that once. Worth saying plainly: anyone who knows your email can now log in as you. It\u2019s a football pool between friends.",
       "by": "Claude",
       "tags": [
         "feature"

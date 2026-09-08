@@ -24,8 +24,6 @@ js/
   ui/                 Rendering. One module per page/panel.
 manifest.webmanifest  Makes it installable to a home screen.
 sw.js                 Service worker: offline support and instant loads.
-netlify/functions/    The only server-side code: reset-password.mjs, which sets
-                      a new password without an emailed link. No npm packages.
 ```
 
 `index.html` loads `js/app.js` as an ES module; everything else is reached through
@@ -53,31 +51,23 @@ This is a per-device convenience, not a security boundary: anyone who picks up a
 unlocked phone with the app installed is already signed in. That is the normal
 trade for a home-screen app, but it's why the pool holds nothing sensitive.
 
-### Forgotten passwords
+### There is no password
 
-The login gate has a **Forgot your password?** link: enter the email, type a new
-password, and you're logged straight in. No emailed link, no code to type.
+You log in with an email address and nothing else. Firebase Auth needs *some*
+credential, so every account carries the same one and `js/core/firebase.js`
+supplies it — see `enterWithEmail()`. Nobody types it, so nobody can forget it,
+and a first-time email creates its own account.
 
-Firebase's client SDK can't do that — it can only change a password for someone
-already signed in, or email a reset link — so the actual change runs server-side
-in `netlify/functions/reset-password.mjs`. It signs its own service-account JWT
-with node's built-in `crypto` and calls Google's Identity Toolkit admin API, so
-there is still nothing to `npm install`.
+An account made before this change still has its own password. The gate asks for
+it once, swaps it for the shared one (`retireOldPassword()`), and never asks
+again. Anyone who has genuinely forgotten theirs isn't stuck: an admin sets it to
+anything from the Firebase console (Authentication → Users → edit), they type
+that once, and it retires the same way.
 
-**It needs one environment variable, set once in Netlify** (Site configuration →
-Environment variables):
-
-```
-FIREBASE_SERVICE_ACCOUNT = <the whole service-account JSON, pasted as one value>
-```
-
-Get it from the Firebase console → Project settings → Service accounts →
-*Generate new private key*. Without it the reset form returns
-"FIREBASE_SERVICE_ACCOUNT is not set on this site" and nothing else breaks.
-
-The endpoint has no verification at all by design: anyone who knows a member's
-email address can set that account's password. That's the trade this pool asked
-for, and it's another reason nothing sensitive lives in here.
+This is deliberately not security. Anyone who knows a member's email can sign in
+as them, admins included. It's a football pool between friends and it holds
+nothing worth taking — which is the same reason the league password below is a
+plaintext field.
 
 ### Offline
 
@@ -229,7 +219,6 @@ from the filesystem won't work, because ES modules and `fetch` need a real origi
 ## A note on the league password
 
 The league password is a shared secret checked in the client, not real access control.
-It's enough to keep a friend group's pool tidy; it is not security. Firebase Auth
-(email + password) is what actually gates accounts — though the password reset
-above is deliberately open, so treat account access the same way: a convenience
-between friends, not a boundary.
+It's enough to keep a friend group's pool tidy; it is not security. Neither is
+the email-only login above. Nothing here is a boundary — it's all convenience
+between people who know each other.
