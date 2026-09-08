@@ -39,6 +39,16 @@
   font-size: 14px; padding: 13px 30px; border-radius: 8px; cursor:pointer;
 }
 .league-gate-btn.secondary:hover{ border-color: var(--amber); color: var(--amber); }
+/* A plain text link inside a gate card -- "Forgot your password?" and the way
+   back. A <button> rather than an <a> so it can't be mistaken for navigation
+   and doesn't submit the form it sits in. */
+.league-gate-link{
+  display:block; width:100%; margin-top: 14px; padding: 0;
+  background: none; border: none; cursor: pointer;
+  font-family:'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.5px;
+  color: var(--chalk-dim); text-align:center; text-decoration: underline;
+}
+.league-gate-link:hover{ color: var(--amber); }
 .league-gate-divider{
   display:flex; align-items:center; text-align:center; margin: 18px 0;
   color: var(--chalk-dim); font-family:'JetBrains Mono', monospace; font-size: 11px; text-transform:uppercase;

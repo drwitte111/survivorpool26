@@ -2,7 +2,7 @@
 // the auth listener. Everything below is event wiring -- the actual work lives
 // in the core/ and ui/ modules.
 import { loadAppData } from './core/data.js';
-import { initFirebase, auth } from './core/firebase.js';
+import { initFirebase, auth, resetPassword } from './core/firebase.js';
 import { store, ui, peekWeek } from './core/state.js';
 import { applyTeamTheme } from './core/theme.js';
 import { saveState, onSaveStatus } from './core/persist.js';
@@ -25,6 +25,7 @@ const $ = (id) => document.getElementById(id);
 const RANK_REFRESH_MS = 60000;
 const RESULTS_POLL_MS = 30000;
 const AUTH_SPLASH_TIMEOUT_MS = 8000;
+const MIN_PASSWORD_LENGTH = 6;  // Firebase's own minimum.
 
 // ---------- Dropdown panels (week picker + account menu) ----------
 // Both behave the same way: opening one closes the other, an outside click
@@ -239,6 +240,69 @@ function friendlyAuthError(e){
   return (e && e.message) ? e.message : 'Something went wrong — try again.';
 }
 
+// ---------- Forgot password ----------
+// Deliberately no verification step: enter the email, set a new password, done.
+// The reset itself happens server-side (netlify/functions/reset-password.mjs)
+// because the Firebase client SDK can only change a password for someone who
+// can already sign in, or by emailing a link to click.
+function showLoginCard(which){
+  $('loginCard').style.display = which === 'login' ? '' : 'none';
+  $('forgotCard').style.display = which === 'forgot' ? '' : 'none';
+}
+
+function wireForgotPassword(){
+  $('forgotPasswordBtn').onclick = () => {
+    // Carry over whatever they'd already typed, so the email isn't retyped.
+    $('forgotEmailInput').value = $('loginEmailInput').value.trim();
+    $('forgotPasswordInput').value = '';
+    $('forgotError').textContent = '';
+    $('loginError').textContent = '';
+    showLoginCard('forgot');
+    $('forgotEmailInput').focus();
+  };
+
+  $('backToLoginBtn').onclick = () => {
+    $('loginEmailInput').value = $('forgotEmailInput').value.trim() || $('loginEmailInput').value;
+    $('forgotError').textContent = '';
+    showLoginCard('login');
+  };
+
+  $('forgotForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('forgotEmailInput').value.trim();
+    const password = $('forgotPasswordInput').value;
+    const errorEl = $('forgotError');
+    const btn = $('forgotBtn');
+    errorEl.textContent = '';
+    if(!email || !password){
+      errorEl.textContent = 'Enter your email and a new password.';
+      return;
+    }
+    if(password.length < MIN_PASSWORD_LENGTH){
+      errorEl.textContent = 'Password should be at least ' + MIN_PASSWORD_LENGTH + ' characters.';
+      return;
+    }
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try{
+      const result = await resetPassword(email, password);
+      if(!result.ok){ errorEl.textContent = result.error; return; }
+      // The password is already changed at this point, so a failure here is
+      // only a failed sign-in -- send them back to the form to type it in.
+      await auth.signInWithEmailAndPassword(email, password);
+      // onAuthStateChanged takes it from here.
+      $('forgotPasswordInput').value = '';
+      showLoginCard('login');
+    }catch(err){
+      errorEl.textContent = 'Password changed, but signing in failed: ' + friendlyAuthError(err);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  });
+}
+
 function wireAuth(){
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -267,6 +331,8 @@ function wireAuth(){
     btn.disabled = false;
   });
 
+  wireForgotPassword();
+
   $('logoutBtn').onclick = () => auth.signOut();
 
   // Drop the splash once we know whether there's a saved session. Belt-and-braces
@@ -284,6 +350,7 @@ function wireAuth(){
       clearAuthPending();
     } else {
       store.currentUser = null;
+      showLoginCard('login');
       $('loginGate').style.display = 'flex';
       $('leagueGate').style.display = 'none';
       hideProfileGate();

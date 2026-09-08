@@ -4,6 +4,12 @@
   publish = "."
   command = "node tools/stamp-build.mjs"
 
+# The one bit of server-side code: the no-email password reset. It has no npm
+# dependencies -- node's own crypto and fetch are enough -- so there is still
+# nothing to install.
+[functions]
+  directory = "netlify/functions"
+
 # Deploy Previews: every pull request gets its own URL, so a change can be
 # looked at running for real before it reaches the live site.
 [context.deploy-preview]

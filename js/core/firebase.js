@@ -52,3 +52,32 @@ export async function loadUserState(uid){
 export function saveUserState(uid, stateObj){
   return db.collection('users').doc(uid).set(stateObj);
 }
+
+/**
+ * Sets a new password for an account, with no email link to click.
+ *
+ * The Firebase client SDK can't do this -- changing a password needs either the
+ * old one or a signed-in session, and its only other route is an emailed reset
+ * link. So this posts to the Netlify Function in netlify/functions, which holds
+ * the privileged credentials and does it through Firebase's admin API.
+ *
+ * Resolves to { ok } or { ok: false, error } -- never throws, so the gate can
+ * just print the message.
+ */
+export async function resetPassword(email, newPassword){
+  try{
+    const res = await fetch('/.netlify/functions/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: newPassword })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok || !data.ok){
+      return { ok: false, error: data.error || 'Couldn’t reset the password — try again.' };
+    }
+    return { ok: true };
+  }catch(e){
+    console.error('resetPassword failed', e);
+    return { ok: false, error: 'Couldn’t reach the server — check your connection and try again.' };
+  }
+}
