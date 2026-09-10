@@ -210,6 +210,33 @@ One scoreboard request covers every game in a week, so the poll is a single call
 It skips backgrounded tabs, and only re-renders and saves when something actually
 changed.
 
+### When a pick reaches the league
+
+`syncToLeague` writes a pick to the member row **as soon as it's made**, and each
+one carries `lockAt` — the moment its game closes for edits.
+
+It used to hold picks back until kickoff. That looked private but broke the grid:
+a pick only ever reached Firestore if that member's own device opened the app
+again *after* kickoff, so anyone who picked early and didn't come back showed up
+on Group Picks as having skipped the week. Nothing writes on their behalf, so
+there was no way for the board to recover it.
+
+Hiding is now the reader's job, and it fails closed:
+
+* Confidence — the cell consults the row only when `isGameLocked(game)`. No
+  kickoff time means not locked, so it stays hidden.
+* Survivor — `visibleLock()` compares `lockAt` against now. Missing or
+  unparseable is treated as not yet. An entry with no `lockAt` key at all
+  predates the field and was only ever written post-kickoff.
+
+**This is a curtain, not a lock.** Anyone signed in can read the member documents
+directly, so an unkicked pick is technically reachable. That matches the rest of
+the app — the sign-in password is in `firebase.js`, so anyone with a member's
+email can sign in as them regardless. To seal it properly, gate the read in
+`firestore.rules` on `request.time >= resource.data.lockAt`, which is what the
+field is there for. It needs the picks split one document per game, since rules
+allow or deny whole documents, not fields.
+
 ## Modules
 
 **core/**

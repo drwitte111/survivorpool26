@@ -14,7 +14,7 @@ import { withTimeout } from './net.js';
 import { store, getWeek, peekWeek } from './state.js';
 import { saveState } from './persist.js';
 import { TOTAL_WEEKS } from './data.js';
-import { isGameLocked, isSuperBowlPickLocked } from './locks.js';
+import { isGameLocked, isSuperBowlPickLocked, gameLockTime } from './locks.js';
 import { weekScore, spreadForPick } from './scoring.js';
 import { getSurvivorStatus } from './survivor.js';
 import { teamAbbrEquals, getTeamAbbr } from './teams.js';
@@ -334,17 +334,25 @@ export async function syncToLeague(){
     }
     // Everyone's picks, for the group picks grid.
     //
-    // A pick is only written once its own game has kicked off. This is the
-    // privacy rule, and it has to live here rather than in the UI: the Firebase
-    // config ships in the page, so anything written to Firestore is readable by
-    // anyone signed in. Not writing it is the only way it's genuinely hidden.
+    // Written as soon as a pick is made, not at kickoff. Holding them back
+    // meant a pick only ever reached the league if that member happened to open
+    // the app again after the game locked -- pick on Tuesday, don't come back,
+    // and the board showed you as having skipped the week.
+    //
+    // Each pick carries the moment it opens up (`lockAt`), and the grid draws
+    // nobody else's until that passes. Be honest about what that is: it's the
+    // UI declining to show it, not the server refusing to hand it over. Anyone
+    // signed in can read this document directly. That's the same footing as the
+    // rest of the app -- the sign-in password ships in the page (firebase.js),
+    // so anyone with a member's email can already sign in as them -- but if
+    // these ever need sealing properly, the fix is a Firestore rule comparing
+    // request.time against lockAt, which is why the field is written now.
     const picks = {};
     for(let n = 1; n <= TOTAL_WEEKS; n++){
       const week = peekWeek(n);
       if(!week.games.length) continue;
       const weekPicks = {};
       week.games.forEach(g => {
-        if(!isGameLocked(g)) return;         // still in play -- stays private
         if(!g.pick && g.confidence == null) return;
         // `s` is the line this pick was locked at. It has to travel with the
         // pick: take a team at -3 and someone else takes it at -3.5 an hour
@@ -354,26 +362,30 @@ export async function syncToLeague(){
           p: g.pick || null,
           c: g.confidence ?? null,
           s: spreadForPick(g),
+          // When this pick becomes everyone's business. Null -- no kickoff time
+          // set yet -- reads as "not yet", so the grid fails closed.
+          lockAt: gameLockTime(g) ? gameLockTime(g).toISOString() : null,
         };
       });
       if(Object.keys(weekPicks).length) picks[n] = weekPicks;
     }
 
-    // Survivor picks per week, for the grid's Survivor view. Same privacy rule
-    // as the confidence picks: a lock is only published once the team it's on
-    // has actually kicked off.
+    // Survivor picks per week, for the grid's Survivor view. Written on the
+    // same terms as the confidence picks above, and carrying the same lockAt so
+    // the grid can hold each one back until its team has kicked off.
     const locks = {};
     for(let n = 1; n <= TOTAL_WEEKS; n++){
       const w = peekWeek(n);
       if(!w.lockTeam || !w.games.length) continue;
       const lockGame = w.games.find(g =>
         teamAbbrEquals(g.away, w.lockTeam) || teamAbbrEquals(g.home, w.lockTeam));
-      if(!lockGame || !isGameLocked(lockGame)) continue;
+      if(!lockGame) continue;
       const side = teamAbbrEquals(lockGame.away, w.lockTeam) ? 'away' : 'home';
       locks[n] = {
         team: w.lockTeam,
         // null while the game is in progress; 'win' or 'loss' once graded.
         result: lockGame.actualWinner ? (lockGame.actualWinner === side ? 'win' : 'loss') : null,
+        lockAt: gameLockTime(lockGame) ? gameLockTime(lockGame).toISOString() : null,
       };
     }
 

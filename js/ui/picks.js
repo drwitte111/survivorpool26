@@ -5,14 +5,17 @@
 // top. Once a game is graded the logo picks up a green ring for a correct pick
 // or a red one for a wrong one.
 //
-// Privacy: another member's pick for a game that hasn't kicked off is not hidden
-// here, it genuinely isn't available -- core/league.js only writes a pick to
-// Firestore once that game has locked. Your own picks come from local state, so
-// you can always see your own full column.
+// Privacy: picks are published as they're made, so an unkicked game's picks ARE
+// in Firestore and this file is what keeps them off the screen -- the `locked`
+// check on each cell, and visibleLock() for Survivor. Both fail closed. This is
+// a curtain, not a lock: anyone signed in can read the member documents
+// directly. See the note in core/league.js for why that's the deal here, and
+// what a real seal would take. Your own picks come from local state, so you can
+// always see your own full column.
 import { store, peekWeek, getWeek } from '../core/state.js';
 import { TOTAL_WEEKS } from '../core/data.js';
 import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
-import { isGameLocked, gameLockTime } from '../core/locks.js';
+import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
 import { gradedWinner, spreadForPick, sharedSpread } from '../core/scoring.js';
@@ -110,9 +113,9 @@ export async function renderPicksPage(){
   // Members whose row is older than a game that has already kicked off. Their
   // cell is blank because nothing has been published for them, which is not the
   // same claim as "they didn't pick" -- see staleFor() below.
-  // Keyed by name -> true when their row says they submitted this week, which
-  // turns "probably hasn't synced" into "definitely has picks we can't see".
-  const unsynced = new Map();
+  // Members whose row says they submitted this week but carries no picks for
+  // it, so their blanks are "we can't see it", not "they didn't pick".
+  const unsynced = new Set();
 
   const table = document.createElement('table');
   table.className = 'picks-table';
@@ -161,22 +164,21 @@ export async function renderPicksPage(){
       td.className = 'picks-cell';
       const isMe = (myUid && m.uid === myUid) || m.teamName === me;
 
-      // Yours comes from local state so it's visible immediately; everyone
-      // else's only exists in Firestore once the game has locked.
+      // Yours comes from local state so it's visible immediately. Everyone
+      // else's is in Firestore from the moment they pick, so THIS is the gate
+      // that keeps an open game's picks out of sight -- `locked` first, before
+      // the row is even consulted, so a game with no kickoff time set stays
+      // hidden rather than falling open.
       const entry = isMe
         ? (game.pick || game.confidence != null
             ? { p: game.pick, c: game.confidence, s: spreadForPick(game) }
             : null)
-        : ((m.picks && m.picks[picksWeek]) ? m.picks[picksWeek][key] : null);
+        : (locked && m.picks && m.picks[picksWeek] ? m.picks[picksWeek][key] : null);
 
       if(!entry || !entry.p){
-        const stale = staleFor(m, game, isMe, locked);
-        if(stale){
-          const submitted = (m.submittedWeeks || []).includes(picksWeek);
-          unsynced.set(m.teamName || m.uid, submitted);
-        }
-        td.appendChild(placeholder(locked, isMe, stale,
-          (m.submittedWeeks || []).includes(picksWeek)));
+        const stale = staleFor(m, isMe, locked);
+        if(stale) unsynced.add(m.teamName || m.uid);
+        td.appendChild(placeholder(locked, isMe, stale));
       } else {
         td.appendChild(pickChip(game, entry, isMe));
       }
@@ -196,30 +198,18 @@ export async function renderPicksPage(){
     : `${lockedCount} of ${week.games.length} games have kicked off. Everyone else’s picks appear as each game starts; your own are always shown.`;
   grid.appendChild(note);
 
-  // A blank column reads as "they didn't play". Usually it means their device
-  // hasn't been near the app since kickoff, so say which it is.
+  // Picks publish on submit now, so this only fires for a member whose row has
+  // nothing for a week they say they submitted -- in practice an older build,
+  // which held every pick back until kickoff.
   if(unsynced.size){
     const warn = document.createElement('p');
     warn.className = 'picks-note picks-note-warn';
-    const submitted = [...unsynced].filter(([, sub]) => sub).map(([name]) => name);
-    const quiet = [...unsynced].filter(([, sub]) => !sub).map(([name]) => name);
-    const list = (names) => names.map(escapeHtml).join(', ');
-    const parts = [];
-    // Their roster row records the weeks they submitted, and that field is
-    // published whether or not a game has locked. So for these we don't have to
-    // hedge: the picks exist, they just haven't been shared with the league.
-    if(submitted.length){
-      parts.push(`<b>${list(submitted)}</b> ${submitted.length === 1 ? 'has' : 'have'} `
-        + `submitted a Week ${picksWeek} lineup, so ${submitted.length === 1 ? 'those picks exist' : 'their picks exist'} `
-        + `— they just haven’t reached the league yet.`);
-    }
-    if(quiet.length){
-      parts.push(`<b>${list(quiet)}</b> ${quiet.length === 1 ? 'has' : 'have'} not submitted `
-        + `a lineup for this week, so ${quiet.length === 1 ? 'they' : 'they'} may not have picked at all.`);
-    }
-    warn.innerHTML = '⚠ ' + parts.join(' ')
-      + ` A pick is only published once that member’s own device opens the board`
-      + ` after kickoff, so a blank cell above means <b>not synced</b> rather than "no pick".`;
+    const who = [...unsynced].map(escapeHtml).join(', ');
+    const one = unsynced.size === 1;
+    warn.innerHTML = `⚠ <b>${who}</b> ${one ? 'has' : 'have'} submitted a Week ${picksWeek} `
+      + `lineup, but nothing has reached the league for ${one ? 'them' : 'them'} — so those `
+      + `blanks mean <b>not synced</b>, not "no pick". This clears itself the next time `
+      + `${one ? 'they open' : 'they open'} the board on the current version.`;
     grid.appendChild(warn);
   }
 
@@ -236,25 +226,25 @@ function statusText(game){
 }
 
 /**
- * True when this member's row physically cannot contain a pick for this game.
+ * True when this member's row can't be trusted to say they skipped this game.
  *
- * A pick only reaches Firestore when that member's OWN device runs
- * syncToLeague after the game locked (core/league.js) -- the pool never writes
- * it on their behalf, because not writing it is the only real way to keep an
- * open pick private. So a row last written before kickoff is silent about this
- * game whether they picked it or not, and calling that "No pick" is a guess
- * dressed up as a fact.
+ * Picks now publish the moment they're made, so a row that carries ANY pick for
+ * this week is a complete account of it: a gap in it is a real gap, and drawing
+ * that as "no pick" is honest.
+ *
+ * The row carrying nothing at all for a week they submitted is the case that
+ * isn't -- almost always a member still on an older build, which held every
+ * pick back until its game kicked off. Their picks exist and this board can't
+ * see them, so it must not claim otherwise.
  */
-function staleFor(m, game, isMe, locked){
+function staleFor(m, isMe, locked){
   if(isMe || !locked) return false;
-  const lockAt = gameLockTime(game);
-  if(!lockAt) return false;
-  const synced = m.updatedAt ? new Date(m.updatedAt) : null;
-  if(synced && !isNaN(synced.getTime())) return synced < lockAt;
-  return true;                                  // never synced at all
+  const wk = m.picks && m.picks[picksWeek];
+  if(wk && Object.keys(wk).length) return false;
+  return (m.submittedWeeks || []).includes(picksWeek);
 }
 
-function placeholder(locked, isMe, stale, submitted){
+function placeholder(locked, isMe, stale){
   const el = document.createElement('div');
   el.className = 'pick-empty' + (stale ? ' unsynced' : '');
   if(!locked && !isMe){
@@ -264,11 +254,8 @@ function placeholder(locked, isMe, stale, submitted){
   }
   if(stale){
     el.textContent = '⋯';
-    el.title = submitted
-      ? 'They submitted a lineup for this week, so this pick exists — it just hasn’t '
-        + 'been published. The league only sees it once their own device opens the board after kickoff.'
-      : 'Not published yet — this member hasn’t opened the app since kickoff, and hasn’t '
-        + 'submitted a lineup for this week either.';
+    el.title = 'They submitted a lineup for this week, so this pick exists — nothing has '
+      + 'reached the league for it yet. Clears once they open the board on the current version.';
     return el;
   }
   // Their row is newer than kickoff and still has nothing here, so this one is
@@ -350,7 +337,7 @@ function renderSurvivorGrid(grid, members, me, myUid){
   const weeks = [];
   for(let n = 1; n <= TOTAL_WEEKS; n++){
     const mine = peekWeek(n).lockTeam;
-    const theirs = members.some(m => m.locks && m.locks[n]);
+    const theirs = members.some(m => visibleLock(m.locks && m.locks[n]));
     if(mine || theirs) weeks.push(n);
   }
 
@@ -401,7 +388,10 @@ function renderSurvivorGrid(grid, members, me, myUid){
     members.forEach(m => {
       const td = document.createElement('td');
       td.className = 'picks-cell';
-      const entry = isMine(m) ? myLockFor(n) : ((m.locks && m.locks[n]) || null);
+      // Locks publish when they're set, not at kickoff, so this is the gate
+      // that keeps them out of sight. A missing lockAt is an entry from before
+      // that field existed, which was only ever written post-kickoff anyway.
+      const entry = isMine(m) ? myLockFor(n) : visibleLock(m.locks && m.locks[n]);
 
       if(!entry || !entry.team){
         const empty = document.createElement('div');
@@ -422,6 +412,19 @@ function renderSurvivorGrid(grid, members, me, myUid){
   scroller.className = 'picks-scroll';
   scroller.appendChild(table);
   grid.appendChild(scroller);
+}
+
+/**
+ * Somebody else's lock, or null while the team it's on hasn't kicked off yet.
+ * A lockAt that won't parse counts as not yet -- fail closed, never leak.
+ */
+function visibleLock(entry){
+  if(!entry) return null;
+  if(entry.lockAt === undefined) return entry;   // written before lockAt existed
+  if(!entry.lockAt) return null;                 // no kickoff time known
+  const at = new Date(entry.lockAt);
+  if(isNaN(at.getTime())) return null;
+  return new Date() >= at ? entry : null;
 }
 
 /** Your own lock for a week, straight from local state so it's always visible. */
