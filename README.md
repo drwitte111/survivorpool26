@@ -163,13 +163,30 @@ uses — on load, on switching weeks, and on the 30s poll — and it always runs
 same order:
 
 1. **ESPN** (`syncWeekScores`) fills in `liveAway` / `liveHome` / `gameState` and
-   grades any completed game by setting `actualWinner`.
+   marks any completed game final by setting `actualWinner`.
 2. **Firestore** (`ensureSpreadsLoaded`) runs second, so a result an admin fixed by
-   hand in the Results editor overwrites whatever ESPN said.
+   hand in the Results editor overwrites whatever ESPN said. Published results
+   carry the final score as well as the winner, so every device grades off the
+   same numbers even if its own ESPN call failed.
 
 That ordering is the whole point: ESPN handles the routine case unattended, and a
 human still has the last word. Ties stay ungraded (`actualWinner: null`), which is
 already how the board treats "nobody picked this correctly".
+
+### Against the spread, not straight up
+
+`actualWinner` is the **straight-up** winner and only ever means "this game is
+over". Confidence picks are graded by `gradedWinner(game)` in `core/scoring.js`,
+which applies the line the pick was made on (`spreadForPick`: `pickedSpread`,
+then `closingSpread`, then the current `homeSpread`):
+
+* Seattle laying 3.5 and winning by 3 grades as a **loss** for Seattle backers.
+* An exact tie against the number is a `'push'` — graded, correct for nobody.
+* No published line, or no final score, falls back to the straight-up winner,
+  so a pool running without spreads behaves as it always did.
+
+Survivor locks are the deliberate exception: they're straight up by design and
+keep reading `actualWinner` directly (`core/survivor.js`).
 
 One scoreboard request covers every game in a week, so the poll is a single call.
 It skips backgrounded tabs, and only re-renders and saves when something actually

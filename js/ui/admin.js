@@ -615,6 +615,11 @@ export function renderResultsEditor(panel, weekNum){
         const target = rows.find(x => x.game.away === r.away && x.game.home === r.home);
         if(!target) return;
 
+        // Keep the score on the game too, not just on screen: it's what
+        // gets published with the result and what grades the spread.
+        if(r.awayScore != null) target.game.liveAway = r.awayScore;
+        if(r.homeScore != null) target.game.liveHome = r.homeScore;
+
         // Show the score in the row whether or not the game is over yet.
         const label = target.row.querySelector('.spread-edit-matchup');
         let scoreEl = label.querySelector('.results-score');
@@ -663,7 +668,11 @@ export function renderResultsEditor(panel, weekNum){
     const resultsArr = rows.map(r => ({
       away: r.game.away,
       home: r.game.home,
-      actualWinner: r.getSelected()
+      actualWinner: r.getSelected(),
+      // Published alongside the winner because picks are graded against the
+      // spread, which needs the margin and not just who won.
+      awayScore: r.game.liveAway != null ? r.game.liveAway : null,
+      homeScore: r.game.liveHome != null ? r.game.liveHome : null
     }));
     const mnfInput = wrap.querySelector('.re-mnf-score');
     const mnfScore = mnfInput && mnfInput.value.trim() !== '' ? parseInt(mnfInput.value, 10) : null;

@@ -11,6 +11,7 @@ import {
 import {
   maxPointsFor, weekScore, seasonScore, assignConfidence, canShiftTo, shiftCount,
   getMvpPick, isPerfectWeek, computeHotStreak,
+  spreadForPick, coverStatus, gradedWinner, isPickCorrect,
 } from '../core/scoring.js';
 import {
   getLockStatusForWeek, getUsedLockTeams, getSurvivorStatus,
@@ -33,26 +34,9 @@ export function lineMoved(game){
     && game.pickedSpread !== game.homeSpread;
 }
 
-/**
- * The spread this pick is judged against: the line showing when it was made.
- * Falls back to what the game closed at, then to the current number, so picks
- * from before this was recorded still work.
- */
-export function spreadForPick(game){
-  return game.pickedSpread ?? game.closingSpread ?? game.homeSpread ?? null;
-}
-
-export function coverStatus(game, side){
-  const spread = spreadForPick(game);
-  if(spread == null) return null;
-  if(game.liveAway == null || game.liveHome == null || isNaN(game.liveAway) || isNaN(game.liveHome)) return null;
-  const margin = side === 'home' ? (game.liveHome - game.liveAway) : (game.liveAway - game.liveHome);
-  const spreadForSide = side === 'home' ? spread : -spread;
-  const value = margin + spreadForSide;
-  if(value > 0) return 'cover';
-  if(value < 0) return 'no-cover';
-  return 'push';
-}
+// Both live in core/scoring.js now, next to the grading that uses them.
+// Re-exported here because this is where the picks page has always found them.
+export { spreadForPick, coverStatus };
 
 export function teamButtonRow(game, mode, locked){
   // Two stacked team rows with the spread right-aligned, the way a sportsbook
@@ -77,8 +61,10 @@ export function teamButtonRow(game, mode, locked){
       const cover = coverStatus(game, side);
       if(cover) cls += ' ' + cover;
     }
-    if(mode === 'pick' && game.actualWinner){
-      cls += (game.actualWinner === side) ? ' result-win' : ' result-loss';
+    // Green or red against the spread, so the row agrees with the score.
+    const graded = gradedWinner(game);
+    if(mode === 'pick' && graded){
+      cls += (graded === side) ? ' result-win' : ' result-loss';
     }
     btn.className = cls;
 
@@ -604,11 +590,12 @@ export function renderGames(){
   sortedGames(week).forEach(game => {
     const row = document.createElement('div');
     row.className = 'game-row';
+    const graded = gradedWinner(game);
     let gradedClass = '';
-    if(game.actualWinner && game.pick){
-      gradedClass = game.pick === game.actualWinner ? 'correct' : 'incorrect';
+    if(graded && game.pick){
+      gradedClass = isPickCorrect(game) ? 'correct' : 'incorrect';
     }
-    row.className = 'game-row' + (game.actualWinner ? ' graded ' + gradedClass : '');
+    row.className = 'game-row' + (graded ? ' graded ' + gradedClass : '');
 
     // Each matchup closes at its own kickoff, independent of the rest of the slate.
     const gameLocked = notOpenYet || isGameLocked(game);

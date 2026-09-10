@@ -15,6 +15,7 @@ import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
 import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
+import { gradedWinner } from '../core/scoring.js';
 import { escapeHtml, renderLoadFailure } from './dom.js';
 import { formatInZone } from '../core/tz.js';
 
@@ -208,8 +209,10 @@ function pickChip(game, entry, isMe){
   wrap.className = 'pick-chip' + (isMe ? ' is-me' : '');
 
   // Green ring for a correct pick, red for a wrong one, nothing until graded.
-  if(game.actualWinner){
-    wrap.classList.add(game.actualWinner === side ? 'correct' : 'wrong');
+  // Judged against the spread, the same as the points are.
+  const graded = gradedWinner(game);
+  if(graded){
+    wrap.classList.add(graded === side ? 'correct' : 'wrong');
   }
 
   const logo = teamLogoUrl(teamName);

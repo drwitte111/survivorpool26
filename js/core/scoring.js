@@ -5,13 +5,88 @@ import { TOTAL_WEEKS } from './data.js';
 
 export function maxPointsFor(week){ return week.games.length; }
 
+/**
+ * The spread this pick is judged against: the line showing when it was made.
+ * Falls back to what the game closed at, then to the current number, so picks
+ * from before this was recorded still work.
+ */
+export function spreadForPick(game){
+  return game.pickedSpread ?? game.closingSpread ?? game.homeSpread ?? null;
+}
+
+/** Both final scores, or null if this game hasn't got a usable pair. */
+function finalScores(game){
+  const away = game.liveAway, home = game.liveHome;
+  if(away == null || home == null || isNaN(away) || isNaN(home)) return null;
+  return { away, home };
+}
+
+/**
+ * How `side` is doing against its number right now: 'cover' | 'no-cover' |
+ * 'push', or null when there's no line or no score yet. Live, so it reads
+ * off whatever is on the board at this moment.
+ */
+export function coverStatus(game, side){
+  const spread = spreadForPick(game);
+  if(spread == null) return null;
+  const scores = finalScores(game);
+  if(!scores) return null;
+  const margin = side === 'home' ? (scores.home - scores.away) : (scores.away - scores.home);
+  const spreadForSide = side === 'home' ? spread : -spread;
+  const value = margin + spreadForSide;
+  if(value > 0) return 'cover';
+  if(value < 0) return 'no-cover';
+  return 'push';
+}
+
+/**
+ * The side a confidence pick is actually graded against: whoever beat the
+ * spread, not whoever won the game. 'away' | 'home' | 'push' | null.
+ *
+ * This is the whole point of the board -- every pick is made on a number and
+ * records the number it was made on, so a team that wins by less than it was
+ * laying has not won you anything. Seattle -3.5 winning by 3 is a loss for
+ * Seattle backers and a win for the other side.
+ *
+ * `actualWinner` (straight up, from ESPN or an admin) is still what says a
+ * game is over: null there means in progress or tied, and both stay ungraded.
+ * It's also the fallback when a game has no published line or no final score,
+ * so a pool running without spreads keeps working exactly as it did.
+ *
+ * A push -- an exact tie against the number -- is graded but correct for
+ * nobody, the same treatment a tied game gets.
+ *
+ * Survivor locks are deliberately not run through this: they're straight-up
+ * by design (see core/survivor.js) and keep reading `actualWinner`.
+ */
+export function gradedWinner(game){
+  if(!game.actualWinner) return null;
+  const spread = spreadForPick(game);
+  if(spread == null) return game.actualWinner;
+  const scores = finalScores(game);
+  if(!scores) return game.actualWinner;
+  const margin = (scores.home - scores.away) + spread;   // home, against its number
+  if(margin > 0) return 'home';
+  if(margin < 0) return 'away';
+  return 'push';
+}
+
+/** Whether this game counts towards a week's graded total. */
+export function isGraded(game){ return gradedWinner(game) != null; }
+
+/** Whether this game's pick beat the spread. False for a push and for no pick. */
+export function isPickCorrect(game){
+  const winner = gradedWinner(game);
+  return !!game.pick && !!winner && game.pick === winner;
+}
+
 export function weekScore(week){
   let earned = 0, possible = 0, gradedCount = 0, correctCount = 0;
   week.games.forEach(g => {
     if(g.confidence) possible += g.confidence;
-    if(g.actualWinner){
+    if(isGraded(g)){
       gradedCount++;
-      if(g.pick && g.pick === g.actualWinner){ earned += (g.confidence||0); correctCount++; }
+      if(isPickCorrect(g)){ earned += (g.confidence||0); correctCount++; }
     }
   });
   return { earned, possible, gradedCount, correctCount, total: week.games.length };
@@ -29,7 +104,7 @@ export function seasonScore(){
 export function getMvpPick(week){
   let best = null;
   week.games.forEach(g => {
-    if(g.actualWinner && g.pick && g.pick === g.actualWinner && g.confidence){
+    if(isPickCorrect(g) && g.confidence){
       if(!best || g.confidence > best.confidence) best = g;
     }
   });
@@ -39,7 +114,7 @@ export function isPerfectWeek(week){
   const s = weekScore(week);
   return s.total > 0 && s.gradedCount === s.total && s.correctCount === s.total;
 }
-export function isWeekFullyGraded(week){ return week.games.length > 0 && week.games.every(g => g.actualWinner); }
+export function isWeekFullyGraded(week){ return week.games.length > 0 && week.games.every(g => isGraded(g)); }
 export function isWinningWeek(week){ const s = weekScore(week); return s.correctCount > (s.gradedCount - s.correctCount); }
 export function computeHotStreak(){
   let n = TOTAL_WEEKS;

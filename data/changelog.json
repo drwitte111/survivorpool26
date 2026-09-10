@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-10T03:31:05Z",
+      "title": "Picks are graded against the spread, not just who won",
+      "detail": "A team that won the game but not the number was being marked correct \u2014 Seattle laying 3.5 and winning by 3 scored full points instead of none. Every confidence pick is now graded against the line it was made on, a push is graded but correct for nobody, and the green/red on the picks page and the group grid agrees with the points. Survivor locks are unchanged: those are still straight up. Published results now carry the final score alongside the winner so every device grades off the same numbers.",
+      "by": "Claude",
+      "tags": [
+        "scoring",
+        "fix"
+      ]
+    },
+    {
       "at": "2026-09-08T17:38:00Z",
       "title": "Admins can remove a member and reset a stuck login",
       "detail": "The League Admin roster now shows each member's email. Remove clears their roster row and their saved picks, so they can sign back in with the same email and start clean. A new \"Reset a member's login\" box emails a Firebase reset link \u2014 the way back in for someone on an older account who's forgotten their password, since the app can't delete a sign-in itself.",

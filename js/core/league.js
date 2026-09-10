@@ -127,6 +127,12 @@ export async function saveGlobalResults(n, resultsArr, mnfFinalScore){
       let g = games.find(x => x.away === r.away && x.home === r.home);
       if(!g){ g = { away: r.away, home: r.home }; games.push(g); }
       g.actualWinner = r.actualWinner;
+      // The final score travels with the result. Grading is against the
+      // spread, so a published winner on its own isn't enough to grade a
+      // game -- without the score every client would have to have reached
+      // ESPN itself for the same numbers.
+      g.awayScore = r.awayScore != null ? r.awayScore : null;
+      g.homeScore = r.homeScore != null ? r.homeScore : null;
     });
     await db.collection('schedule').doc('week' + n).set({
       games,
@@ -160,7 +166,13 @@ export async function ensureSpreadsLoaded(n){
       if(local.closingOverUnder == null && gs.closingOverUnder != null) local.closingOverUnder = gs.closingOverUnder;
       if(gs.kickoff) local.kickoff = gs.kickoff;
       if(gs.isMNF !== undefined) local.isMNF = gs.isMNF;
-      if(gs.actualWinner) local.actualWinner = gs.actualWinner;
+      if(gs.actualWinner){
+        local.actualWinner = gs.actualWinner;
+        // Published finals win over whatever this device last pulled from
+        // ESPN, so everyone grades the same game off the same score.
+        if(gs.awayScore != null) local.liveAway = gs.awayScore;
+        if(gs.homeScore != null) local.liveHome = gs.homeScore;
+      }
     }
   });
   if(data.mnfFinalScore != null) week.mnfActualTotal = data.mnfFinalScore;
