@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-10T03:47:00Z",
+      "title": "A blank cell on Group Picks says which kind of blank it is",
+      "detail": "An empty cell claimed \"No pick\" for everyone, including members whose picks simply hadn't reached the league yet. A pick is only published when that member's own device opens the app after the game kicks off, so anyone who picked early and didn't come back looked like they'd skipped the week. Those cells now show a dashed \u22ef instead of \u2014, and a note under the grid names who hasn't synced. A plain \u2014 now genuinely means they didn't pick it.",
+      "by": "Claude",
+      "tags": [
+        "fix",
+        "feature"
+      ]
+    },
+    {
       "at": "2026-09-10T03:36:17Z",
       "title": "Each final says who beat the number, not just who won",
       "detail": "The line under a finished game read \"SEA by 3\" and stopped there, which looks like a Seattle win even when Seattle was laying 3.5 and lost the bet. The margin is still shown \u2014 it's a real fact \u2014 but a green tag beside it now names the side that actually covered, or PUSH when the game landed exactly on the number.",

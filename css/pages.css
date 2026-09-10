@@ -453,6 +453,15 @@
   display:flex; align-items:center; justify-content:center;
   font-size:13px; color:var(--chalk-dim); opacity:0.45;
 }
+/* Nothing published for this member yet -- distinct from a genuine no-pick. */
+.pick-empty.unsynced{
+  opacity:0.8; color:var(--amber); letter-spacing:1px;
+  border:1px dashed var(--line); border-radius:8px;
+}
+.picks-note-warn{
+  color:var(--amber); border-left:2px solid var(--amber);
+  padding-left:8px; line-height:1.45;
+}
 
 @media (max-width: 720px){
   .picks-game{ min-width:78px; }

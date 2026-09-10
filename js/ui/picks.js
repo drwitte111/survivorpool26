@@ -12,7 +12,7 @@
 import { store, peekWeek, getWeek } from '../core/state.js';
 import { TOTAL_WEEKS } from '../core/data.js';
 import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
-import { isGameLocked } from '../core/locks.js';
+import { isGameLocked, gameLockTime } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
 import { gradedWinner, spreadForPick, sharedSpread } from '../core/scoring.js';
@@ -107,6 +107,11 @@ export async function renderPicksPage(){
 
   const lockedCount = week.games.filter(isGameLocked).length;
 
+  // Members whose row is older than a game that has already kicked off. Their
+  // cell is blank because nothing has been published for them, which is not the
+  // same claim as "they didn't pick" -- see staleFor() below.
+  const unsynced = new Set();
+
   const table = document.createElement('table');
   table.className = 'picks-table';
 
@@ -163,7 +168,9 @@ export async function renderPicksPage(){
         : ((m.picks && m.picks[picksWeek]) ? m.picks[picksWeek][key] : null);
 
       if(!entry || !entry.p){
-        td.appendChild(placeholder(locked, isMe));
+        const stale = staleFor(m, game, isMe, locked);
+        if(stale) unsynced.add(m.teamName || m.uid);
+        td.appendChild(placeholder(locked, isMe, stale));
       } else {
         td.appendChild(pickChip(game, entry, isMe));
       }
@@ -179,9 +186,22 @@ export async function renderPicksPage(){
   const note = document.createElement('p');
   note.className = 'picks-note';
   note.textContent = lockedCount === week.games.length
-    ? 'Every game has kicked off — all picks are visible.'
+    ? 'Every game has kicked off — every published pick is visible.'
     : `${lockedCount} of ${week.games.length} games have kicked off. Everyone else’s picks appear as each game starts; your own are always shown.`;
   grid.appendChild(note);
+
+  // A blank column reads as "they didn't play". Usually it means their device
+  // hasn't been near the app since kickoff, so say which it is.
+  if(unsynced.size){
+    const warn = document.createElement('p');
+    warn.className = 'picks-note picks-note-warn';
+    const who = [...unsynced].map(escapeHtml).join(', ');
+    warn.innerHTML = `⚠ ${unsynced.size === 1 ? 'One member has' : unsynced.size + ' members have'} `
+      + `not opened the app since these games kicked off (${who}), so nothing has been `
+      + `published for them yet. A blank cell there means <b>not synced</b>, not "no pick" — `
+      + `their picks appear the moment they next open the board.`;
+    grid.appendChild(warn);
+  }
 
   const scroller = document.createElement('div');
   scroller.className = 'picks-scroll';
@@ -195,12 +215,43 @@ function statusText(game){
   return 'Locked';
 }
 
-function placeholder(locked, isMe){
+/**
+ * True when this member's row physically cannot contain a pick for this game.
+ *
+ * A pick only reaches Firestore when that member's OWN device runs
+ * syncToLeague after the game locked (core/league.js) -- the pool never writes
+ * it on their behalf, because not writing it is the only real way to keep an
+ * open pick private. So a row last written before kickoff is silent about this
+ * game whether they picked it or not, and calling that "No pick" is a guess
+ * dressed up as a fact.
+ */
+function staleFor(m, game, isMe, locked){
+  if(isMe || !locked) return false;
+  const lockAt = gameLockTime(game);
+  if(!lockAt) return false;
+  const synced = m.updatedAt ? new Date(m.updatedAt) : null;
+  if(synced && !isNaN(synced.getTime())) return synced < lockAt;
+  return true;                                  // never synced at all
+}
+
+function placeholder(locked, isMe, stale){
   const el = document.createElement('div');
-  el.className = 'pick-empty';
-  // A locked game with no pick means they genuinely didn't pick it.
-  el.textContent = locked || isMe ? '—' : '🔒';
-  el.title = locked || isMe ? 'No pick' : 'Hidden until this game kicks off';
+  el.className = 'pick-empty' + (stale ? ' unsynced' : '');
+  if(!locked && !isMe){
+    el.textContent = '🔒';
+    el.title = 'Hidden until this game kicks off';
+    return el;
+  }
+  if(stale){
+    el.textContent = '⋯';
+    el.title = 'Not published yet — this member hasn’t opened the app since kickoff. '
+      + 'Their pick may well exist; the league only sees it once their own device syncs.';
+    return el;
+  }
+  // Their row is newer than kickoff and still has nothing here, so this one is
+  // genuine: they didn't pick it.
+  el.textContent = '—';
+  el.title = 'No pick';
   return el;
 }
 
