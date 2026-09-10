@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-10T03:34:45Z",
+      "title": "Everyone is graded on the line they locked in",
+      "detail": "Spread grading was reading whichever number happened to be in your own state, so on the Group Picks grid another member's chip got judged against your line instead of theirs. Take Seattle at -3 and someone else takes it at -3.5 an hour later and a 3-point win is a push for you and a loss for them \u2014 the grid now says so. The line each pick was made on is published with the pick, and the chip tooltip names it. Older picks synced before this fall back to the closing line, never to yours.",
+      "by": "Claude",
+      "tags": [
+        "scoring",
+        "fix"
+      ]
+    },
+    {
       "at": "2026-09-10T03:31:05Z",
       "title": "Picks are graded against the spread, not just who won",
       "detail": "A team that won the game but not the number was being marked correct \u2014 Seattle laying 3.5 and winning by 3 scored full points instead of none. Every confidence pick is now graded against the line it was made on, a push is graded but correct for nobody, and the green/red on the picks page and the group grid agrees with the points. Survivor locks are unchanged: those are still straight up. Published results now carry the final score alongside the winner so every device grades off the same numbers.",

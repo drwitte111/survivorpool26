@@ -15,7 +15,7 @@ import { store, getWeek, peekWeek } from './state.js';
 import { saveState } from './persist.js';
 import { TOTAL_WEEKS } from './data.js';
 import { isGameLocked, isSuperBowlPickLocked } from './locks.js';
-import { weekScore } from './scoring.js';
+import { weekScore, spreadForPick } from './scoring.js';
 import { getSurvivorStatus } from './survivor.js';
 import { teamAbbrEquals, getTeamAbbr } from './teams.js';
 import { isAdmin } from './roles.js';
@@ -346,7 +346,15 @@ export async function syncToLeague(){
       week.games.forEach(g => {
         if(!isGameLocked(g)) return;         // still in play -- stays private
         if(!g.pick && g.confidence == null) return;
-        weekPicks[gamePickKey(g)] = { p: g.pick || null, c: g.confidence ?? null };
+        // `s` is the line this pick was locked at. It has to travel with the
+        // pick: take a team at -3 and someone else takes it at -3.5 an hour
+        // later and you are not on the same bet, so the grid can't grade
+        // anyone else's chip off the number sitting in your own state.
+        weekPicks[gamePickKey(g)] = {
+          p: g.pick || null,
+          c: g.confidence ?? null,
+          s: spreadForPick(g),
+        };
       });
       if(Object.keys(weekPicks).length) picks[n] = weekPicks;
     }

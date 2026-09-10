@@ -15,7 +15,7 @@ import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
 import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
-import { gradedWinner } from '../core/scoring.js';
+import { gradedWinner, spreadForPick, sharedSpread } from '../core/scoring.js';
 import { escapeHtml, renderLoadFailure } from './dom.js';
 import { formatInZone } from '../core/tz.js';
 
@@ -157,7 +157,9 @@ export async function renderPicksPage(){
       // Yours comes from local state so it's visible immediately; everyone
       // else's only exists in Firestore once the game has locked.
       const entry = isMe
-        ? (game.pick || game.confidence != null ? { p: game.pick, c: game.confidence } : null)
+        ? (game.pick || game.confidence != null
+            ? { p: game.pick, c: game.confidence, s: spreadForPick(game) }
+            : null)
         : ((m.picks && m.picks[picksWeek]) ? m.picks[picksWeek][key] : null);
 
       if(!entry || !entry.p){
@@ -209,8 +211,12 @@ function pickChip(game, entry, isMe){
   wrap.className = 'pick-chip' + (isMe ? ' is-me' : '');
 
   // Green ring for a correct pick, red for a wrong one, nothing until graded.
-  // Judged against the spread, the same as the points are.
-  const graded = gradedWinner(game);
+  // Judged against the line THIS person locked in, which isn't necessarily the
+  // one you're on -- so two chips on the same team can grade differently, and
+  // that's correct. `s` is missing on picks synced before it was published;
+  // those fall back to the league's shared line rather than to yours.
+  const line = entry.s != null ? entry.s : sharedSpread(game);
+  const graded = gradedWinner(game, line);
   if(graded){
     wrap.classList.add(graded === side ? 'correct' : 'wrong');
   }
@@ -243,7 +249,14 @@ function pickChip(game, entry, isMe){
   pts.textContent = entry.c != null ? entry.c : '';
   wrap.appendChild(pts);
 
-  wrap.title = `${teamName}${entry.c != null ? ` — ${entry.c} pt${entry.c === 1 ? '' : 's'}` : ''}`;
+  // Name the number too. Two chips on the same team can carry different lines
+  // and so grade differently, and the tooltip is where that becomes explicable
+  // rather than looking like a bug.
+  const lineLabel = line == null ? '' : (() => {
+    const n = side === 'home' ? line : -line;
+    return ' ' + (n === 0 ? 'PK' : (n > 0 ? '+' + n : String(n)));
+  })();
+  wrap.title = `${teamName}${lineLabel}${entry.c != null ? ` — ${entry.c} pt${entry.c === 1 ? '' : 's'}` : ''}`;
   return wrap;
 }
 

@@ -6,12 +6,28 @@ import { TOTAL_WEEKS } from './data.js';
 export function maxPointsFor(week){ return week.games.length; }
 
 /**
- * The spread this pick is judged against: the line showing when it was made.
+ * The spread YOUR pick is judged against: the line showing when you made it.
  * Falls back to what the game closed at, then to the current number, so picks
  * from before this was recorded still work.
+ *
+ * `pickedSpread` is personal -- two people who took the same team an hour apart
+ * can be holding different numbers, and each is graded on their own. So this is
+ * only ever right for the game object in your own state. To grade somebody
+ * else's pick, use the line published with it, falling back to sharedSpread().
  */
 export function spreadForPick(game){
   return game.pickedSpread ?? game.closingSpread ?? game.homeSpread ?? null;
+}
+
+/**
+ * The league-wide line for a game: what it closed at, else the number on the
+ * board now. Never `pickedSpread`, which belongs to whoever's state this is.
+ *
+ * This is the fallback for grading another member's pick that was synced
+ * before the line it was taken at was published alongside it.
+ */
+export function sharedSpread(game){
+  return game.closingSpread ?? game.homeSpread ?? null;
 }
 
 /** Both final scores, or null if this game hasn't got a usable pair. */
@@ -53,15 +69,17 @@ export function coverStatus(game, side){
  * It's also the fallback when a game has no published line or no final score,
  * so a pool running without spreads keeps working exactly as it did.
  *
+ * `spread` defaults to the line on this game object, which is yours. Pass one
+ * in to grade a pick somebody else locked at a different number.
+ *
  * A push -- an exact tie against the number -- is graded but correct for
  * nobody, the same treatment a tied game gets.
  *
  * Survivor locks are deliberately not run through this: they're straight-up
  * by design (see core/survivor.js) and keep reading `actualWinner`.
  */
-export function gradedWinner(game){
+export function gradedWinner(game, spread = spreadForPick(game)){
   if(!game.actualWinner) return null;
-  const spread = spreadForPick(game);
   if(spread == null) return game.actualWinner;
   const scores = finalScores(game);
   if(!scores) return game.actualWinner;
@@ -72,11 +90,13 @@ export function gradedWinner(game){
 }
 
 /** Whether this game counts towards a week's graded total. */
-export function isGraded(game){ return gradedWinner(game) != null; }
+export function isGraded(game, spread = spreadForPick(game)){
+  return gradedWinner(game, spread) != null;
+}
 
 /** Whether this game's pick beat the spread. False for a push and for no pick. */
-export function isPickCorrect(game){
-  const winner = gradedWinner(game);
+export function isPickCorrect(game, spread = spreadForPick(game)){
+  const winner = gradedWinner(game, spread);
   return !!game.pick && !!winner && game.pick === winner;
 }
 

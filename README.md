@@ -188,6 +188,24 @@ then `closingSpread`, then the current `homeSpread`):
 Survivor locks are the deliberate exception: they're straight up by design and
 keep reading `actualWinner` directly (`core/survivor.js`).
 
+#### Everyone is on their own number
+
+`pickedSpread` is per person. Take Seattle at -3 on Tuesday and someone else
+takes it at -3.5 on Sunday morning and you are not on the same bet: a 3-point
+win is a push for you and a loss for them, and the board has to say so.
+
+* Your own points come from your own state, so `weekScore` is right by
+  construction — `spreadForPick(game)` is your line.
+* **Everyone else's** picks are graded in the group grid, where the only game
+  object available is *yours*. So `syncToLeague` publishes the line with the
+  pick (`{ p, c, s }`), and `gradedWinner(game, line)` takes it as an argument.
+* Picks synced before `s` existed fall back to `sharedSpread(game)` — the
+  closing line, frozen at kickoff by `core/refresh.js` — never to your
+  `pickedSpread`.
+
+Two chips on the same team grading differently is correct, not a bug. The chip
+tooltip names each person's number so it reads as intended.
+
 One scoreboard request covers every game in a week, so the poll is a single call.
 It skips backgrounded tabs, and only re-renders and saves when something actually
 changed.
