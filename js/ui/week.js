@@ -213,6 +213,27 @@ export function teamButtonRow(game, mode, locked){
           + (game.gameState === 'post' ? ' by ' : ' +') + Math.abs(a - h)
         : (game.gameState === 'post' ? 'Tie — no points' : 'Tied');
       sub.appendChild(verdict);
+
+      // Who won the game and who won the bet are different questions, and the
+      // margin alone answers the wrong one. Seattle by 3 laying 3.5 reads as a
+      // Seattle win until this says otherwise, so say it right next to it.
+      const line = spreadForPick(game);
+      const graded = gradedWinner(game);
+      if(line != null && graded){
+        const ats = document.createElement('span');
+        ats.className = 'sub-ats' + (graded === 'push' ? ' push' : '');
+        if(graded === 'push'){
+          ats.textContent = 'PUSH';
+          ats.title = 'Exactly on the number — nobody scores this one.';
+        } else {
+          const name = graded === 'away' ? game.away : game.home;
+          const n = graded === 'home' ? line : -line;
+          const num = n === 0 ? 'PK' : (n > 0 ? '+' + n : String(n));
+          ats.textContent = (getTeamAbbr(name)?.toUpperCase() || name) + ' ' + num + ' ✓';
+          ats.title = 'Against the spread, this is the pick that scores.';
+        }
+        sub.appendChild(ats);
+      }
     }
   }
 

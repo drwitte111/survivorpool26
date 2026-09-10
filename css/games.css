@@ -171,6 +171,13 @@
 .sub-score{
   color: var(--chalk); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
+/* Who beat the number, sat next to the margin that doesn't say so on its own. */
+.sub-ats{
+  font-size: 9px; letter-spacing: 0.5px; font-weight: 700;
+  padding: 2px 5px; border-radius: 4px; white-space: nowrap;
+  color: var(--correct); border: 1px solid var(--correct);
+}
+.sub-ats.push{ color: var(--chalk-dim); border-color: var(--line); }
 
 .conf-select{
   background: var(--night); color: var(--amber); border: 1px solid var(--line);
