@@ -367,7 +367,12 @@ export async function syncToLeague(){
           lockAt: gameLockTime(g) ? gameLockTime(g).toISOString() : null,
         };
       });
-      if(Object.keys(weekPicks).length) picks[n] = weekPicks;
+      // Written even when it's empty, and that's the point: an empty object
+      // says "synced this week, picked nothing", which is a different fact from
+      // a missing key saying "this row has never been near this week". The grid
+      // can only tell a real skipped game from an unpublished one by asking
+      // that question, so the answer has to be on the row.
+      picks[n] = weekPicks;
     }
 
     // Survivor picks per week, for the grid's Survivor view. Written on the

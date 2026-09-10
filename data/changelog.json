@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-09-10T04:12:00Z",
+      "title": "The grid can tell \"didn't pick\" from \"never synced\"",
+      "detail": "A week with no picks used to be left off a member's row entirely, so someone who synced having picked nothing looked exactly like someone whose device has never touched that week. Every week with games is now recorded even when it's empty, and the grid reads the difference: a recorded week means a blank cell is a real skipped game, an unrecorded one means the board knows nothing and says so instead of guessing.",
+      "by": "Claude",
+      "tags": [
+        "fix"
+      ]
+    },
+    {
       "at": "2026-09-10T04:01:12Z",
       "title": "Picks reach the league when you make them, not at kickoff",
       "detail": "A pick used to be withheld from Firestore until its game kicked off, which meant it only ever reached the league if you happened to open the app again afterwards. Pick on Tuesday, don't come back, and Group Picks showed you as having skipped the week. Picks and Survivor locks now publish the moment they're set, each carrying the time its game opens up, and the grid is what holds them back until then. Worth knowing: that's the screen declining to draw them rather than the server refusing to send them.",

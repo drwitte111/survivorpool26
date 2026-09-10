@@ -113,9 +113,9 @@ export async function renderPicksPage(){
   // Members whose row is older than a game that has already kicked off. Their
   // cell is blank because nothing has been published for them, which is not the
   // same claim as "they didn't pick" -- see staleFor() below.
-  // Members whose row says they submitted this week but carries no picks for
-  // it, so their blanks are "we can't see it", not "they didn't pick".
-  const unsynced = new Set();
+  // Members whose row has never been written for this week. Name -> whether
+  // they say they submitted it, which decides how firmly the note can put it.
+  const unsynced = new Map();
 
   const table = document.createElement('table');
   table.className = 'picks-table';
@@ -177,8 +177,9 @@ export async function renderPicksPage(){
 
       if(!entry || !entry.p){
         const stale = staleFor(m, isMe, locked);
-        if(stale) unsynced.add(m.teamName || m.uid);
-        td.appendChild(placeholder(locked, isMe, stale));
+        const submitted = (m.submittedWeeks || []).includes(picksWeek);
+        if(stale) unsynced.set(m.teamName || m.uid, submitted);
+        td.appendChild(placeholder(locked, isMe, stale, submitted));
       } else {
         td.appendChild(pickChip(game, entry, isMe));
       }
@@ -198,18 +199,31 @@ export async function renderPicksPage(){
     : `${lockedCount} of ${week.games.length} games have kicked off. Everyone else’s picks appear as each game starts; your own are always shown.`;
   grid.appendChild(note);
 
-  // Picks publish on submit now, so this only fires for a member whose row has
-  // nothing for a week they say they submitted -- in practice an older build,
-  // which held every pick back until kickoff.
+  // Nobody has written anything for this week on these rows. Say which of the
+  // two reasons it is where the row can tell us, and don't pretend where it
+  // can't -- the point of the note is that a blank cell is not evidence.
   if(unsynced.size){
     const warn = document.createElement('p');
     warn.className = 'picks-note picks-note-warn';
-    const who = [...unsynced].map(escapeHtml).join(', ');
-    const one = unsynced.size === 1;
-    warn.innerHTML = `⚠ <b>${who}</b> ${one ? 'has' : 'have'} submitted a Week ${picksWeek} `
-      + `lineup, but nothing has reached the league for ${one ? 'them' : 'them'} — so those `
-      + `blanks mean <b>not synced</b>, not "no pick". This clears itself the next time `
-      + `${one ? 'they open' : 'they open'} the board on the current version.`;
+    const list = (names) => names.map(escapeHtml).join(', ');
+    const said = [...unsynced].filter(([, sub]) => sub).map(([name]) => name);
+    const quiet = [...unsynced].filter(([, sub]) => !sub).map(([name]) => name);
+    const parts = [];
+    if(said.length){
+      parts.push(`<b>${list(said)}</b> ${said.length === 1 ? 'has' : 'have'} submitted a `
+        + `Week ${picksWeek} lineup, so those picks definitely exist — they have just never `
+        + `been published to the league.`);
+    }
+    if(quiet.length){
+      parts.push(`Nothing at all has been published for <b>${list(quiet)}</b> this week, and `
+        + `${quiet.length === 1 ? 'their row doesn’t' : 'their rows don’t'} record a submitted `
+        + `lineup either, so the board genuinely can’t tell whether `
+        + `${quiet.length === 1 ? 'they picked' : 'they picked'}.`);
+    }
+    warn.innerHTML = '⚠ ' + parts.join(' ')
+      + ` Either way a blank above means <b>nothing published</b>, not "no pick". It resolves`
+      + ` the moment each of them opens the board on the current version — once, after which`
+      + ` it stays up to date on its own.`;
     grid.appendChild(warn);
   }
 
@@ -228,23 +242,22 @@ function statusText(game){
 /**
  * True when this member's row can't be trusted to say they skipped this game.
  *
- * Picks now publish the moment they're made, so a row that carries ANY pick for
- * this week is a complete account of it: a gap in it is a real gap, and drawing
- * that as "no pick" is honest.
+ * The whole question is whether the row has ever been written for this week.
+ * A key here -- even an empty object -- means their device synced this week, so
+ * the row is a complete account of it and a gap in it is a real gap. That holds
+ * for older builds too: those published locked picks, and this only ever asks
+ * about a game that has already locked.
  *
- * The row carrying nothing at all for a week they submitted is the case that
- * isn't -- almost always a member still on an older build, which held every
- * pick back until its game kicked off. Their picks exist and this board can't
- * see them, so it must not claim otherwise.
+ * No key at all means nothing has been written for this week by anyone. Their
+ * picks may well exist, unreachable in users/{uid}, so the board must not call
+ * that "no pick".
  */
 function staleFor(m, isMe, locked){
   if(isMe || !locked) return false;
-  const wk = m.picks && m.picks[picksWeek];
-  if(wk && Object.keys(wk).length) return false;
-  return (m.submittedWeeks || []).includes(picksWeek);
+  return !(m.picks && m.picks[picksWeek]);
 }
 
-function placeholder(locked, isMe, stale){
+function placeholder(locked, isMe, stale, submitted){
   const el = document.createElement('div');
   el.className = 'pick-empty' + (stale ? ' unsynced' : '');
   if(!locked && !isMe){
@@ -254,8 +267,13 @@ function placeholder(locked, isMe, stale){
   }
   if(stale){
     el.textContent = '⋯';
-    el.title = 'They submitted a lineup for this week, so this pick exists — nothing has '
-      + 'reached the league for it yet. Clears once they open the board on the current version.';
+    el.title = submitted
+      ? 'Nothing has been published for this member this week, but their row says they '
+        + 'submitted a lineup — so this pick exists and the board can’t reach it. '
+        + 'Clears once they open the board on the current version.'
+      : 'Nothing has been published for this member this week and their row records no '
+        + 'submitted lineup, so the board can’t tell whether they picked. '
+        + 'Clears once they open the board on the current version.';
     return el;
   }
   // Their row is newer than kickoff and still has nothing here, so this one is
