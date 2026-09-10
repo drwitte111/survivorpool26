@@ -110,7 +110,9 @@ export async function renderPicksPage(){
   // Members whose row is older than a game that has already kicked off. Their
   // cell is blank because nothing has been published for them, which is not the
   // same claim as "they didn't pick" -- see staleFor() below.
-  const unsynced = new Set();
+  // Keyed by name -> true when their row says they submitted this week, which
+  // turns "probably hasn't synced" into "definitely has picks we can't see".
+  const unsynced = new Map();
 
   const table = document.createElement('table');
   table.className = 'picks-table';
@@ -169,8 +171,12 @@ export async function renderPicksPage(){
 
       if(!entry || !entry.p){
         const stale = staleFor(m, game, isMe, locked);
-        if(stale) unsynced.add(m.teamName || m.uid);
-        td.appendChild(placeholder(locked, isMe, stale));
+        if(stale){
+          const submitted = (m.submittedWeeks || []).includes(picksWeek);
+          unsynced.set(m.teamName || m.uid, submitted);
+        }
+        td.appendChild(placeholder(locked, isMe, stale,
+          (m.submittedWeeks || []).includes(picksWeek)));
       } else {
         td.appendChild(pickChip(game, entry, isMe));
       }
@@ -195,11 +201,25 @@ export async function renderPicksPage(){
   if(unsynced.size){
     const warn = document.createElement('p');
     warn.className = 'picks-note picks-note-warn';
-    const who = [...unsynced].map(escapeHtml).join(', ');
-    warn.innerHTML = `⚠ ${unsynced.size === 1 ? 'One member has' : unsynced.size + ' members have'} `
-      + `not opened the app since these games kicked off (${who}), so nothing has been `
-      + `published for them yet. A blank cell there means <b>not synced</b>, not "no pick" — `
-      + `their picks appear the moment they next open the board.`;
+    const submitted = [...unsynced].filter(([, sub]) => sub).map(([name]) => name);
+    const quiet = [...unsynced].filter(([, sub]) => !sub).map(([name]) => name);
+    const list = (names) => names.map(escapeHtml).join(', ');
+    const parts = [];
+    // Their roster row records the weeks they submitted, and that field is
+    // published whether or not a game has locked. So for these we don't have to
+    // hedge: the picks exist, they just haven't been shared with the league.
+    if(submitted.length){
+      parts.push(`<b>${list(submitted)}</b> ${submitted.length === 1 ? 'has' : 'have'} `
+        + `submitted a Week ${picksWeek} lineup, so ${submitted.length === 1 ? 'those picks exist' : 'their picks exist'} `
+        + `— they just haven’t reached the league yet.`);
+    }
+    if(quiet.length){
+      parts.push(`<b>${list(quiet)}</b> ${quiet.length === 1 ? 'has' : 'have'} not submitted `
+        + `a lineup for this week, so ${quiet.length === 1 ? 'they' : 'they'} may not have picked at all.`);
+    }
+    warn.innerHTML = '⚠ ' + parts.join(' ')
+      + ` A pick is only published once that member’s own device opens the board`
+      + ` after kickoff, so a blank cell above means <b>not synced</b> rather than "no pick".`;
     grid.appendChild(warn);
   }
 
@@ -234,7 +254,7 @@ function staleFor(m, game, isMe, locked){
   return true;                                  // never synced at all
 }
 
-function placeholder(locked, isMe, stale){
+function placeholder(locked, isMe, stale, submitted){
   const el = document.createElement('div');
   el.className = 'pick-empty' + (stale ? ' unsynced' : '');
   if(!locked && !isMe){
@@ -244,8 +264,11 @@ function placeholder(locked, isMe, stale){
   }
   if(stale){
     el.textContent = '⋯';
-    el.title = 'Not published yet — this member hasn’t opened the app since kickoff. '
-      + 'Their pick may well exist; the league only sees it once their own device syncs.';
+    el.title = submitted
+      ? 'They submitted a lineup for this week, so this pick exists — it just hasn’t '
+        + 'been published. The league only sees it once their own device opens the board after kickoff.'
+      : 'Not published yet — this member hasn’t opened the app since kickoff, and hasn’t '
+        + 'submitted a lineup for this week either.';
     return el;
   }
   // Their row is newer than kickoff and still has nothing here, so this one is

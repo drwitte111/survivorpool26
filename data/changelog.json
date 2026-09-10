@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-09-10T03:51:23Z",
+      "title": "The unsynced note says who definitely has picks",
+      "detail": "A member's roster row records which weeks they submitted, and that field is published whether or not a game has locked. So when someone's cell is blank but their row says they submitted that week, the board now states it plainly \u2014 those picks exist and simply haven't reached the league \u2014 instead of hedging. Members with no submitted lineup are listed separately, since they may genuinely not have picked.",
+      "by": "Claude",
+      "tags": [
+        "fix"
+      ]
+    },
+    {
       "at": "2026-09-10T03:47:00Z",
       "title": "A blank cell on Group Picks says which kind of blank it is",
       "detail": "An empty cell claimed \"No pick\" for everyone, including members whose picks simply hadn't reached the league yet. A pick is only published when that member's own device opens the app after the game kicks off, so anyone who picked early and didn't come back looked like they'd skipped the week. Those cells now show a dashed \u22ef instead of \u2014, and a note under the grid names who hasn't synced. A plain \u2014 now genuinely means they didn't pick it.",
