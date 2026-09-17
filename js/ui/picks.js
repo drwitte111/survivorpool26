@@ -19,6 +19,7 @@ import { isGameLocked } from '../core/locks.js';
 import { fetchLeagueTeams, gamePickKey } from '../core/league.js';
 import { getLockStatusForWeek, getSurvivorStatus, STRIKES_ALLOWED } from '../core/survivor.js';
 import { gradedWinner, spreadForPick, sharedSpread } from '../core/scoring.js';
+import { reconcileMember, survivorStatusFromLocks } from '../core/reconcile.js';
 import { escapeHtml, renderLoadFailure } from './dom.js';
 import { formatInZone } from '../core/tz.js';
 
@@ -70,7 +71,10 @@ export async function renderPicksPage(){
   grid.innerHTML = '<div class="empty">Loading everyone’s picks…</div>';
   let members;
   try{
-    members = await fetchLeagueTeams();
+    // Reconciled so the header's point total (and, in Survivor mode,
+    // statusFor below) reflect this device's own fresh copy of each week
+    // rather than that member's possibly-stale published summary.
+    members = (await fetchLeagueTeams()).map(reconcileMember);
   }catch(e){
     // A stalled read used to leave this on "Loading…" with no way back.
     renderLoadFailure(grid, {
@@ -351,6 +355,15 @@ function pickChip(game, entry, isMe){
 function renderSurvivorGrid(grid, members, me, myUid){
   const isMine = (m) => (myUid && m.uid === myUid) || m.teamName === me;
 
+  // Recomputed from each member's published locks rather than trusted as
+  // published -- their own device only re-grades whichever week is current
+  // for it, so a week they've moved past can sit published as "pending"
+  // long after this viewer's own copy of it knows better. See
+  // core/reconcile.js. Skipped for "me": getSurvivorStatus() below already
+  // reads local state directly, which is always at least as fresh.
+  const statusFor = new Map();
+  members.forEach(m => { if(!isMine(m)) statusFor.set(m, survivorStatusFromLocks(m.locks)); });
+
   // Only show weeks anyone has actually reached.
   const weeks = [];
   for(let n = 1; n <= TOTAL_WEEKS; n++){
@@ -384,7 +397,7 @@ function renderSurvivorGrid(grid, members, me, myUid){
   members.forEach(m => {
     const th = document.createElement('th');
     th.className = 'picks-member' + (isMine(m) ? ' is-me' : '');
-    const strikes = strikeCountFor(m, isMine(m));
+    const strikes = isMine(m) ? getSurvivorStatus().strikes : statusFor.get(m).strikes;
     const out = strikes >= STRIKES_ALLOWED;
     th.innerHTML = `<span class="picks-member-name">${escapeHtml(m.teamName || '—')}</span>`
       + `<span class="survivor-strikes ${out ? 'out' : strikes ? 'warn' : 'clean'}">`
@@ -409,7 +422,13 @@ function renderSurvivorGrid(grid, members, me, myUid){
       // Locks publish when they're set, not at kickoff, so this is the gate
       // that keeps them out of sight. A missing lockAt is an entry from before
       // that field existed, which was only ever written post-kickoff anyway.
-      const entry = isMine(m) ? myLockFor(n) : visibleLock(m.locks && m.locks[n]);
+      // The win/loss on it is recomputed (statusFor), not the published
+      // result -- see the note above renderSurvivorGrid.
+      const entry = isMine(m) ? myLockFor(n) : (() => {
+        const raw = visibleLock(m.locks && m.locks[n]);
+        if(!raw) return null;
+        return { team: raw.team, result: statusFor.get(m).resultsByWeek[n] || null };
+      })();
 
       if(!entry || !entry.team){
         const empty = document.createElement('div');
@@ -453,13 +472,6 @@ function myLockFor(n){
     team: status.team,
     result: status.result === 'win' || status.result === 'loss' ? status.result : null,
   };
-}
-
-function strikeCountFor(member, mine){
-  if(mine) return getSurvivorStatus().strikes;
-  if(typeof member.survivorStrikes === 'number') return member.survivorStrikes;
-  // Older rows predate survivorStrikes; fall back to counting published losses.
-  return Object.values(member.locks || {}).filter(l => l && l.result === 'loss').length;
 }
 
 function lockChip(entry, mine){

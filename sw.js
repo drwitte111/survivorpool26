@@ -40,6 +40,7 @@ const SHELL_ASSETS = [
   'js/core/league.js',
   'js/core/locks.js',
   'js/core/nflstats.js',
+  'js/core/reconcile.js',
   'js/core/roles.js',
   'js/core/net.js',
   'js/core/persist.js',

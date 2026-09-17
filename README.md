@@ -239,16 +239,33 @@ allow or deny whole documents, not fields.
 
 ### Every past week gets swept too, not just the one on screen
 
-Survivor status and season totals are computed from *your own device's* local
-copy of every week (see `syncToLeague` in `core/league.js`) — so a week you set a
-pick in and then never revisited stays frozen at whatever it looked like the last
-time you had it open, usually mid-game. `refreshWeek` therefore also grades every
-other week that still has a kicked-off game with no result (`catchUpStaleWeeks`),
-the same two ways, and stops checking a week for good once every game in it has a
-winner or ESPN has marked it final. This runs on the same schedule as everything
-above — boot, a week switch, the 30s poll — so it costs nothing once a week is
-settled and self-heals the next time the affected person's device does anything
-at all.
+Survivor status and season totals are each computed and published by *that
+member's own device*, from its local copy of every week (see `syncToLeague` in
+`core/league.js`) — so a week they set a pick or lock in and then never
+revisited stays frozen at whatever it looked like the last time it was open,
+usually mid-game. `refreshWeek` therefore also grades every other week that
+still has a kicked-off game with no result (`catchUpStaleWeeks`), the same two
+ways, and stops checking a week for good once every game in it has a winner or
+ESPN has marked it final. This runs on the same schedule as everything above —
+boot, a week switch, the 30s poll — so it costs nothing once a week is settled,
+and it fixes the problem at the source: it self-heals the next time the
+affected person's device does anything at all.
+
+### Standings and the picks grid don't wait for that
+
+`catchUpStaleWeeks` fixes it eventually, but it can't fix a device that never
+reopens the app. `core/reconcile.js` fixes it immediately instead, by not
+trusting the published summary in the first place: a member's raw picks and
+Survivor locks publish the moment they're made (see above) and are reliable
+right away, so `reconcileMember()` recomputes weeklyPoints, total, and Survivor
+status from those, graded against **the viewing device's own** local copy of
+each week rather than the member's. Any one up-to-date viewer can therefore
+grade everyone correctly, regardless of whose device is behind — the same
+trick the confidence grid already used per pick chip (see above), just applied
+to the season-level summaries on Standings and the Survivor grid. The published
+summary fields still exist and still matter (they're what that member sees
+about themselves before anyone else's device has weighed in), but nothing
+downstream trusts them for anyone else once `reconcileMember` has run.
 
 ## Modules
 
@@ -268,6 +285,7 @@ at all.
 | `league.js` | All shared Firestore collections: leagues, members, spreads, results. |
 | `roles.js` | `isAdmin()` — the fixed two-email admin list. Mirror it in `firestore.rules`. |
 | `refresh.js` | `refreshWeek()` — the one path that pulls scores + fills missing ESPN lines. |
+| `reconcile.js` | Recomputes a member's points/Survivor status from published ground truth, so Standings and the picks grid aren't at the mercy of that member's own device being current. |
 | `persist.js` | `saveState()` — kept tiny, since most modules call it. |
 | `session.js` | `loadState()` / `enterApp()` — boot and post-league-join re-entry. |
 

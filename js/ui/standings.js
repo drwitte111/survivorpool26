@@ -7,6 +7,7 @@ import { getSurvivorStatus } from '../core/survivor.js';
 import {
   fetchLeagueTeams, slugifyTeam, loadGlobalSpreads, syncToLeague, getLeagueMeta,
 } from '../core/league.js';
+import { reconcileMember } from '../core/reconcile.js';
 import { escapeHtml, ordinal, rankBadge, placeNickname, timeAgo, renderLoadFailure } from './dom.js';
 
 // Survivor is its own contest. It used to add a flat 50 to a "Total" column,
@@ -245,7 +246,7 @@ export function updateHeaderRank(teams){
 
 export async function updateSeasonRank(){
   try{
-    const teams = await fetchLeagueTeams();
+    const teams = (await fetchLeagueTeams()).map(reconcileMember);
     updateHeaderRank(teams);
   }catch(e){ /* leave rank badge blank on failure */ }
 }
@@ -395,7 +396,10 @@ export async function renderStandingsPage(){
 
   let teams = [];
   try{
-    teams = await fetchLeagueTeams();
+    // Recomputed from each member's published raw picks/locks rather than
+    // trusted as published -- see core/reconcile.js for why the summary
+    // fields alone can be stale even when everything else is current.
+    teams = (await fetchLeagueTeams()).map(reconcileMember);
   }catch(e){
     console.error('standings load failed', e);
     renderLoadFailure(listEl, {

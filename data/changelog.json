@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-17T22:49:02Z",
+      "title": "Standings stop waiting on a stale device to fix itself",
+      "detail": "Today's fix to old weeks re-grading themselves only helps once the affected person's own device reopens the app -- which doesn't help a league that wants it right now. Standings and the picks grid no longer trust a member's own published points/Survivor status at all: they recompute both from that member's raw picks and locks (reliable from the moment they're made) graded against the VIEWER's own local copy of each week. Any one up-to-date viewer -- an admin checking the board is enough -- now shows everyone correctly regardless of whose device is behind. This is what fixes a member showing 0 points for a week Group Picks already shows they won, or \"Alive\" after a Survivor loss.",
+      "by": "Caleb",
+      "tags": [
+        "fix",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-09-17T22:34:07Z",
       "title": "A week nobody revisits now grades itself everywhere",
       "detail": "Survivor status and weekly points are computed from each person's own device, from its local copy of every past week -- and that copy only ever updated for whichever week was \"current\" at the time. Set a Week 1 lock and never open Week 1 again, and your device's Week 1 stays frozen mid-game forever: your Survivor result never resolves to win or loss, and that week's points stay wrong on everyone's standings. refreshWeek now also sweeps every other week that still has a kicked-off game with no result on every load, week switch and poll, and a fix to how it decides whether it found anything means the poll and the week picker actually save a correction once found -- both used to discover changes and then throw them away. Self-healing: this fixes itself the next time an affected person's device does anything at all, no need to track anyone down.",
