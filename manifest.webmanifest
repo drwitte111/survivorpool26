@@ -2,7 +2,7 @@
   "name": "Hungry Dawgs Run Faster",
   "short_name": "Hungry Dawgs",
   "description": "2026 NFL confidence pool and survivor board.",
-  "id": "/",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

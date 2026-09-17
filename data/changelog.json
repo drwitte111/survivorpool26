@@ -27,6 +27,15 @@
   ],
   "entries": [
     {
+      "at": "2026-09-17T23:35:20Z",
+      "title": "Fixed the installed app's identity for a subpath deploy",
+      "detail": "manifest.webmanifest declared its id as the absolute root (\"/\"), which is wrong once the site is actually served under a subpath like drwitte111.github.io/survivorpool26/ instead of a bare domain. Matched it to start_url and scope (\"./\") so an installed home-screen icon is recognized as the same app it was installed as. Doesn't affect whether the page shows the latest code -- if the board still looks old after a deploy, it's a stuck browser/service-worker cache on that device, not this.",
+      "by": "Caleb",
+      "tags": [
+        "fix"
+      ]
+    },
+    {
       "at": "2026-09-17T23:21:47Z",
       "title": "Trash Talk shows who's actually talking, and the Commissioner sounds human",
       "detail": "Every post now shows the person's name next to their team name (\"theOX — Caleb\"), not just the team. The Commissioner's weekly recap drops full team names in favor of nicknames -- \"the Cardinals upsetting the Chargers\" instead of \"Arizona Cardinals over Los Angeles Chargers\" -- and the unread badge next to Trash Talk in the open menu is bigger and sits right by the label instead of off at the far edge.",
