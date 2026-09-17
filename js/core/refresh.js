@@ -9,7 +9,7 @@
 //
 // The order is the point. Everyone sees real numbers without an admin lifting a
 // finger, and an admin who publishes still has the last word.
-import { CONFIG } from './data.js';
+import { CONFIG, TOTAL_WEEKS } from './data.js';
 import { getWeek } from './state.js';
 import { syncWeekScores, fetchWeekOdds } from './espn.js';
 import { ensureSpreadsLoaded } from './league.js';
@@ -101,6 +101,57 @@ function captureClosingLines(week){
   return captured;
 }
 
+// Not the same question as scoring.js's isWeekFullyGraded, which also counts a
+// game that simply hasn't kicked off yet as "not graded" -- exactly right for
+// deciding whether a week's score is final, and exactly wrong here, where it
+// would mean re-fetching every week still in the future, forever. This only
+// cares about games that HAVE kicked off: a week is settled once each of those
+// either has a winner or ESPN has marked it final. The gameState check (rather
+// than actualWinner alone) matters for a tie: a completed tie never gets an
+// actualWinner by design, so relying on that alone would re-check a tied week
+// forever.
+function isWeekSettled(week){
+  return week.games.every(g => !isGameLocked(g) || g.actualWinner || g.gameState === 'post');
+}
+
+/**
+ * Grades any OTHER week that still has a kicked-off game with no result.
+ *
+ * refreshWeek only ever pulls ESPN scores and an admin's publish for the one
+ * week it's called with -- so a week nobody has reopened since its games
+ * finished never gets re-checked by either source, and its local actualWinner
+ * sits at null indefinitely. That's what left some members' weekly points,
+ * picks and Survivor result frozen mid-game even though they kept using the
+ * app every week for whatever week was current: Survivor and season totals are
+ * computed from each person's OWN local copy of every past week (see
+ * syncToLeague), so a stale week1 on their device is a wrong week1 on the
+ * standings for everyone, forever, until something re-grades it there.
+ *
+ * Cheap in steady state: a week stops being checked at all the moment
+ * isWeekSettled(week) is true, so this only ever costs anything for the
+ * handful of weeks still settling -- and never touches a week that's simply
+ * still in the future.
+ */
+async function catchUpStaleWeeks(skip){
+  let changed = 0;
+  for(let n = 1; n <= TOTAL_WEEKS; n++){
+    if(n === skip) continue;
+    const week = getWeek(n);
+    if(!week.games.length || isWeekSettled(week)) continue;
+    try{
+      changed += await syncWeekScores(n, CONFIG.seasonYear, week);
+    }catch(e){
+      console.warn('catch-up ESPN sync failed for week', n, e.message);
+    }
+    try{
+      changed += await ensureSpreadsLoaded(n);
+    }catch(e){
+      console.warn('catch-up publish sync failed for week', n, e.message);
+    }
+  }
+  return changed;
+}
+
 /**
  * Refreshes week n in place. Returns true if anything visible changed, so
  * callers can skip a pointless re-render and save.
@@ -126,7 +177,14 @@ export async function refreshWeek(n){
     changed += captureClosingLines(week);
   }
 
-  await ensureSpreadsLoaded(n);
+  changed += await ensureSpreadsLoaded(n);
+
+  // Every other week that isn't done grading yet -- see catchUpStaleWeeks.
+  try{
+    changed += await catchUpStaleWeeks(n);
+  }catch(e){
+    console.warn('stale-week catch-up sweep failed', e.message);
+  }
 
   // Last, so it fills against the final picture: scores in, lines frozen, and
   // whatever the admin published applied. Every week rather than just this one

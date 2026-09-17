@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-17T22:34:07Z",
+      "title": "A week nobody revisits now grades itself everywhere",
+      "detail": "Survivor status and weekly points are computed from each person's own device, from its local copy of every past week -- and that copy only ever updated for whichever week was \"current\" at the time. Set a Week 1 lock and never open Week 1 again, and your device's Week 1 stays frozen mid-game forever: your Survivor result never resolves to win or loss, and that week's points stay wrong on everyone's standings. refreshWeek now also sweeps every other week that still has a kicked-off game with no result on every load, week switch and poll, and a fix to how it decides whether it found anything means the poll and the week picker actually save a correction once found -- both used to discover changes and then throw them away. Self-healing: this fixes itself the next time an affected person's device does anything at all, no need to track anyone down.",
+      "by": "Caleb",
+      "tags": [
+        "fix",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-09-10T04:12:00Z",
       "title": "The grid can tell \"didn't pick\" from \"never synced\"",
       "detail": "A week with no picks used to be left off a member's row entirely, so someone who synced having picked nothing looked exactly like someone whose device has never touched that week. Every week with games is now recorded even when it's empty, and the grid reads the difference: a recorded week means a blank cell is a real skipped game, an unrecorded one means the board knows nothing and says so instead of guessing.",

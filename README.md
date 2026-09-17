@@ -237,6 +237,19 @@ email can sign in as them regardless. To seal it properly, gate the read in
 field is there for. It needs the picks split one document per game, since rules
 allow or deny whole documents, not fields.
 
+### Every past week gets swept too, not just the one on screen
+
+Survivor status and season totals are computed from *your own device's* local
+copy of every week (see `syncToLeague` in `core/league.js`) — so a week you set a
+pick in and then never revisited stays frozen at whatever it looked like the last
+time you had it open, usually mid-game. `refreshWeek` therefore also grades every
+other week that still has a kicked-off game with no result (`catchUpStaleWeeks`),
+the same two ways, and stops checking a week for good once every game in it has a
+winner or ESPN has marked it final. This runs on the same schedule as everything
+above — boot, a week switch, the 30s poll — so it costs nothing once a week is
+settled and self-heals the next time the affected person's device does anything
+at all.
+
 ## Modules
 
 **core/**

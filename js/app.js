@@ -339,19 +339,18 @@ function startPolling(){
   setInterval(() => { updateSeasonRank().catch(() => {}); }, RANK_REFRESH_MS);
 
   // Quietly re-pull the current week: live scores and final results from ESPN,
-  // then anything the admin corrected by hand. Scores tick over on their own
-  // during games without anyone reloading or switching weeks and back.
+  // then anything the admin corrected by hand -- plus, inside refreshWeek, a
+  // sweep of any OTHER week still waiting on a result. Trust refreshWeek's own
+  // answer for whether anything changed rather than diffing the current week by
+  // hand: a change the sweep found in a different week is exactly the kind of
+  // thing a current-week-only diff used to miss and never save.
   setInterval(async () => {
     if(!store.currentUser || !store.state.account.leagueSlug) return;
     if(document.hidden) return; // don't poll a backgrounded tab
     const week = peekWeek(store.currentWeek);
     if(!week.games.length) return;
-    const snapshot = () => JSON.stringify(
-      week.games.map(g => [g.actualWinner, g.liveAway, g.liveHome, g.gameState,
-                           g.pick, g.confidence]));
-    const before = snapshot();
-    await refreshWeek(store.currentWeek);
-    if(snapshot() !== before){
+    const changed = await refreshWeek(store.currentWeek);
+    if(changed){
       saveState();
       render();
     }

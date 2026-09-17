@@ -151,31 +151,39 @@ export async function saveGlobalResults(n, resultsArr, mnfFinalScore){
 // list (matching by team names), without touching anyone's picks. Always
 // fetches fresh (no caching) since results can be entered/updated at any time
 // after a week's spreads were first loaded.
+//
+// Returns how many fields actually changed, so a caller that only fetched this
+// to check for a fresh result (see refresh.js's stale-week sweep) can tell
+// whether anything needs saving -- a publish that matches what's already local
+// must not look like a change every time it's re-checked.
 export async function ensureSpreadsLoaded(n){
   const data = await loadGlobalSpreads(n);
-  if(!data || !data.games) return;
+  if(!data || !data.games) return 0;
   const week = getWeek(n);
+  let changed = 0;
   data.games.forEach(gs => {
     const local = week.games.find(g => g.away === gs.away && g.home === gs.home);
-    if(local){
-      local.homeSpread = gs.homeSpread != null ? gs.homeSpread : local.homeSpread;
-      local.overUnder = gs.overUnder != null ? gs.overUnder : local.overUnder;
-      // Closing lines are write-once: the first value recorded is the one that
-      // stands, whether it came from this device or the admin's publish.
-      if(local.closingSpread == null && gs.closingSpread != null) local.closingSpread = gs.closingSpread;
-      if(local.closingOverUnder == null && gs.closingOverUnder != null) local.closingOverUnder = gs.closingOverUnder;
-      if(gs.kickoff) local.kickoff = gs.kickoff;
-      if(gs.isMNF !== undefined) local.isMNF = gs.isMNF;
-      if(gs.actualWinner){
-        local.actualWinner = gs.actualWinner;
-        // Published finals win over whatever this device last pulled from
-        // ESPN, so everyone grades the same game off the same score.
-        if(gs.awayScore != null) local.liveAway = gs.awayScore;
-        if(gs.homeScore != null) local.liveHome = gs.homeScore;
-      }
+    if(!local) return;
+    if(gs.homeSpread != null && local.homeSpread !== gs.homeSpread){ local.homeSpread = gs.homeSpread; changed++; }
+    if(gs.overUnder != null && local.overUnder !== gs.overUnder){ local.overUnder = gs.overUnder; changed++; }
+    // Closing lines are write-once: the first value recorded is the one that
+    // stands, whether it came from this device or the admin's publish.
+    if(local.closingSpread == null && gs.closingSpread != null){ local.closingSpread = gs.closingSpread; changed++; }
+    if(local.closingOverUnder == null && gs.closingOverUnder != null){ local.closingOverUnder = gs.closingOverUnder; changed++; }
+    if(gs.kickoff && local.kickoff !== gs.kickoff){ local.kickoff = gs.kickoff; changed++; }
+    if(gs.isMNF !== undefined && local.isMNF !== gs.isMNF){ local.isMNF = gs.isMNF; changed++; }
+    if(gs.actualWinner && local.actualWinner !== gs.actualWinner){
+      local.actualWinner = gs.actualWinner;
+      changed++;
+      // Published finals win over whatever this device last pulled from ESPN,
+      // so everyone grades the same game off the same score.
+      if(gs.awayScore != null) local.liveAway = gs.awayScore;
+      if(gs.homeScore != null) local.liveHome = gs.homeScore;
     }
   });
-  if(data.mnfFinalScore != null) week.mnfActualTotal = data.mnfFinalScore;
+  if(data.mnfFinalScore != null && week.mnfActualTotal !== data.mnfFinalScore){
+    week.mnfActualTotal = data.mnfFinalScore; changed++;
+  }
 
   // When an admin last published spreads for this week. Takes precedence over a
   // local ESPN fill if it's newer -- published numbers are the shared truth.
@@ -184,6 +192,7 @@ export async function ensureSpreadsLoaded(n){
     week.oddsSource = 'published';
     week.oddsUpdatedBy = data.updatedBy || null;
   }
+  return changed;
 }
 
 export async function getLeagueMeta(slug){

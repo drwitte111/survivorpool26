@@ -2,6 +2,7 @@
 import { store, ui } from '../core/state.js';
 import { TOTAL_WEEKS } from '../core/data.js';
 import { refreshWeek } from '../core/refresh.js';
+import { saveState } from '../core/persist.js';
 import { renderLockPanel, renderGames, renderSummary } from './week.js';
 import { renderStandingsPage } from './standings.js';
 import { renderAccount } from './account.js';
@@ -53,7 +54,13 @@ export function renderWeekPicker(){
       document.getElementById('weekPickerBtn').classList.remove('open');
       showWeekPage();
       render();
-      refreshWeek(i).then(() => render());
+      // Switching weeks never used to save what it found -- a grade or an
+      // admin's publish picked up here just sat in memory until some unrelated
+      // action happened to trigger a save.
+      refreshWeek(i).then((changed) => {
+        render();
+        if(changed) saveState();
+      });
     };
     list.appendChild(btn);
   }
