@@ -507,6 +507,16 @@ function lockChip(entry, mine){
   tag.textContent = abbr;
   wrap.appendChild(tag);
 
+  // The ring around the chip already carries the result in colour, but a
+  // green check or red X reads at a glance across a whole season of columns
+  // without having to look for a faint border on every logo.
+  if(entry.result === 'win' || entry.result === 'loss'){
+    const badge = document.createElement('span');
+    badge.className = 'survivor-result-badge ' + entry.result;
+    badge.textContent = entry.result === 'win' ? '✓' : '✕';
+    wrap.appendChild(badge);
+  }
+
   wrap.title = entry.team + (entry.result ? ` — ${entry.result === 'win' ? 'survived' : 'lost'}` : ' — pending');
   return wrap;
 }
