@@ -19,6 +19,9 @@ export async function postTrashTalk(message){
   if(!trimmed) return { ok: false, error: 'Message is empty.' };
   const payload = {
     teamName: store.state.account.teamName,
+    // The person behind the team name, so a post reads as "theOX -- Caleb"
+    // rather than leaving everyone to guess who's actually talking.
+    yourName: store.state.account.yourName || '',
     week: store.currentWeek,
     message: trimmed.slice(0, MAX_MESSAGE_LENGTH),
     postedAt: new Date().toISOString()
@@ -72,7 +75,7 @@ export async function renderTrashTalkFeed(){
       div.innerHTML = `
         <div class="tt-post-header">
           <div class="tt-post-meta">
-            <span class="tt-post-team">${p.commissioner ? '\ud83c\udfc8 ' : ''}${escapeHtml(p.teamName)}${p.week ? ' \u00b7 Wk ' + p.week : ''}</span>
+            <span class="tt-post-team">${p.commissioner ? '\ud83c\udfc8 ' : ''}${escapeHtml(p.teamName)}${p.yourName ? ' \u2014 ' + escapeHtml(p.yourName) : ''}${p.week ? ' \u00b7 Wk ' + p.week : ''}</span>
             <span class="tt-post-time">${timeAgo(p.postedAt)}</span>
           </div>
         </div>

@@ -28,3 +28,15 @@ export function teamAbbrEquals(nameA, nameB){
   const a = getTeamAbbr(nameA), b = getTeamAbbr(nameB);
   return !!a && !!b && a === b;
 }
+
+/**
+ * Just the mascot -- "Cardinals" rather than "Arizona Cardinals" -- for
+ * anywhere that should read like a person talking rather than a scoreboard
+ * (see core/commissioner.js). teams.csv's `key` column is already this,
+ * lower-case; "49ers" is left alone since there's no letter to capitalize.
+ */
+export function teamNickname(name){
+  const team = findTeam(name);
+  if(!team) return name;
+  return team.key.charAt(0).toUpperCase() + team.key.slice(1);
+}

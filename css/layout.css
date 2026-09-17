@@ -104,13 +104,13 @@ header.board::after{
   border: 1px solid var(--amber-dim); display:none;
 }
 
-/* Unread Trash Talk count: a small pill, on the Menu button's corner and again
-   on the Trash Talk item once the dropdown is open, so it's visible whether or
-   not the menu has been opened yet. Toggled by ui/trashtalk.js. */
+/* Unread Trash Talk count: a pill, on the Menu button's corner and again right
+   next to the Trash Talk item once the dropdown is open, so it's visible
+   whether or not the menu has been opened yet. Toggled by ui/trashtalk.js. */
 .unread-badge{
   background: var(--incorrect); color: var(--chalk);
-  font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 10px;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 12px;
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
   display:flex; align-items:center; justify-content:center; line-height: 1;
 }
 .picker-item .unread-badge{
@@ -118,7 +118,10 @@ header.board::after{
   border: 1.5px solid var(--night-2);
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
-.menu-nav-link .unread-badge{ margin-left: auto; flex-shrink: 0; }
+/* Sits right after the "Trash Talk" label (the button's own flex gap does the
+   spacing) rather than off at the far edge of the row -- the point is for it
+   to read as attached to that specific item. */
+.menu-nav-link .unread-badge{ flex-shrink: 0; }
 .picker-btn .menu-avatar.show{ display:inline-block; }
 .week-dropdown-panel{
   position:absolute; top: calc(100% + 8px); left: 0; z-index: 100;

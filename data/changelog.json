@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-17T23:21:47Z",
+      "title": "Trash Talk shows who's actually talking, and the Commissioner sounds human",
+      "detail": "Every post now shows the person's name next to their team name (\"theOX — Caleb\"), not just the team. The Commissioner's weekly recap drops full team names in favor of nicknames -- \"the Cardinals upsetting the Chargers\" instead of \"Arizona Cardinals over Los Angeles Chargers\" -- and the unread badge next to Trash Talk in the open menu is bigger and sits right by the label instead of off at the far edge.",
+      "by": "Caleb",
+      "tags": [
+        "feature",
+        "fix"
+      ]
+    },
+    {
       "at": "2026-09-17T23:10:51Z",
       "title": "An unread badge points people at Trash Talk",
       "detail": "A count of new posts since you last opened it (never counting your own) now shows as a small badge on the Menu button, and again on the Trash Talk item once the menu is open -- so there's something to notice even before anyone opens the menu. Clears the moment the board is actually opened. Checked on login and every 60 seconds after.",

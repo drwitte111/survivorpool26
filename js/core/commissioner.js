@@ -22,6 +22,7 @@ import { isWeekFinished } from './refresh.js';
 import { gradedWinner, sharedSpread } from './scoring.js';
 import { gamePickKey, fetchLeagueTeams } from './league.js';
 import { reconcileMember } from './reconcile.js';
+import { teamNickname } from './teams.js';
 import { isAdmin } from './roles.js';
 
 const COMMISSIONER_NAME = 'Roger Goodell';
@@ -53,9 +54,8 @@ function findWorstPick(n, week, teams){
         worst = {
           teamName: t.teamName,
           confidence,
-          pickedTeam: entry.p === 'home' ? g.home : g.away,
-          away: g.away,
-          home: g.home,
+          pickedTeam: teamNickname(entry.p === 'home' ? g.home : g.away),
+          opponent: teamNickname(entry.p === 'home' ? g.away : g.home),
         };
       }
     });
@@ -74,8 +74,8 @@ function findBiggestUpset(week){
     if(!upset || magnitude > upset.magnitude){
       upset = {
         magnitude,
-        winner: g.actualWinner === 'home' ? g.home : g.away,
-        loser: g.actualWinner === 'home' ? g.away : g.home,
+        winner: teamNickname(g.actualWinner === 'home' ? g.home : g.away),
+        loser: teamNickname(g.actualWinner === 'home' ? g.away : g.home),
       };
     }
   });
@@ -132,21 +132,31 @@ const BOTTOM_LINES = [
   (bottom, pts) => `${bottom} put up ${pts} points this week. Good news: there's nowhere to go but up. Probably.`,
 ];
 
+// Real team names in these get run through teamNickname() before they hit a
+// template -- "the Cardinals upsetting the Chargers" reads like someone
+// actually watched the game; "Arizona Cardinals over Los Angeles Chargers"
+// reads like a scoreboard ticker.
 const WORST_PICK_LINES = [
-  (w) => `Special mention to ${w.teamName}, who put ${w.confidence} points on ${w.pickedTeam} in ${w.away} @ ${w.home}. That did not go well.`,
-  (w) => `${w.teamName} laid ${w.confidence} points on ${w.pickedTeam} this week in ${w.away} @ ${w.home}. ${w.pickedTeam} lost. The league office feels your pain.`,
-  (w) => `Somewhere out there, ${w.teamName} is still staring at the ${w.away} @ ${w.home} box score wondering where that ${w.confidence}-point pick on ${w.pickedTeam} went wrong.`,
-  (w) => `A moment of silence for ${w.teamName}'s ${w.confidence}-point pick on ${w.pickedTeam}. It did not survive contact with ${w.away} @ ${w.home}.`,
+  (w) => `Special mention to ${w.teamName}, who put ${w.confidence} points on the ${w.pickedTeam} against the ${w.opponent}. That did not age well.`,
+  (w) => `${w.teamName} went all in on the ${w.pickedTeam} this week, ${w.confidence} points and all. The ${w.opponent} had other plans. The league office feels your pain.`,
+  (w) => `Somewhere out there, ${w.teamName} is still wondering where that ${w.confidence}-point pick on the ${w.pickedTeam} went wrong. Say hi to the ${w.opponent} on your way out.`,
+  (w) => `A moment of silence for ${w.teamName}'s ${w.confidence}-point pick on the ${w.pickedTeam}. It did not survive the ${w.opponent}.`,
+  (w) => `Bold of ${w.teamName} to put ${w.confidence} points on the ${w.pickedTeam} this week. The ${w.opponent} said no thanks.`,
 ];
 
 const UPSET_LINES = [
-  (u) => `Also worth noting: ${u.winner} pulled off a real upset over ${u.loser} this week. Vegas is not thrilled.`,
-  (u) => `The ${u.winner}-over-${u.loser} result was the kind of upset that ruins confidence boards league-wide.`,
+  (u) => `Also worth noting: the ${u.winner} upsetting the ${u.loser} was not on anyone's bingo card.`,
+  (u) => `The ${u.winner} over the ${u.loser} was the kind of result that ruins confidence boards league-wide.`,
+  (u) => `Nobody had the ${u.winner} beating the ${u.loser}. Vegas isn't thrilled either.`,
+  (u) => `The ${u.loser} losing to the ${u.winner} is going to sting for a few of you.`,
 ];
 
+// `team` already carries its own article -- "the Cardinals" or, with nothing
+// published to name, "their lock" -- so the templates below don't add one.
 const CASUALTY_LINES = [
-  (name, team) => `And in Survivor news: ${name} is officially out after ${team || 'their lock'} came up short. The league observes a moment of silence.`,
-  (name, team) => `Survivor claimed another victim this week: ${name}, eliminated after ${team || 'their lock'} lost.`,
+  (name, team) => `And in Survivor news: ${name} is officially out after riding ${team} a week too far. The league observes a moment of silence.`,
+  (name, team) => `Survivor claimed another victim this week: ${name}, eliminated after ${team} came up short.`,
+  (name, team) => `RIP to ${name}'s Survivor run, done in by ${team}.`,
 ];
 
 const SIGNOFFS = [
@@ -174,7 +184,8 @@ export function composeCommissionerPost(n, facts){
   }
 
   facts.casualties.forEach(t => {
-    lines.push(pick(CASUALTY_LINES)(t.teamName, t.survivorEliminatedTeam));
+    const team = t.survivorEliminatedTeam ? 'the ' + teamNickname(t.survivorEliminatedTeam) : 'their lock';
+    lines.push(pick(CASUALTY_LINES)(t.teamName, team));
   });
 
   lines.push('', pick(SIGNOFFS));
