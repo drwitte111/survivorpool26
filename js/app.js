@@ -17,7 +17,7 @@ import {
 } from './ui/router.js';
 import { hideProfileGate } from './ui/onboarding.js';
 import { renderAccount } from './ui/account.js';
-import { postTrashTalk, renderTrashTalkFeed } from './ui/trashtalk.js';
+import { postTrashTalk, renderTrashTalkFeed, updateUnreadBadges } from './ui/trashtalk.js';
 import { updateSeasonRank } from './ui/standings.js';
 
 const $ = (id) => document.getElementById(id);
@@ -337,6 +337,7 @@ function wireStallRecovery(){
 // ---------- Background refresh ----------
 function startPolling(){
   setInterval(() => { updateSeasonRank().catch(() => {}); }, RANK_REFRESH_MS);
+  setInterval(() => { updateUnreadBadges().catch(() => {}); }, RANK_REFRESH_MS);
 
   // Quietly re-pull the current week: live scores and final results from ESPN,
   // then anything the admin corrected by hand -- plus, inside refreshWeek, a

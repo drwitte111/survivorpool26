@@ -172,11 +172,15 @@
           <span>Menu</span>
           <span class="caret">▾</span>
         </button>
+        <!-- Unread Trash Talk count. Lives outside the button so it can sit in
+             the corner of it (see .picker-item .unread-badge); set by
+             ui/trashtalk.js's updateUnreadBadges(). -->
+        <span class="unread-badge" id="menuUnreadBadge" style="display:none;">0</span>
         <div class="dropdown-panel" id="accountPanel" style="display:none;">
           <button class="menu-nav-link" id="navAccountBtn" type="button">👤 Account</button>
           <button class="menu-nav-link" id="navStandingsBtn" type="button">🏆 Standings</button>
           <button class="menu-nav-link" id="navPicksBtn" type="button">🗓️ Group Picks</button>
-          <button class="menu-nav-link" id="navTrashTalkBtn" type="button">💬 Trash Talk</button>
+          <button class="menu-nav-link" id="navTrashTalkBtn" type="button">💬 Trash Talk<span class="unread-badge" id="trashTalkNavUnreadBadge" style="display:none;">0</span></button>
           <button class="menu-nav-link" id="navRulesBtn" type="button">📜 Rules</button>
           <button class="menu-nav-link" id="navResearchBtn" type="button">📊 Research</button>
           <button class="menu-nav-link" id="navAdminBtn" type="button">🛡️ League Admin</button>

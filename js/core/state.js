@@ -30,6 +30,11 @@ export function newAccount(){
     profilePic: null, teamName: '', yourName: '', favTeam: '',
     leagueSlug: null, leagueName: '', isLeagueAdmin: false,
     leagueAdminSecret: null, leagueJoinedAt: null, superBowlPick: null,
+    // When this account last looked at the Trash Talk feed. Drives the unread
+    // badge on the Menu button and the Trash Talk nav item -- synced through
+    // users/{uid} like the rest of the account, so it follows you device to
+    // device rather than resetting every time you open the app somewhere new.
+    lastTrashTalkSeenAt: null,
   };
 }
 
@@ -74,4 +79,5 @@ export function normalizeState(){
   if(s.account.leagueSlug === undefined) s.account.leagueSlug = null;
   if(s.account.isLeagueAdmin === undefined) s.account.isLeagueAdmin = false;
   if(s.account.superBowlPick === undefined) s.account.superBowlPick = null;
+  if(s.account.lastTrashTalkSeenAt === undefined) s.account.lastTrashTalkSeenAt = null;
 }

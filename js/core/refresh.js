@@ -115,6 +115,18 @@ function isWeekSettled(week){
 }
 
 /**
+ * Every game in the week has actually kicked off AND been decided -- unlike
+ * isWeekSettled above (which only asks about games that HAVE kicked off, so a
+ * week that hasn't started yet trivially "passes"), this is false for a week
+ * that's still upcoming or still in progress. For deciding whether there's a
+ * finished week worth writing a recap about (core/commissioner.js), not for
+ * deciding whether refreshWeek has anything left to check.
+ */
+export function isWeekFinished(week){
+  return week.games.length > 0 && week.games.every(g => isGameLocked(g) && (g.actualWinner || g.gameState === 'post'));
+}
+
+/**
  * Grades any OTHER week that still has a kicked-off game with no result.
  *
  * refreshWeek only ever pulls ESPN scores and an admin's publish for the one

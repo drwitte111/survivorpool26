@@ -6,7 +6,7 @@ import { saveState } from '../core/persist.js';
 import { renderLockPanel, renderGames, renderSummary } from './week.js';
 import { renderStandingsPage } from './standings.js';
 import { renderAccount } from './account.js';
-import { renderTrashTalkFeed } from './trashtalk.js';
+import { renderTrashTalkFeed, markTrashTalkSeen } from './trashtalk.js';
 import { renderRulesContent } from './rules.js';
 import { renderAdminPage } from './admin.js';
 import { renderPicksPage } from './picks.js';
@@ -24,7 +24,11 @@ export function showStandingsPage(){ showPage('standingsPage'); renderStandingsP
 
 export function showAccountPage(){ showPage('accountPage'); }
 
-export function showTrashTalkPage(){ showPage('trashTalkPage'); renderTrashTalkFeed(); }
+export function showTrashTalkPage(){
+  showPage('trashTalkPage');
+  renderTrashTalkFeed();
+  markTrashTalkSeen(); // clears the unread badge now that they're looking at it
+}
 
 export function showRulesPage(){ showPage('rulesPage'); renderRulesContent(); }
 

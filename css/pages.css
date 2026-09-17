@@ -89,6 +89,13 @@
   background: var(--night-2); border: 1px solid var(--line); border-radius: 10px;
   padding: 12px 16px; margin-bottom: 10px; animation: fadeUp .25s ease both;
 }
+/* The automated weekly recap, posted as the Commissioner -- set off from a
+   real member's post so it reads as a league-office memo. */
+.tt-post.tt-commissioner{
+  background: linear-gradient(135deg, rgba(var(--amber-rgb),0.10), rgba(var(--amber-rgb),0.03));
+  border-color: var(--amber-dim);
+}
+.tt-post.tt-commissioner .tt-post-team{ color: var(--amber); }
 .tt-post-header{ display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 6px; }
 .tt-post-meta{ display:flex; align-items:baseline; gap: 8px; min-width:0; }
 .tt-post-team{ font-family:'Oswald', sans-serif; font-weight:700; color: var(--amber); font-size: 14px; }
@@ -99,7 +106,10 @@
 }
 .tt-delete-btn:hover{ color: var(--incorrect); background: rgba(230,57,70,0.12); }
 .tt-delete-btn:disabled{ opacity: 0.5; cursor: wait; }
-.tt-post-msg{ font-family:'Oswald', sans-serif; font-size: 14px; color: var(--chalk); line-height: 1.4; word-break: break-word; }
+.tt-post-msg{
+  font-family:'Oswald', sans-serif; font-size: 14px; color: var(--chalk); line-height: 1.4;
+  word-break: break-word; white-space: pre-line;
+}
 .tt-reaction-row{ display:flex; gap: 6px; margin-top: 8px; }
 .tt-reaction-btn{
   background: var(--night); border: 1px solid var(--line); border-radius: 14px;

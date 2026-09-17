@@ -33,6 +33,7 @@ const SHELL_ASSETS = [
   'css/mobile.css',
   'js/app.js',
   'js/core/autofill.js',
+  'js/core/commissioner.js',
   'js/core/data.js',
   'js/core/espn.js',
   'js/core/refresh.js',

@@ -9,9 +9,11 @@ import { syncToLeague } from './league.js';
 import { saveState } from './persist.js';
 import { refreshWeek } from './refresh.js';
 import { isAdmin } from './roles.js';
+import { checkAndPostWeeklyRecaps } from './commissioner.js';
 import { render } from '../ui/router.js';
 import { updateSeasonRank } from '../ui/standings.js';
 import { maybeShowProfileGate } from '../ui/onboarding.js';
+import { updateUnreadBadges } from '../ui/trashtalk.js';
 
 export async function loadState(){
   const loaded = await loadUserState(store.currentUser.uid);
@@ -52,4 +54,6 @@ export async function enterApp(){
   if(await refreshWeek(store.currentWeek)){ render(); saveState(); }
   syncToLeague().catch(() => {});
   updateSeasonRank().catch(() => {});
+  checkAndPostWeeklyRecaps().catch(() => {});
+  updateUnreadBadges().catch(() => {});
 }

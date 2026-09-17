@@ -1,8 +1,11 @@
-// The league trash-talk board: posts, reactions and the feed.
+// The league trash-talk board: posts, reactions, the feed, and the unread
+// badge that points people at it.
 import { store } from '../core/state.js';
 import { db } from '../core/firebase.js';
 import { withTimeout } from '../core/net.js';
 import { slugifyTeam } from '../core/league.js';
+import { saveState } from '../core/persist.js';
+import { isAdmin } from '../core/roles.js';
 import { escapeHtml, timeAgo, renderLoadFailure } from './dom.js';
 
 const REACTION_EMOJIS = ['🔥', '💀', '😂'];
@@ -65,16 +68,18 @@ export async function renderTrashTalkFeed(){
     posts.slice(0, 100).forEach(p => {
       const isMine = store.state.account.teamName && p.teamName === store.state.account.teamName;
       const div = document.createElement('div');
-      div.className = 'tt-post';
+      div.className = 'tt-post' + (p.commissioner ? ' tt-commissioner' : '');
       div.innerHTML = `
         <div class="tt-post-header">
           <div class="tt-post-meta">
-            <span class="tt-post-team">${escapeHtml(p.teamName)}${p.week ? ' \u00b7 Wk ' + p.week : ''}</span>
+            <span class="tt-post-team">${p.commissioner ? '\ud83c\udfc8 ' : ''}${escapeHtml(p.teamName)}${p.week ? ' \u00b7 Wk ' + p.week : ''}</span>
             <span class="tt-post-time">${timeAgo(p.postedAt)}</span>
           </div>
         </div>
         <div class="tt-post-msg">${escapeHtml(p.message)}</div>`;
-      if(isMine){
+      // Anyone deletes their own post; an admin can also clean up a bad
+      // Commissioner recap, since nobody's own account "owns" that one.
+      if(isMine || (p.commissioner && isAdmin())){
         const delBtn = document.createElement('button');
         delBtn.className = 'tt-delete-btn';
         delBtn.title = 'Delete this message';
@@ -116,5 +121,49 @@ export async function renderTrashTalkFeed(){
       onRetry: () => renderTrashTalkFeed(),
     });
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// Unread badge: a count on the Menu button and again on the Trash Talk item
+// inside it, so there's a nudge to go look whether or not the menu is open.
+// ---------------------------------------------------------------------------
+
+/** How many posts (not your own) have landed since you last opened the feed. */
+export async function getUnreadTrashTalkCount(){
+  if(!store.state.account.leagueSlug) return 0;
+  try{
+    const snap = await withTimeout(
+      db.collection('leagues').doc(store.state.account.leagueSlug).collection('trashtalk').get(),
+      undefined, 'Checking trash talk');
+    const since = store.state.account.lastTrashTalkSeenAt
+      ? new Date(store.state.account.lastTrashTalkSeenAt) : null;
+    let count = 0;
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      if(store.state.account.teamName && p.teamName === store.state.account.teamName) return; // never notify on your own post
+      if(!since || new Date(p.postedAt) > since) count++;
+    });
+    return count;
+  }catch(e){ return 0; }
+}
+
+/** Refreshes both badges from the current unread count. Safe to call often. */
+export async function updateUnreadBadges(){
+  const menuBadge = document.getElementById('menuUnreadBadge');
+  const navBadge = document.getElementById('trashTalkNavUnreadBadge');
+  if(!menuBadge || !navBadge) return;
+  const count = await getUnreadTrashTalkCount();
+  [menuBadge, navBadge].forEach(el => {
+    el.textContent = count > 9 ? '9+' : String(count);
+    el.style.display = count > 0 ? 'flex' : 'none';
+  });
+}
+
+/** Call when the feed is actually opened: clears the badges going forward. */
+export function markTrashTalkSeen(){
+  store.state.account.lastTrashTalkSeenAt = new Date().toISOString();
+  saveState();
+  updateUnreadBadges();
 }
 

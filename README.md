@@ -267,6 +267,33 @@ summary fields still exist and still matter (they're what that member sees
 about themselves before anyone else's device has weighed in), but nothing
 downstream trusts them for anyone else once `reconcileMember` has run.
 
+### The Commissioner posts a weekly recap
+
+Once every game in a week has kicked off and been decided, an admin's client
+posts a recap to Trash Talk as **Roger Goodell** — top scorer, bottom scorer,
+the highest-confidence pick anyone blew, the week's biggest upset, and any
+Survivor elimination. `core/commissioner.js` builds those facts the same way
+`reconcile.js` does (graded against the admin's own local copy of the week,
+never a member's self-report), then fills in a bank of hand-written lines for
+each beat and picks one at random per beat, so the shape reads differently
+most weeks without a live LLM call in the browser — that would mean shipping
+an API key to every visitor, which this app is built never to do.
+
+Posting is gated to `isAdmin()` and written through a Firestore transaction
+keyed to `commissioner-week{n}`, so it can't ever double-post even if more
+than one admin session notices the same finished week at once. It fires from
+`enterApp()`, so it happens on the next admin login after a week wraps, not
+on any fixed schedule.
+
+### The unread badge on Trash Talk
+
+`ui/trashtalk.js` tracks `lastTrashTalkSeenAt` per account (synced like the
+rest of the profile, so it follows you device to device) and shows a count of
+posts since then — never counting your own — as a small badge on the Menu
+button, and again on the Trash Talk item once the menu is open. It clears the
+moment you actually open the board. Checked on login and every 60s alongside
+the season-rank poll.
+
 ## Modules
 
 **core/**
@@ -286,6 +313,7 @@ downstream trusts them for anyone else once `reconcileMember` has run.
 | `roles.js` | `isAdmin()` — the fixed two-email admin list. Mirror it in `firestore.rules`. |
 | `refresh.js` | `refreshWeek()` — the one path that pulls scores + fills missing ESPN lines. |
 | `reconcile.js` | Recomputes a member's points/Survivor status from published ground truth, so Standings and the picks grid aren't at the mercy of that member's own device being current. |
+| `commissioner.js` | Posts the weekly "Roger Goodell" recap to Trash Talk once a week is finished. |
 | `persist.js` | `saveState()` — kept tiny, since most modules call it. |
 | `session.js` | `loadState()` / `enterApp()` — boot and post-league-join re-entry. |
 
