@@ -9,8 +9,9 @@ import {
   fetchLeagueTeams, getLeagueMeta, saveGlobalSpreads, saveGlobalResults, setPlaysForMoney,
   removeMemberAccount,
 } from '../core/league.js';
-import { isWeekFullyLocked } from '../core/locks.js';
+import { isWeekFullyLocked, isGameLocked } from '../core/locks.js';
 import { isAdmin } from '../core/roles.js';
+import { reconcileMember } from '../core/reconcile.js';
 import { saveState } from '../core/persist.js';
 import { escapeHtml } from './dom.js';
 import { isoToZonedInput as isoToLocalInput, zonedInputToIso as localInputToIso, formatInZone, zoneLabel } from '../core/tz.js';
@@ -230,8 +231,86 @@ export async function renderAdminPage(){
     listEl.appendChild(row);
   });
 
+  renderDataHealthCheck(el, teams);
   renderAccountTools(el);
   renderUpdateLog(el);
+}
+
+
+// ---------------------------------------------------------------------------
+// Data Health Check. Every member's Standings/Survivor numbers are recomputed
+// live from raw picks+locks (see core/reconcile.js) rather than trusted from
+// what their own device last published -- that's what makes stale numbers
+// self-heal for every VIEWER immediately. This panel surfaces the other half:
+// which members' own published rows are still stale, so the admin can see
+// exactly who's affected instead of guessing from a vague "points look wrong"
+// report. A mismatch here means that member's own device hasn't reopened the
+// app since the result it's missing -- nothing for the admin to fix by hand.
+// ---------------------------------------------------------------------------
+function renderDataHealthCheck(el, teams){
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+
+  const rows = teams.map(t => {
+    const fresh = reconcileMember(t);
+    const pointsMatch = (t.total || 0) === (fresh.total || 0);
+    const survivorMatch = !!t.survivorAlive === !!fresh.survivorAlive
+      && (t.survivorStrikes || 0) === (fresh.survivorStrikes || 0)
+      && (t.survivorEliminatedWeek || null) === (fresh.survivorEliminatedWeek || null);
+    const missingWeeks = missingPickWeeks(t);
+    return { t, fresh, pointsMatch, survivorMatch, missingWeeks };
+  });
+  const mismatches = rows.filter(r => !r.pointsMatch || !r.survivorMatch || r.missingWeeks.length);
+
+  const summaryLine = mismatches.length
+    ? `<div class="admin-locked-msg" style="color:var(--danger,#e5484d)">⚠️ ${mismatches.length} of ${teams.length} member${teams.length === 1 ? '' : 's'} ${mismatches.length === 1 ? 'is' : 'are'} showing stale data right now.</div>`
+    : `<div class="empty">✅ Checked ${teams.length} member${teams.length === 1 ? '' : 's'} — everyone's published points, Survivor status, and picks match what this page recomputes live. Nothing stale right now.</div>`;
+
+  panel.innerHTML = `
+    <div class="section-label"><span>🩺 Data Health Check</span></div>
+    <p class="account-tools-note">Compares each member's own last-published points/Survivor status/picks
+      against the live recomputed truth (the same data Standings and Group Picks show). A mismatch means
+      that member's device hasn't caught back up yet — have them fully close and reopen the app on the
+      current version.</p>
+    ${summaryLine}
+    <div id="dataHealthList"></div>`;
+  el.appendChild(panel);
+
+  if(!mismatches.length) return;
+  const listEl = panel.querySelector('#dataHealthList');
+  listEl.innerHTML = mismatches.map(({ t, fresh, pointsMatch, survivorMatch, missingWeeks }) => `
+    <div class="admin-member-row">
+      <div>
+        <div class="admin-member-name">${escapeHtml(t.teamName)}${t.yourName ? ' — ' + escapeHtml(t.yourName) : ''}</div>
+        ${pointsMatch ? '' : `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Points: shows ${t.total || 0} → should be ${fresh.total || 0}</div>`}
+        ${survivorMatch ? '' : `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Survivor: shows ${survivorSummary(t)} → should be ${survivorSummary(fresh)}</div>`}
+        ${missingWeeks.length ? `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Group Picks: Week ${missingWeeks.join(', ')} kicked off but ${missingWeeks.length === 1 ? 'was' : 'were'} never published for this member — their cells will show as unsynced instead of their real picks.</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+/**
+ * Weeks whose games have already kicked off (so their picks are supposed to
+ * be public) where this member's published `picks` has no entry at all for
+ * that week. This is what leaves Group Picks showing "⋯ unsynced" instead of
+ * their actual picks -- the row itself was never written for that week, most
+ * often because their device hadn't opened the app since that week's games
+ * started when it last published.
+ */
+function missingPickWeeks(t){
+  const missing = [];
+  for(let n = 1; n <= TOTAL_WEEKS; n++){
+    const week = getWeek(n);
+    if(!week.games.length) continue;
+    if(!week.games.some(isGameLocked)) continue; // nothing public yet for this week anyway
+    if(!t.picks || !t.picks[n]) missing.push(n);
+  }
+  return missing;
+}
+
+function survivorSummary(t){
+  if(t.survivorAlive) return t.survivorStrikes ? `${t.survivorStrikes} strike${t.survivorStrikes === 1 ? '' : 's'}` : 'Alive';
+  return `Eliminated Wk ${t.survivorEliminatedWeek || '?'}`;
 }
 
 

@@ -101,6 +101,12 @@ header.board{
   .wrap{ padding-left: calc(14px + env(safe-area-inset-left));
          padding-right: calc(14px + env(safe-area-inset-right)); }
 
+  /* Commissioner banner: text wraps to its own line above the buttons rather
+     than truncating the recap announcement on a narrow screen. */
+  .commissioner-banner{ flex-wrap: wrap; font-size: 13px; padding: 8px 12px; }
+  .commissioner-banner-text{ flex-basis: 100%; }
+  .commissioner-banner-actions{ margin-left: auto; }
+
   /* Week picker + Menu side by side, each a comfortable thumb target. */
   .top-menu-row{ margin-top: 14px; padding-top: 14px; gap: 8px; }
   .picker-item{ min-width: 0; }

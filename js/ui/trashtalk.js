@@ -128,13 +128,24 @@ export async function renderTrashTalkFeed(){
 
 
 // ---------------------------------------------------------------------------
-// Unread badge: a count on the Menu button and again on the Trash Talk item
-// inside it, so there's a nudge to go look whether or not the menu is open.
+// Unread notifications: a count on the Menu button and again on the Trash
+// Talk item inside it, so there's a nudge to go look whether or not the menu
+// is open -- plus a banner across the top of the page for a Commissioner
+// recap specifically, since that's the one post everyone should actually
+// read and a small corner badge kept going unnoticed for it. The banner is a
+// one-time nudge per post (dismissing it, or reading the feed, both retire
+// it for that post); the badges stay lit -- a real unread count -- until the
+// feed is actually opened.
 // ---------------------------------------------------------------------------
 
-/** How many posts (not your own) have landed since you last opened the feed. */
-export async function getUnreadTrashTalkCount(){
-  if(!store.state.account.leagueSlug) return 0;
+/**
+ * Unread posts (not your own) since the feed was last opened, plus the
+ * newest unread Commissioner recap if there is one -- that post gets called
+ * out by name rather than folded into a generic number, since "someone said
+ * something" and "the weekly recap is up" are different-urgency news.
+ */
+export async function getUnreadTrashTalkInfo(){
+  if(!store.state.account.leagueSlug) return { count: 0, commissionerPost: null };
   try{
     const snap = await withTimeout(
       db.collection('leagues').doc(store.state.account.leagueSlug).collection('trashtalk').get(),
@@ -142,25 +153,64 @@ export async function getUnreadTrashTalkCount(){
     const since = store.state.account.lastTrashTalkSeenAt
       ? new Date(store.state.account.lastTrashTalkSeenAt) : null;
     let count = 0;
+    let commissionerPost = null;
     snap.forEach(docSnap => {
-      const p = docSnap.data();
+      const p = { key: docSnap.id, ...docSnap.data() };
       if(store.state.account.teamName && p.teamName === store.state.account.teamName) return; // never notify on your own post
-      if(!since || new Date(p.postedAt) > since) count++;
+      if(since && new Date(p.postedAt) <= since) return;
+      count++;
+      if(p.commissioner && (!commissionerPost || new Date(p.postedAt) > new Date(commissionerPost.postedAt))){
+        commissionerPost = p;
+      }
     });
-    return count;
-  }catch(e){ return 0; }
+    return { count, commissionerPost };
+  }catch(e){ return { count: 0, commissionerPost: null }; }
 }
 
-/** Refreshes both badges from the current unread count. Safe to call often. */
+// Which Commissioner post the banner has already been dismissed for, so a
+// dismiss doesn't come back on the next poll -- but a NEW recap still gets
+// its own banner even if the last one was waved away unread.
+let dismissedCommissionerKey = null;
+
+/** Refreshes both badges (and the Commissioner banner) from what's unread. Safe to call often. */
 export async function updateUnreadBadges(){
   const menuBadge = document.getElementById('menuUnreadBadge');
   const navBadge = document.getElementById('trashTalkNavUnreadBadge');
+  const banner = document.getElementById('commissionerBanner');
   if(!menuBadge || !navBadge) return;
-  const count = await getUnreadTrashTalkCount();
+  const { count, commissionerPost } = await getUnreadTrashTalkInfo();
+
   [menuBadge, navBadge].forEach(el => {
-    el.textContent = count > 9 ? '9+' : String(count);
+    el.classList.toggle('has-commissioner', !!commissionerPost);
+    // A football, not a number, when the news is specifically "the recap is
+    // up" -- a plain count reads as "someone said something", which is easy
+    // to shrug off for a week; this one shouldn't be.
+    el.textContent = commissionerPost ? '🏈' : (count > 9 ? '9+' : String(count));
     el.style.display = count > 0 ? 'flex' : 'none';
   });
+
+  if(!banner) return;
+  if(commissionerPost && commissionerPost.key !== dismissedCommissionerKey){
+    const textEl = document.getElementById('commissionerBannerText');
+    if(textEl){
+      textEl.textContent = `🏈 Commissioner Roger Goodell just posted the Week ${commissionerPost.week || ''} recap in Trash Talk.`;
+    }
+    banner.style.display = 'flex';
+    const viewBtn = document.getElementById('commissionerBannerView');
+    const dismissBtn = document.getElementById('commissionerBannerDismiss');
+    if(viewBtn) viewBtn.onclick = () => {
+      dismissedCommissionerKey = commissionerPost.key;
+      banner.style.display = 'none';
+      const navBtn = document.getElementById('navTrashTalkBtn');
+      if(navBtn) navBtn.click();
+    };
+    if(dismissBtn) dismissBtn.onclick = () => {
+      dismissedCommissionerKey = commissionerPost.key;
+      banner.style.display = 'none';
+    };
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 /** Call when the feed is actually opened: clears the badges going forward. */

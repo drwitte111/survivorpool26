@@ -43,8 +43,18 @@
   // Registered outside the module graph so a service-worker failure can never
   // stop the app itself from booting.
   if('serviceWorker' in navigator){
+    let reg = null;
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW registration failed', e));
+      // updateViaCache: 'none' matters more than it looks like it should. This
+      // site is served from GitHub Pages, which sends its own Cache-Control on
+      // static files -- so without this, a long-lived tab (or a PWA nobody
+      // fully closes) could keep asking for sw.js and get back a browser-cached
+      // copy that looks unchanged, and never learn a new one exists. This tells
+      // the browser to never use the HTTP cache for the worker script itself,
+      // so every check is a real one.
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+        .then(r => { reg = r; })
+        .catch(e => console.warn('SW registration failed', e));
     });
     // A new worker calls skipWaiting() and takes over straight away. Reload once
     // so the page isn't left running against the previous version's assets.
@@ -53,6 +63,15 @@
       if(reloading) return;          // guard: controllerchange can fire more than once
       reloading = true;
       window.location.reload();
+    });
+    // Browsers already check for a new worker on navigation, but a PWA that
+    // stays open for days between launches wouldn't otherwise notice a deploy
+    // until reopened. Ask again periodically while the tab is actually visible.
+    setInterval(() => {
+      if(reg && document.visibilityState === 'visible') reg.update().catch(() => {});
+    }, 15 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => {
+      if(reg && document.visibilityState === 'visible') reg.update().catch(() => {});
     });
   }
 </script>
@@ -193,6 +212,18 @@
     <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
   </div>
 </header>
+
+<!-- Prominent one-time nudge for a new Commissioner recap -- the corner badge
+     alone wasn't getting noticed, so this repeats the same news as a banner
+     nobody has to already be looking at the menu to see. Filled and shown by
+     ui/trashtalk.js's updateUnreadBadges(). -->
+<div class="commissioner-banner" id="commissionerBanner" style="display:none;">
+  <span class="commissioner-banner-text" id="commissionerBannerText"></span>
+  <span class="commissioner-banner-actions">
+    <button class="commissioner-banner-view" id="commissionerBannerView" type="button">Read it</button>
+    <button class="commissioner-banner-dismiss" id="commissionerBannerDismiss" type="button" aria-label="Dismiss">✕</button>
+  </span>
+</div>
 
 <main class="wrap">
   <div id="weekPage">

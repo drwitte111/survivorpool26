@@ -10,6 +10,7 @@ import { createLeague, joinLeague } from './core/league.js';
 import { refreshWeek } from './core/refresh.js';
 import { onBackOnline } from './core/net.js';
 import { loadState, enterApp } from './core/session.js';
+import { checkAndPostWeeklyRecaps } from './core/commissioner.js';
 import {
   render, showPage, showWeekPage, showAccountPage,
   showStandingsPage, showTrashTalkPage, showRulesPage, showAdminPage, showPicksPage,
@@ -338,6 +339,12 @@ function wireStallRecovery(){
 function startPolling(){
   setInterval(() => { updateSeasonRank().catch(() => {}); }, RANK_REFRESH_MS);
   setInterval(() => { updateUnreadBadges().catch(() => {}); }, RANK_REFRESH_MS);
+  // checkAndPostWeeklyRecaps only used to run once, on boot -- so a week that
+  // finished while an admin's tab was already open (rather than freshly
+  // opened) never got its recap posted until their next full reload. It's
+  // cheap to re-check (isAdmin() and a no-op transaction for anything already
+  // posted), so it rides the same poll as everything else here.
+  setInterval(() => { checkAndPostWeeklyRecaps().catch(() => {}); }, RANK_REFRESH_MS);
 
   // Quietly re-pull the current week: live scores and final results from ESPN,
   // then anything the admin corrected by hand -- plus, inside refreshWeek, a

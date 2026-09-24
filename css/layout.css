@@ -122,6 +122,34 @@ header.board::after{
    spacing) rather than off at the far edge of the row -- the point is for it
    to read as attached to that specific item. */
 .menu-nav-link .unread-badge{ flex-shrink: 0; }
+
+/* A Commissioner recap gets its own color and a football instead of a bare
+   number -- same badge, but "the recap is up" shouldn't look like just
+   another unread count that's easy to brush off. */
+.unread-badge.has-commissioner{
+  background: var(--amber); color: var(--night);
+  min-width: 22px; height: 22px; font-size: 13px;
+}
+
+/* Commissioner banner: a full-width nudge across the top of the page, since
+   the corner badge alone kept going unnoticed. One per recap -- dismissing
+   it or opening Trash Talk both retire it until the next one posts. */
+.commissioner-banner{
+  align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 16px; background: linear-gradient(90deg, rgba(var(--amber-rgb),0.22), rgba(var(--amber-rgb),0.08));
+  border-bottom: 1px solid var(--amber-dim);
+  color: var(--chalk); font-size: 14px; font-weight: 600;
+}
+.commissioner-banner-text{ flex: 1; min-width: 0; }
+.commissioner-banner-actions{ display:flex; align-items:center; gap: 8px; flex-shrink: 0; }
+.commissioner-banner-view{
+  background: var(--amber); color: var(--night); border: none; border-radius: 8px;
+  font-weight: 700; font-size: 13px; padding: 6px 12px; cursor: pointer; min-height: 32px;
+}
+.commissioner-banner-dismiss{
+  background: transparent; border: none; color: var(--chalk-dim); font-size: 16px;
+  cursor: pointer; padding: 4px 8px; min-height: 32px;
+}
 .picker-btn .menu-avatar.show{ display:inline-block; }
 .week-dropdown-panel{
   position:absolute; top: calc(100% + 8px); left: 0; z-index: 100;
