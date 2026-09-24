@@ -107,6 +107,10 @@ header.board{
   .commissioner-banner-text{ flex-basis: 100%; }
   .commissioner-banner-actions{ margin-left: auto; }
 
+  /* Commissioner popup toast: full-width with just a small margin instead of
+     a fixed max-width, so it reads as a real notification on a phone. */
+  .commissioner-toast{ width: calc(100vw - 20px); padding: 10px 12px; }
+
   /* Week picker + Menu side by side, each a comfortable thumb target. */
   .top-menu-row{ margin-top: 14px; padding-top: 14px; gap: 8px; }
   .picker-item{ min-width: 0; }

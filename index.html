@@ -225,6 +225,20 @@
   </span>
 </div>
 
+<!-- Text-message-style popup for a new Commissioner recap: slides in over
+     whatever page is open (arriving at picks after login, most of the time)
+     the way a phone notification would, then goes away on its own. The post
+     itself always stays readable in Trash Talk -- this is just the nudge.
+     Filled and shown by ui/trashtalk.js's maybeShowCommissionerPopup(). -->
+<div class="commissioner-toast" id="commissionerToast" style="display:none;" role="status">
+  <div class="commissioner-toast-icon">🏈</div>
+  <div class="commissioner-toast-body">
+    <div class="commissioner-toast-sender">Commissioner Roger Goodell</div>
+    <div class="commissioner-toast-msg" id="commissionerToastMsg"></div>
+  </div>
+  <button class="commissioner-toast-close" id="commissionerToastClose" type="button" aria-label="Dismiss">✕</button>
+</div>
+
 <main class="wrap">
   <div id="weekPage">
     <div class="week-header">

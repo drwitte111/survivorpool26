@@ -150,6 +150,40 @@ header.board::after{
   background: transparent; border: none; color: var(--chalk-dim); font-size: 16px;
   cursor: pointer; padding: 4px 8px; min-height: 32px;
 }
+
+/* Commissioner popup toast: a phone-notification-style bubble that slides in
+   over whatever page is open (usually the picks page, right after login) and
+   goes away on its own -- the banner above is a passive corner nudge, this is
+   the "something just happened" moment. Tapping it opens Trash Talk, where
+   the post stays readable for good; it's a one-time announcement, not the
+   only way to see the recap. */
+.commissioner-toast{
+  position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 50%;
+  transform: translateX(-50%) translateY(-24px); opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.32s ease;
+  z-index: 500; width: min(420px, calc(100vw - 24px));
+  align-items: flex-start; gap: 10px; padding: 12px 14px;
+  background: linear-gradient(160deg, #14283f, #0c1c30);
+  border: 1px solid var(--amber-dim); border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  cursor: pointer;
+}
+.commissioner-toast.show{ transform: translateX(-50%) translateY(0); opacity: 1; }
+.commissioner-toast-icon{
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--amber); color: var(--night);
+  display:flex; align-items:center; justify-content:center; font-size: 18px;
+}
+.commissioner-toast-body{ flex: 1; min-width: 0; }
+.commissioner-toast-sender{ font-weight: 700; font-size: 13px; color: var(--amber); margin-bottom: 2px; }
+.commissioner-toast-msg{
+  font-size: 13px; color: var(--chalk); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.commissioner-toast-close{
+  flex-shrink: 0; background: transparent; border: none; color: var(--chalk-dim);
+  font-size: 14px; cursor: pointer; padding: 2px 4px; min-height: 28px; min-width: 28px;
+}
 .picker-btn .menu-avatar.show{ display:inline-block; }
 .week-dropdown-panel{
   position:absolute; top: calc(100% + 8px); left: 0; z-index: 100;

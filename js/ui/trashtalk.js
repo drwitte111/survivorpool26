@@ -211,6 +211,41 @@ export async function updateUnreadBadges(){
   } else {
     banner.style.display = 'none';
   }
+
+  showCommissionerPopup(commissionerPost);
+}
+
+// Which Commissioner post has already popped its toast this session -- once
+// per post, however many times updateUnreadBadges() happens to run (boot,
+// every poll, coming back online). Dismissing it only skips it for the rest
+// of this session; it's due again on the next login until it's actually read.
+let poppedCommissionerKey = null;
+let popupHideTimer = null;
+
+function showCommissionerPopup(commissionerPost){
+  const toast = document.getElementById('commissionerToast');
+  if(!toast || !commissionerPost || commissionerPost.key === poppedCommissionerKey) return;
+  poppedCommissionerKey = commissionerPost.key;
+
+  const msgEl = document.getElementById('commissionerToastMsg');
+  if(msgEl) msgEl.textContent = commissionerPost.message || '';
+
+  const dismiss = () => {
+    toast.classList.remove('show');
+    setTimeout(() => { toast.style.display = 'none'; }, 320);
+  };
+  const closeBtn = document.getElementById('commissionerToastClose');
+  if(closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); dismiss(); };
+  toast.onclick = () => {
+    dismiss();
+    const navBtn = document.getElementById('navTrashTalkBtn');
+    if(navBtn) navBtn.click();
+  };
+
+  toast.style.display = 'flex';
+  requestAnimationFrame(() => toast.classList.add('show'));
+  clearTimeout(popupHideTimer);
+  popupHideTimer = setTimeout(dismiss, 9000);
 }
 
 /** Call when the feed is actually opened: clears the badges going forward. */

@@ -15,6 +15,16 @@
   background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 200px auto, 100% 100%;
 }
 .lock-panel::before{ background: repeating-linear-gradient(90deg, var(--incorrect) 0px, var(--incorrect) 14px, transparent 14px, transparent 28px); }
+
+/* Draws the eye here when Submit Picks is blocked on a missing Survivor lock
+   -- the panel already carries a permanent red border for the theme, so this
+   pulses an outline around it instead of fighting that border for attention. */
+.lock-panel.needs-attention{ animation: survivor-attention-pulse 1.6s ease-out; }
+@keyframes survivor-attention-pulse{
+  0%   { outline: 3px solid var(--amber); outline-offset: 3px; }
+  70%  { outline: 3px solid var(--amber); outline-offset: 3px; }
+  100% { outline: 3px solid transparent; outline-offset: 3px; }
+}
 .lock-header{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom: 12px; }
 .lock-title{
   font-family:'Oswald', sans-serif; font-size: 16px; font-weight:700; text-transform:uppercase; letter-spacing: 0.5px;

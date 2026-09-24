@@ -533,6 +533,44 @@ export function sortedGames(week){
   });
 }
 
+/**
+ * True when this member is still alive in Survivor, hasn't locked a team for
+ * the given week, and actually still has a team available to lock -- i.e.
+ * there's a real pick sitting there waiting on them, not just a week where
+ * Survivor genuinely has nothing left to offer. Eliminated members and weeks
+ * with no open choice left are never "missing" a pick.
+ */
+function survivorPickMissingForWeek(n){
+  if(!getSurvivorStatus().alive) return false;
+  const week = peekWeek(n);
+  if(week.lockTeam) return false;
+  return getSurvivorChoices(n).anyOpen;
+}
+
+/** getMissingItems, plus the Survivor lock when this member still owes one. */
+function missingItemsWithSurvivor(week, n){
+  const missing = getMissingItems(week);
+  if(survivorPickMissingForWeek(n)) missing.push('your Survivor pick for this week');
+  return missing;
+}
+
+/** isWeekComplete, plus the Survivor lock when this member still owes one. */
+function weekCompleteWithSurvivor(week, n){
+  return isWeekComplete(week) && !survivorPickMissingForWeek(n);
+}
+
+/** Draws the eye to the Survivor panel when that's what's blocking Submit. */
+function flashLockPanel(){
+  const panel = document.getElementById('lockPanel');
+  if(!panel) return;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  panel.classList.remove('needs-attention');
+  // Re-trigger the animation even if it was already flashed once this render.
+  void panel.offsetWidth;
+  panel.classList.add('needs-attention');
+  setTimeout(() => panel.classList.remove('needs-attention'), 1600);
+}
+
 export function renderGames(){
   const week = getWeek(store.currentWeek);
   const panel = document.getElementById('gamesPanel');
@@ -732,17 +770,19 @@ export function renderGames(){
     banner.innerHTML = `🔒 <b>Week ${store.currentWeek} is locked</b> — every game has kicked off.`;
     footer.appendChild(banner);
   } else if(ui.showIncompleteWarning){
-    const missing = getMissingItems(week);
+    const missing = missingItemsWithSurvivor(week, store.currentWeek);
+    const survivorMissing = survivorPickMissingForWeek(store.currentWeek);
     const warnBox = document.createElement('div');
     warnBox.className = 'lock-banner incomplete-warning';
     warnBox.innerHTML = `⚠️ <b>Your Week ${store.currentWeek} lineup isn’t complete</b> — you’re still missing ${missing.join(', ')}. Finish those before submitting.`;
     footer.appendChild(warnBox);
     const goBackBtn = document.createElement('button');
     goBackBtn.className = 'submit-btn complete';
-    goBackBtn.textContent = 'Go Back';
+    goBackBtn.textContent = survivorMissing ? 'Go Set Your Survivor Pick' : 'Go Back';
     goBackBtn.onclick = () => {
       ui.showIncompleteWarning = false;
       render();
+      if(survivorMissing) flashLockPanel();
     };
     footer.appendChild(goBackBtn);
   } else {
@@ -755,7 +795,7 @@ export function renderGames(){
       footer.appendChild(done);
     }
     const submitBtn = document.createElement('button');
-    const complete = isWeekComplete(week);
+    const complete = weekCompleteWithSurvivor(week, store.currentWeek);
     submitBtn.className = 'submit-btn' + (complete ? ' complete' : '');
     submitBtn.textContent = week.submitted ? 'Update Lineup' : 'Submit Picks';
     let armed = false;
@@ -763,7 +803,12 @@ export function renderGames(){
     submitBtn.onclick = () => {
       if(!complete){
         ui.showIncompleteWarning = true;
+        const survivorMissing = survivorPickMissingForWeek(store.currentWeek);
         render();
+        // Survivor lives in its own panel above the games -- easy to miss
+        // entirely if someone only ever scrolls straight to the matchups, so
+        // point at it the moment it's actually what's blocking them.
+        if(survivorMissing) flashLockPanel();
         return;
       }
       if(!armed){
