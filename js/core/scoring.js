@@ -157,11 +157,21 @@ export function computeHotStreak(){
  * pushes whatever held 16, 15 and 14 each down a step; the 13 it gave up is
  * absorbed at the bottom of that run, so everything is back to square.
  *
+ * An unmovable game (one that's already kicked off) keeps its number no
+ * matter what -- but that number is a fixed POST the chain reroutes around,
+ * not a wall the whole move crashes into. Used to be the latter: a single
+ * locked game anywhere between the old and new value failed the entire
+ * reassignment, which meant one Thursday-night pick could leave half the
+ * week's point values permanently unreachable for everyone else, even though
+ * none of those reassignments actually needed to touch it. The only thing
+ * that's genuinely impossible is handing a locked game's own number to
+ * someone else.
+ *
  * Pure, and told which games may move via `canMove`, so the locking rules stay
  * in the UI layer where they belong.
  *
- * Returns { ok, moved }. ok is false when the shift would have to renumber a
- * game that can't move, in which case nothing is changed at all.
+ * Returns { ok, moved }. ok is false only when `next` itself belongs to a
+ * game that can't give it up, in which case nothing is changed at all.
  */
 export function assignConfidence(games, game, next, canMove = () => true){
   const prev = game.confidence;
@@ -169,10 +179,17 @@ export function assignConfidence(games, game, next, canMove = () => true){
   if(next === prev) return { ok: true, moved: [] };
 
   const others = games.filter(g => g !== game);
+  const lockedValues = new Set(
+    others.filter(g => g.confidence != null && !canMove(g)).map(g => g.confidence));
+  // A locked game's own number can never be handed to another game -- full stop.
+  if(lockedValues.has(next)) return { ok: false, moved: [] };
+
   const used = new Set(others.filter(g => g.confidence != null).map(g => g.confidence));
 
   // The slot that frees up and absorbs the shift. Normally it's the value this
   // game gives up; if it didn't have one, the nearest unused number stands in.
+  // Always a free (and therefore unlocked) number, never one a locked game
+  // is sitting on.
   let hole = prev;
   if(hole == null){
     const max = games.length;
@@ -185,19 +202,33 @@ export function assignConfidence(games, game, next, canMove = () => true){
     else hole = (above - next) <= (next - below) ? above : below;
   }
 
-  // The run that has to move, and which way.
-  const [from, to, delta] = next > hole
-    ? [hole + 1, next, -1]      // moving up: the run above slides down a step
-    : [next, hole - 1, +1];     // moving down: the run below slides up a step
+  // The numbers between the hole and the target that are actually free to
+  // carry a different game -- a locked game's number is skipped rather than
+  // treated as part of the chain, so the chain steps around it instead of
+  // stopping there.
+  const lo = Math.min(next, hole), hi = Math.max(next, hole);
+  const openSlots = [];
+  for(let v = lo; v <= hi; v++) if(!lockedValues.has(v)) openSlots.push(v);
+  const holeIdx = openSlots.indexOf(hole);
+  const nextIdx = openSlots.indexOf(next);
 
-  const affected = others.filter(g =>
-    g.confidence != null && g.confidence >= from && g.confidence <= to);
+  // Snapshot who's in each open slot before anything moves.
+  const occupant = openSlots.map(v => others.find(g => g.confidence === v) || null);
 
-  if(affected.some(g => !canMove(g))) return { ok: false, moved: [] };
-
-  affected.forEach(g => { g.confidence += delta; });
+  const moved = [];
+  if(nextIdx > holeIdx){
+    for(let i = holeIdx + 1; i <= nextIdx; i++){
+      const g = occupant[i];
+      if(g){ g.confidence = openSlots[i - 1]; moved.push(g); }
+    }
+  } else {
+    for(let i = holeIdx - 1; i >= nextIdx; i--){
+      const g = occupant[i];
+      if(g){ g.confidence = openSlots[i + 1]; moved.push(g); }
+    }
+  }
   game.confidence = next;
-  return { ok: true, moved: affected };
+  return { ok: true, moved };
 }
 
 

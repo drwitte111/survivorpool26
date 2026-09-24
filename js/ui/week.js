@@ -631,9 +631,10 @@ export function renderGames(){
     //
     // Every value stays pickable. Choosing one that's already in use reorders
     // the week rather than refusing: the games between here and there each
-    // shift a step, so the numbers stay 1..N with no repeats. A value is only
-    // offered if that shift wouldn't have to renumber a game that has already
-    // kicked off, since those points are settled.
+    // shift, so the numbers stay 1..N with no repeats. A game that's already
+    // kicked off keeps its number fixed -- the reorder steps around it rather
+    // than through it -- so the only value genuinely off-limits is the exact
+    // number a kicked-off game is holding.
     const canMove = (g) => !isGameLocked(g);
     const sel = document.createElement('select');
     sel.className = 'conf-select';
@@ -669,8 +670,8 @@ export function renderGames(){
           title: `Give ${next} point${next === 1 ? '' : 's'} to this game?`,
           body: `${holder.away} @ ${holder.home} currently has ${next}. `
               + (others > 1
-                  ? `It and ${others - 1} other game${others - 1 === 1 ? '' : 's'} will shift by one to make room.`
-                  : `It will shift by one to make room.`),
+                  ? `It and ${others - 1} other game${others - 1 === 1 ? '' : 's'} will move to make room.`
+                  : `It will move to make room.`),
           confirmText: 'Move it',
           cancelText: 'Leave it',
         });
