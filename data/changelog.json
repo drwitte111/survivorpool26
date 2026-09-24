@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-09-24T20:38:02Z",
+      "title": "Survivor pick required to submit, and the Commissioner recap pops up like a text",
+      "detail": "Anyone still alive in Survivor now has to lock a team before Submit Picks will go through, as long as there's actually a team left to pick that week -- eliminated members and weeks with nothing pickable are never blocked. If it's what's missing, the button says so and scrolls up to flash the Survivor panel so it's not easy to miss. Separately, the Commissioner's weekly recap now also arrives as a dismissible pop-up notification (not just the corner badge and top banner) -- closing it just defers it to next login, and the post itself is always still there in Trash Talk.",
+      "by": "Caleb",
+      "tags": [
+        "feature",
+        "scoring"
+      ]
+    },
+    {
       "at": "2026-09-24T19:38:37Z",
       "title": "Fixed confidence points getting stuck grayed-out around a locked game",
       "detail": "Picking every game's points early in the week, then coming back after a Thursday game kicked off to rearrange the rest, left a bunch of clearly-unused point values unselectable. Reassigning a number works by shifting the games in between by one step to keep the week a clean 1-16 with no repeats -- that shift used to refuse outright the moment a kicked-off game's settled number sat anywhere in the range, not just at its own exact value. Now the reorder steps around a locked game's number instead of getting blocked by it; only that game's own exact number stays off-limits.",
