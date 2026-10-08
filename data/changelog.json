@@ -27,6 +27,16 @@
   ],
   "entries": [
     {
+      "at": "2026-10-08T22:13:18Z",
+      "title": "Missing weeks fill in on their own, plus automated bye-week tests",
+      "detail": "The schedule used to be loaded into your saved picks only if you had no games saved for any week, so a save holding some weeks but not others never got the rest. Now every empty week is filled in on load, without touching weeks you've already picked. Also added automated tests that run the scoring, auto-fill and Survivor logic against the real schedule, including the shorter bye weeks (Week 5 has 15 games, so points run 1-15).",
+      "by": "Claude",
+      "tags": [
+        "fix",
+        "infra"
+      ]
+    },
+    {
       "at": "2026-09-24T20:38:02Z",
       "title": "Survivor pick required to submit, and the Commissioner recap pops up like a text",
       "detail": "Anyone still alive in Survivor now has to lock a team before Submit Picks will go through, as long as there's actually a team left to pick that week -- eliminated members and weeks with nothing pickable are never blocked. If it's what's missing, the button says so and scrolls up to flash the Survivor panel so it's not easy to miss. Separately, the Commissioner's weekly recap now also arrives as a dismissible pop-up notification (not just the corner badge and top banner) -- closing it just defers it to next login, and the post itself is always still there in Trash Talk.",
