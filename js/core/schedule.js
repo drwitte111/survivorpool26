@@ -21,12 +21,18 @@ export function getActiveWeekByDate(){
 
 /**
  * Fills in any week that has no games yet, without clobbering existing picks.
- * Runs on entry so the board is populated before any admin spreads load.
+ * Runs on every entry so the board is populated before any admin spreads load.
+ *
+ * Per week, not all-or-nothing: a saved state holding some weeks but not
+ * others (an older seed, a league switch) still gets the missing ones.
+ * Returns how many weeks it filled, and only saves when that's non-zero.
  */
 export function seedDefaultSchedule(){
+  let seeded = 0;
   Object.keys(DEFAULT_SCHEDULE).forEach(wk => {
     const week = getWeek(parseInt(wk));
     if(week.games.length) return; // don't clobber anything already there
+    seeded++;
     week.oddsUpdatedAt = week.oddsUpdatedAt || null;
     week.oddsSource = week.oddsSource || null;
     week.games = DEFAULT_SCHEDULE[wk].map(({ away, home, kickoff, isMNF }) => ({
@@ -39,5 +45,6 @@ export function seedDefaultSchedule(){
       gameState: 'pre', statusDetail: null
     }));
   });
-  saveState();
+  if(seeded) saveState();
+  return seeded;
 }

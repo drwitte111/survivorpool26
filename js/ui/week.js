@@ -639,7 +639,7 @@ export function renderGames(){
   if(!week.games.length){
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.innerHTML = `No matchups loaded for Week ${store.currentWeek} yet.<br>Weeks 16-18 depend on real-world flex scheduling and aren't set yet.`;
+    empty.innerHTML = `No matchups loaded for Week ${store.currentWeek} yet.`;
     panel.appendChild(empty);
     return;
   }
@@ -659,7 +659,7 @@ export function renderGames(){
     // Each matchup closes at its own kickoff, independent of the rest of the slate.
     const gameLocked = notOpenYet || isGameLocked(game);
     if(gameLocked) row.classList.add('locked-game');
-    // Stands out in a 16-row list -- easy to miss otherwise.
+    // Stands out in a long list of games -- easy to miss otherwise.
     if(lineMoved(game)) row.classList.add('line-moved');
 
     // Left: matchup + team selection

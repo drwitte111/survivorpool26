@@ -39,11 +39,7 @@ export async function enterApp(){
   store.currentWeek = getActiveWeekByDate();
   render();
 
-  const hasAnyGames = Object.values(store.state.weeks).some(w => w.games && w.games.length);
-  if(!hasAnyGames){
-    seedDefaultSchedule();
-    render();
-  }
+  if(seedDefaultSchedule()) render();
 
   // New (or half-set-up) member: block the board until they're on the leaderboard.
   maybeShowProfileGate();

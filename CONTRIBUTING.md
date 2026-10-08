@@ -125,6 +125,7 @@ place should trip over it.
 
 ```bash
 node tools/check.mjs
+node tools/test.mjs
 ```
 
 Then serve it and click through the change:

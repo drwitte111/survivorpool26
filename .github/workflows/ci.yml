@@ -26,6 +26,10 @@ jobs:
       - name: Repo health check
         run: node tools/check.mjs
 
+      # Core logic against the real data -- bye weeks, point ranges, Survivor.
+      - name: Tests
+        run: node tools/test.mjs
+
       # The deploy stamps sw.js. If that ever silently no-ops, every returning
       # visitor keeps a stale cache, so prove it still works on a scratch copy.
       - name: Build stamp works
