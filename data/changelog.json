@@ -27,6 +27,17 @@
   ],
   "entries": [
     {
+      "at": "2026-10-08T22:24:13Z",
+      "title": "Bug sweep: picks can't change after kickoff, results and scores sync properly",
+      "detail": "A picks page left open across a kickoff could still change that game's pick, points, tiebreaker or Survivor lock -- every change is now re-checked the moment you tap, and the page redraws when a game kicks off or you come back to the app. Admin result undos and corrected final scores now reach everyone, publishing spreads no longer wipes results already published that week, and a game's closing line is taken from the published number rather than a stale copy. Signing out now fully clears the device, a failed load retries instead of starting a blank season, King streak badges only count weeks that have started (everyone was showing a 13+ week streak), and a few member-written values are now escaped before display.",
+      "by": "Claude",
+      "tags": [
+        "fix",
+        "scoring",
+        "admin"
+      ]
+    },
+    {
       "at": "2026-10-08T22:13:18Z",
       "title": "Missing weeks fill in on their own, plus automated bye-week tests",
       "detail": "The schedule used to be loaded into your saved picks only if you had no games saved for any week, so a save holding some weeks but not others never got the rest. Now every empty week is filled in on load, without touching weeks you've already picked. Also added automated tests that run the scoring, auto-fill and Survivor logic against the real schedule, including the shorter bye weeks (Week 5 has 15 games, so points run 1-15).",
