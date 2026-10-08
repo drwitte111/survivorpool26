@@ -184,12 +184,16 @@ export async function refreshWeek(n){
     }catch(e){
       console.warn('ESPN odds sync failed', e.message);
     }
-    // Runs regardless of whether a fetch happened -- a game can lock between
-    // polls, and its line has to be frozen the moment it does.
-    changed += captureClosingLines(week);
   }
 
   changed += await ensureSpreadsLoaded(n);
+
+  // After the publish is applied, not before: closing lines are write-once, so
+  // capturing first froze whatever stale line this device last fetched (say,
+  // Tuesday's) and the league's published number could never replace it.
+  // Runs regardless of whether a fetch happened -- a game can lock between
+  // polls, and its line has to be frozen the moment it does.
+  changed += captureClosingLines(week);
 
   // Every other week that isn't done grading yet -- see catchUpStaleWeeks.
   try{

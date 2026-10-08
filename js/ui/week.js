@@ -2,7 +2,7 @@
 // The admin spread and results editors live on the Admin page now (ui/admin.js).
 import { store, ui, getWeek, peekWeek } from '../core/state.js';
 import { TEAM_LIST, CONFIG } from '../core/data.js';
-import { getTeamAbbr, getTeamColors, teamLogoUrl, teamAbbrEquals } from '../core/teams.js';
+import { getTeamAbbr, getTeamColors, teamLogoUrl } from '../core/teams.js';
 import { saveState } from '../core/persist.js';
 import {
   isGameLocked, isWeekFullyLocked, openGames, nextLockTime,
@@ -32,6 +32,24 @@ export function lineMoved(game){
     && game.pickedSpread != null
     && game.homeSpread != null
     && game.pickedSpread !== game.homeSpread;
+}
+
+/**
+ * Whether this game is closed right now, checked at the moment of the tap.
+ *
+ * A row's locked state is baked in when it's drawn, and a page left open over
+ * kickoff isn't redrawn until something changes -- so every edit handler asks
+ * again instead of trusting the render. Nothing server-side enforces locks.
+ */
+function closedNow(game){
+  return !isWeekOpen(store.currentWeek) || isGameLocked(game);
+}
+
+/** Redraws (so the row shows as locked) and returns true if `game` has closed. */
+function refuseIfClosed(game){
+  if(!closedNow(game)) return false;
+  render();
+  return true;
 }
 
 // Both live in core/scoring.js now, next to the grading that uses them.
@@ -146,6 +164,7 @@ export function teamButtonRow(game, mode, locked){
     btn.disabled = disablePicks;
     btn.onclick = () => {
       if(disablePicks) return;
+      if(mode === 'pick' && refuseIfClosed(game)) return;
       const clearing = game[field] === side;
       game[field] = clearing ? null : side;
       if(mode === 'pick') game.autoPick = false;
@@ -273,6 +292,7 @@ export function teamButtonRow(game, mode, locked){
       take.title = 'Judge this pick against the current line instead';
       take.onclick = (e) => {
         e.stopPropagation();
+        if(refuseIfClosed(game)) return;
         game.pickedSpread = game.homeSpread;
         game.pickedOverUnder = game.overUnder ?? game.pickedOverUnder;
         game.pickedAt = new Date().toISOString();
@@ -297,6 +317,7 @@ export function teamButtonRow(game, mode, locked){
     guessInput.placeholder = game.overUnder != null ? 'O/U ' + game.overUnder : 'e.g. 47';
     guessInput.disabled = disablePicks;
     guessInput.onchange = () => {
+      if(refuseIfClosed(game)) return;
       game.tiebreakGuess = guessInput.value ? parseInt(guessInput.value) : null;
       saveState(); render();
     };
@@ -400,15 +421,17 @@ export function renderLockPanel(){
   select.onchange = () => {
     const typed = select.value;
     errorEl.textContent = '';
-    if(!typed){ week.lockTeam = null; week.autoLock = false; saveState(); render(); return; }
-    const matchesGame = week.games.find(g => g.away === typed || g.home === typed);
-    if(!matchesGame){
-      errorEl.textContent = `"${typed}" isn’t one of this week’s teams.`;
+    // Re-checked now rather than trusting the render: the page may have sat
+    // open while the locked team (or the one being picked) kicked off.
+    if(!isWeekOpen(store.currentWeek) || getSurvivorChoices(store.currentWeek).committed){
+      render();
       return;
     }
-    const usedElsewhere = getUsedLockTeams(store.currentWeek).find(u => teamAbbrEquals(u.team, typed));
-    if(usedElsewhere){
-      errorEl.textContent = `You already used ${usedElsewhere.team} as your lock in Week ${usedElsewhere.week}.`;
+    if(!typed){ week.lockTeam = null; week.autoLock = false; saveState(); render(); return; }
+    const err = survivorPickError(store.currentWeek, typed);
+    if(err){
+      errorEl.textContent = err;
+      select.value = week.lockTeam || '';
       return;
     }
     week.lockTeam = typed;
@@ -621,6 +644,7 @@ export function renderGames(){
         return;
       }
       clearTimeout(armTimer);
+      if(!isWeekOpen(store.currentWeek)){ render(); return; }
       openGames(week).forEach(g => {
         g.pick = null;
         g.confidence = null;
@@ -645,6 +669,10 @@ export function renderGames(){
   }
 
   const maxPts = maxPointsFor(week);
+  // One-shot: flash the rows a reorder moved on this render only, not on
+  // every redraw after it.
+  const shifted = ui.shiftedGameIds;
+  ui.shiftedGameIds = null;
 
   sortedGames(week).forEach(game => {
     const row = document.createElement('div');
@@ -716,6 +744,8 @@ export function renderGames(){
         if(!ok){ revert(); return; }
       }
 
+      // Checked after the dialog: it can sit open across kickoff.
+      if(refuseIfClosed(game)) return;
       const before = new Map(week.games.map(g => [g.id, g.confidence]));
       const result = assignConfidence(week.games, game, next, canMove);
       if(!result.ok){ revert(); return; }
@@ -728,7 +758,7 @@ export function renderGames(){
     row.appendChild(sel);
 
     // Briefly mark rows the reorder moved -- most are off-screen.
-    if(ui.shiftedGameIds && ui.shiftedGameIds.includes(game.id)){
+    if(shifted && shifted.includes(game.id)){
       row.classList.add('just-shifted');
       setTimeout(() => row.classList.remove('just-shifted'), 1600);
     }
@@ -740,7 +770,7 @@ export function renderGames(){
     del.className = 'del-btn'; del.textContent = '✕'; del.title = 'Reset team pick and points for this matchup';
     del.disabled = gameLocked;
     del.onclick = () => {
-      if(gameLocked) return;
+      if(gameLocked || refuseIfClosed(game)) return;
       game.pick = null;
       game.confidence = null;
       saveState(); render();
@@ -769,7 +799,7 @@ export function renderGames(){
     banner.className = 'lock-banner';
     banner.innerHTML = `🔒 <b>Week ${store.currentWeek} is locked</b> — every game has kicked off.`;
     footer.appendChild(banner);
-  } else if(ui.showIncompleteWarning){
+  } else if(ui.showIncompleteWarning && !weekCompleteWithSurvivor(week, store.currentWeek)){
     const missing = missingItemsWithSurvivor(week, store.currentWeek);
     const survivorMissing = survivorPickMissingForWeek(store.currentWeek);
     const warnBox = document.createElement('div');

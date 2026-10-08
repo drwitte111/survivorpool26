@@ -106,8 +106,19 @@ export async function loadGlobalSpreads(n){
 export async function saveGlobalSpreads(n, gamesArr){
   try{
     const existing = await loadGlobalSpreads(n);
+    // The doc is rewritten whole, so carry over any result already published
+    // for a game -- publishing Sunday's lines after Thursday was graded used
+    // to wipe Thursday's result from the shared record.
+    const prior = (existing && existing.games) || [];
+    const games = gamesArr.map(g => {
+      const was = prior.find(x => x.away === g.away && x.home === g.home);
+      if(!was) return g;
+      const kept = {};
+      ['actualWinner', 'awayScore', 'homeScore'].forEach(k => { if(was[k] !== undefined) kept[k] = was[k]; });
+      return { ...kept, ...g };
+    });
     await db.collection('schedule').doc('week' + n).set({
-      games: gamesArr,
+      games,
       mnfFinalScore: existing && existing.mnfFinalScore != null ? existing.mnfFinalScore : null,
       updatedAt: new Date().toISOString(),
       updatedBy: store.currentUser ? store.currentUser.email : null
@@ -172,13 +183,27 @@ export async function ensureSpreadsLoaded(n){
     if(local.closingOverUnder == null && gs.closingOverUnder != null){ local.closingOverUnder = gs.closingOverUnder; changed++; }
     if(gs.kickoff && local.kickoff !== gs.kickoff){ local.kickoff = gs.kickoff; changed++; }
     if(gs.isMNF !== undefined && local.isMNF !== gs.isMNF){ local.isMNF = gs.isMNF; changed++; }
-    if(gs.actualWinner && local.actualWinner !== gs.actualWinner){
-      local.actualWinner = gs.actualWinner;
-      changed++;
+    if(gs.actualWinner){
+      if(local.actualWinner !== gs.actualWinner){ local.actualWinner = gs.actualWinner; changed++; }
       // Published finals win over whatever this device last pulled from ESPN,
-      // so everyone grades the same game off the same score.
-      if(gs.awayScore != null) local.liveAway = gs.awayScore;
-      if(gs.homeScore != null) local.liveHome = gs.homeScore;
+      // so everyone grades the same game off the same score. Marked, so the
+      // ESPN poll leaves them alone afterwards instead of overwriting an
+      // admin's correction every 30 seconds (see syncWeekScores).
+      if(gs.awayScore != null && gs.homeScore != null){
+        if(local.liveAway !== gs.awayScore || local.liveHome !== gs.homeScore){
+          local.liveAway = gs.awayScore;
+          local.liveHome = gs.homeScore;
+          changed++;
+        }
+        local.scoresPublished = true;
+      }
+    } else if(gs.actualWinner === null && local.actualWinner && local.gameState !== 'post'){
+      // An admin undid this result. Only honoured while ESPN hasn't called the
+      // game final itself -- otherwise this and the ESPN sync would fight over
+      // it on every poll, and a real final beats a blank.
+      local.actualWinner = null;
+      local.scoresPublished = false;
+      changed++;
     }
   });
   if(data.mnfFinalScore != null && week.mnfActualTotal !== data.mnfFinalScore){

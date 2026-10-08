@@ -10,13 +10,31 @@ import { saveState } from './persist.js';
 import { refreshWeek } from './refresh.js';
 import { isAdmin } from './roles.js';
 import { checkAndPostWeeklyRecaps } from './commissioner.js';
-import { render } from '../ui/router.js';
+import { render, setSyncStatus } from '../ui/router.js';
 import { updateSeasonRank } from '../ui/standings.js';
 import { maybeShowProfileGate } from '../ui/onboarding.js';
 import { updateUnreadBadges } from '../ui/trashtalk.js';
 
+const LOAD_RETRY_MAX_MS = 30000;
+
 export async function loadState(){
-  const loaded = await loadUserState(store.currentUser.uid);
+  const uid = store.currentUser.uid;
+  // A failed read is retried, never treated as an empty account -- see
+  // loadUserState. Backs off up to every 30s until it gets through.
+  let loaded;
+  for(let attempt = 0; ; attempt++){
+    try{
+      loaded = await loadUserState(uid);
+      break;
+    }catch(e){
+      console.error('loadUserState failed', e);
+      if(!store.currentUser || store.currentUser.uid !== uid) return; // signed out meanwhile
+      setSyncStatus('Couldn’t load your picks — retrying…');
+      await new Promise(r => setTimeout(r, Math.min(LOAD_RETRY_MAX_MS, 2000 * 2 ** attempt)));
+      if(!store.currentUser || store.currentUser.uid !== uid) return;
+    }
+  }
+  setSyncStatus('');
   if(loaded) store.state = loaded;
   normalizeState();
 

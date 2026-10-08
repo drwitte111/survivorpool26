@@ -38,10 +38,12 @@ globalThis.fetch = async (url) => {
   return { ok: true, status: 200, json: async () => ({ items: [] }) };
 };
 
+const docs = {};        // path -> stored document
 const docRef = (path) => ({
   id: path.split('/').pop(),
-  get: async () => ({ exists: false, data: () => undefined }),
-  set: async () => {}, delete: async () => {},
+  get: async () => ({ exists: path in docs, data: () => structuredClone(docs[path]) }),
+  set: async (v) => { docs[path] = structuredClone(v); },
+  delete: async () => { delete docs[path]; },
   collection: (c) => col(path + '/' + c),
 });
 const col = (path) => ({ doc: (id) => docRef(path + '/' + id), get: async () => ({ forEach(){} }) });
@@ -66,13 +68,18 @@ const reconcile = await mod('js/core/reconcile.js');
 const league = await mod('js/core/league.js');
 const teams = await mod('js/core/teams.js');
 const espn = await mod('js/core/espn.js');
+const refresh = await mod('js/core/refresh.js');
 
 let passed = 0, failed = 0;
 async function test(name, fn){
   try{ await fn(); passed++; console.log(`  ✓ ${name}`); }
   catch(e){ failed++; console.error(`  ✗ ${name}\n      ${e.message.split('\n').join('\n      ')}`); }
 }
-function freshSeason(){ state.store.state = state.newState(); sched.seedDefaultSchedule(); }
+function freshSeason(){
+  Object.keys(docs).forEach(k => delete docs[k]);
+  state.store.state = state.newState();
+  sched.seedDefaultSchedule();
+}
 const range = (n) => Array.from({ length: n }, (_, i) => i + 1);
 const sorted = (a) => a.slice().sort((x, y) => x - y);
 
@@ -216,6 +223,74 @@ await test('ESPN scores match every game in week 5', async () => {
     ] }] }));
   assert.equal(await espn.syncWeekScores(5, 2026, w), 15);
   assert.ok(w.games.every(g => g.actualWinner === 'home'));
+});
+
+console.log('\nPublished results');
+await test('publishing spreads keeps results already published that week', async () => {
+  freshSeason(); setNow('2026-10-09T12:00:00Z');
+  const tnf = state.getWeek(5).games[0];
+  await league.saveGlobalResults(5, [{ away: tnf.away, home: tnf.home, actualWinner: 'home', awayScore: 17, homeScore: 24 }], null);
+  await league.saveGlobalSpreads(5, [{ away: tnf.away, home: tnf.home, homeSpread: -3, overUnder: 44 }]);
+  const g = docs['schedule/week5'].games[0];
+  assert.equal(g.actualWinner, 'home');
+  assert.equal(g.homeScore, 24);
+  assert.equal(g.homeSpread, -3);
+});
+await test('an admin undo clears the result on other devices', async () => {
+  freshSeason(); setNow('2026-10-09T12:00:00Z');
+  const tnf = state.getWeek(5).games[0];
+  tnf.actualWinner = 'home'; tnf.gameState = 'in';   // graded by mistake mid-game
+  await league.saveGlobalResults(5, [{ away: tnf.away, home: tnf.home, actualWinner: null }], null);
+  assert.ok(await league.ensureSpreadsLoaded(5) > 0);
+  assert.equal(tnf.actualWinner, null);
+});
+await test('an undo never overrides a game ESPN has called final', async () => {
+  freshSeason(); setNow('2026-10-09T12:00:00Z');
+  const tnf = state.getWeek(5).games[0];
+  tnf.actualWinner = 'away'; tnf.gameState = 'post';
+  await league.saveGlobalResults(5, [{ away: tnf.away, home: tnf.home, actualWinner: null }], null);
+  assert.equal(await league.ensureSpreadsLoaded(5), 0);
+  assert.equal(tnf.actualWinner, 'away');
+});
+
+await test('published final scores survive the next ESPN poll', async () => {
+  freshSeason(); setNow('2026-10-14T12:00:00Z');
+  const w = state.getWeek(5);
+  const g = w.games[0];
+  await league.saveGlobalResults(5, [{ away: g.away, home: g.home, actualWinner: 'home', awayScore: 17, homeScore: 24 }], null);
+  await league.ensureSpreadsLoaded(5);
+  const abbr = (n) => teams.getTeamAbbr(n).toUpperCase();
+  espnBoard[5] = [{ id: 'x', date: g.kickoff, competitions: [{
+    status: { type: { state: 'post', completed: true, shortDetail: 'Final' } },
+    competitors: [
+      { homeAway: 'home', team: { abbreviation: abbr(g.home) }, score: '21', winner: true },
+      { homeAway: 'away', team: { abbreviation: abbr(g.away) }, score: '17', winner: false },
+    ] }] }];
+  await espn.syncWeekScores(5, 2026, w);
+  assert.equal(g.liveHome, 24);
+  assert.equal(await league.ensureSpreadsLoaded(5), 0, 'stable on the next check');
+});
+await test('a game locks on the published line, not a stale local one', async () => {
+  freshSeason(); setNow('2026-10-09T12:00:00Z');   // TNF has kicked off
+  const w = state.getWeek(5);
+  const tnf = w.games[0];
+  tnf.homeSpread = -3;                             // what this device last fetched
+  await league.saveGlobalSpreads(5, w.games.map(g => ({ away: g.away, home: g.home, homeSpread: g === tnf ? -6 : null, overUnder: null, kickoff: g.kickoff })));
+  espnBoard[5] = [];
+  await refresh.refreshWeek(5);
+  assert.equal(tnf.closingSpread, -6);
+  assert.equal(tnf.pickedSpread, -6);              // the auto-pick is graded on it too
+});
+
+console.log('\nPoints reorder');
+await test('a free value on an empty game moves nobody', () => {
+  freshSeason(); setNow('2026-10-06T12:00:00Z');
+  const w = state.getWeek(5);
+  [1, 2, 3, 4, 6].forEach((v, i) => { w.games[i].confidence = v; });
+  const r = scoring.assignConfidence(w.games, w.games[10], 5);
+  assert.deepEqual(r.moved, []);
+  assert.equal(w.games[4].confidence, 6);
+  assert.equal(w.games[10].confidence, 5);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

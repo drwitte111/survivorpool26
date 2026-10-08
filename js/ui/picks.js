@@ -25,10 +25,13 @@ import { formatInZone } from '../core/tz.js';
 
 let picksWeek = null;
 let picksMode = 'confidence';   // 'confidence' | 'survivor'
+// Latest render wins: a slow roster load must not draw over a newer week or mode.
+let renderToken = 0;
 
 export function setPicksWeek(n){ picksWeek = n; }
 
 export async function renderPicksPage(){
+  const token = ++renderToken;
   const grid = document.getElementById('picksGrid');
   const weekSelect = document.getElementById('picksWeekSelect');
   if(picksWeek == null) picksWeek = store.currentWeek;
@@ -83,7 +86,7 @@ export async function renderPicksPage(){
     });
     return;
   }
-  if(!survivorMode && picksWeek !== parseInt(weekSelect.value, 10)) return; // week changed mid-load
+  if(token !== renderToken) return; // week or mode changed mid-load
 
   const me = store.state.account.teamName;
   const myUid = store.currentUser && store.currentUser.uid;
@@ -136,7 +139,7 @@ export async function renderPicksPage(){
     const isMe = (myUid && m.uid === myUid) || m.teamName === me;
     th.className = 'picks-member' + (isMe ? ' is-me' : '');
     th.innerHTML = `<span class="picks-member-name">${escapeHtml(m.teamName || '—')}</span>`
-      + `<span class="picks-member-pts">${m.total || 0} pts</span>`;
+      + `<span class="picks-member-pts">${Number(m.total) || 0} pts</span>`;
     th.title = m.yourName ? `${m.teamName} — ${m.yourName}` : (m.teamName || '');
     headRow.appendChild(th);
   });

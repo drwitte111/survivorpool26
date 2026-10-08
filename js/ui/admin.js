@@ -167,7 +167,7 @@ export async function renderAdminPage(){
     row.innerHTML = `
       <div>
         <div class="admin-member-name">${escapeHtml(t.teamName)}${t.yourName ? ' — ' + escapeHtml(t.yourName) : ''}</div>
-        <div class="admin-member-sub">${t.total || 0} pts · ${t.survivorAlive ? (t.survivorStrikes ? t.survivorStrikes + ' strike' + (t.survivorStrikes === 1 ? '' : 's') : 'Alive') : 'Eliminated Wk ' + (t.survivorEliminatedWeek || '?')} · joined ${joined}</div>
+        <div class="admin-member-sub">${Number(t.total) || 0} pts · ${escapeHtml(survivorSummary(t))} · joined ${joined}</div>
         <div class="admin-member-email">${t.email ? escapeHtml(t.email) : 'email not synced yet'}</div>
       </div>`;
 
@@ -282,8 +282,8 @@ function renderDataHealthCheck(el, teams){
     <div class="admin-member-row">
       <div>
         <div class="admin-member-name">${escapeHtml(t.teamName)}${t.yourName ? ' — ' + escapeHtml(t.yourName) : ''}</div>
-        ${pointsMatch ? '' : `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Points: shows ${t.total || 0} → should be ${fresh.total || 0}</div>`}
-        ${survivorMatch ? '' : `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Survivor: shows ${survivorSummary(t)} → should be ${survivorSummary(fresh)}</div>`}
+        ${pointsMatch ? '' : `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Points: shows ${Number(t.total) || 0} → should be ${Number(fresh.total) || 0}</div>`}
+        ${survivorMatch ? '' : `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Survivor: shows ${escapeHtml(survivorSummary(t))} → should be ${escapeHtml(survivorSummary(fresh))}</div>`}
         ${missingWeeks.length ? `<div class="admin-member-sub" style="color:var(--danger,#e5484d)">Group Picks: Week ${missingWeeks.join(', ')} kicked off but ${missingWeeks.length === 1 ? 'was' : 'were'} never published for this member — their cells will show as unsynced instead of their real picks.</div>` : ''}
       </div>
     </div>`).join('');

@@ -3,11 +3,12 @@
 // in the core/ and ui/ modules.
 import { loadAppData } from './core/data.js';
 import { initFirebase, auth, enterWithEmail, retireOldPassword } from './core/firebase.js';
-import { store, ui, peekWeek } from './core/state.js';
+import { store, ui, peekWeek, newState } from './core/state.js';
 import { applyTeamTheme } from './core/theme.js';
-import { saveState, onSaveStatus } from './core/persist.js';
+import { saveState, saveStateNow, onSaveStatus } from './core/persist.js';
 import { createLeague, joinLeague } from './core/league.js';
 import { refreshWeek } from './core/refresh.js';
+import { isGameLocked } from './core/locks.js';
 import { onBackOnline } from './core/net.js';
 import { loadState, enterApp } from './core/session.js';
 import { checkAndPostWeeklyRecaps } from './core/commissioner.js';
@@ -288,7 +289,12 @@ function wireAuth(){
     }
   });
 
-  $('logoutBtn').onclick = () => auth.signOut();
+  // Hand any queued save to Firestore first: once currentUser is cleared, the
+  // debounced flush has nobody to save for and drops it.
+  $('logoutBtn').onclick = async () => {
+    try{ await saveStateNow(); }catch(e){ /* signing out matters more */ }
+    auth.signOut();
+  };
 
   // Drop the splash once we know whether there's a saved session. Belt-and-braces
   // timeout so a wedged auth call can never leave someone stuck on it.
@@ -305,6 +311,10 @@ function wireAuth(){
       clearAuthPending();
     } else {
       store.currentUser = null;
+      // Forget the last person's picks and league. A new account has no saved
+      // doc to replace them with, so they'd otherwise carry straight over --
+      // and be written into the new account on its first save.
+      store.state = newState();
       showMigrateStep(false);
       $('loginGate').style.display = 'flex';
       $('leagueGate').style.display = 'none';
@@ -352,17 +362,32 @@ function startPolling(){
   // answer for whether anything changed rather than diffing the current week by
   // hand: a change the sweep found in a different week is exactly the kind of
   // thing a current-week-only diff used to miss and never save.
+  //
+  // Also redraws when a game has kicked off since the last tick, even if
+  // nothing else changed -- otherwise a row stays looking open past kickoff.
+  let lockedSeen = -1;
+  const lockedNow = () => peekWeek(store.currentWeek).games.filter(isGameLocked).length;
   setInterval(async () => {
     if(!store.currentUser || !store.state.account.leagueSlug) return;
     if(document.hidden) return; // don't poll a backgrounded tab
     const week = peekWeek(store.currentWeek);
     if(!week.games.length) return;
     const changed = await refreshWeek(store.currentWeek);
-    if(changed){
-      saveState();
-      render();
-    }
+    if(changed) saveState();
+    const locked = lockedNow();
+    if(changed || locked !== lockedSeen) render();
+    lockedSeen = locked;
   }, RESULTS_POLL_MS);
+
+  // Coming back to a backgrounded phone: the page is exactly as it was left,
+  // which can be hours and several kickoffs ago. Redraw at once rather than
+  // waiting up to a poll interval.
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState !== 'visible') return;
+    if(!store.currentUser || !store.state.account.leagueSlug) return;
+    render();
+    lockedSeen = lockedNow();
+  });
 }
 
 // ---------- Save status ----------

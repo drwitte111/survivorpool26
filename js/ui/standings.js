@@ -4,6 +4,7 @@ import { TOTAL_WEEKS, CONFIG } from '../core/data.js';
 import { getTeamAbbr, teamLogoUrl } from '../core/teams.js';
 import { weekScore, isWeekFullyGraded } from '../core/scoring.js';
 import { getSurvivorStatus } from '../core/survivor.js';
+import { isGameLocked } from '../core/locks.js';
 import {
   fetchLeagueTeams, slugifyTeam, loadGlobalSpreads, syncToLeague, getLeagueMeta,
 } from '../core/league.js';
@@ -109,8 +110,12 @@ export function computeAchievements(teams){
   const badges = {};
   teams.forEach(t => { badges[t.teamName] = []; });
 
+  // Only weeks that have actually started. weeklyPoints carries a 0 for every
+  // week on the schedule, so counting those crowned everyone "king" of each
+  // future week's 0-0 tie and failed everyone on "never missed".
   const playedWeeks = new Set();
   teams.forEach(t => { if(t.weeklyPoints) Object.keys(t.weeklyPoints).forEach(w => playedWeeks.add(parseInt(w))); });
+  playedWeeks.forEach(w => { if(!peekWeek(w).games.some(isGameLocked)) playedWeeks.delete(w); });
   const sortedWeeks = [...playedWeeks].sort((a, b) => a - b);
   if(!sortedWeeks.length) return badges;
 
@@ -252,12 +257,22 @@ export async function updateSeasonRank(){
 }
 
 
+// Bumped on every recap render (and by the Overall view, which has none), so
+// a slow load for a week you've since left can't paint over the current view.
+let recapToken = 0;
+export function clearWeekRecap(){
+  recapToken++;
+  document.getElementById('weekRecapCard').innerHTML = '';
+}
+
 export async function renderWeekRecap(n, teams){
+  const token = ++recapToken;
   const el = document.getElementById('weekRecapCard');
   el.innerHTML = '';
   const week = peekWeek(n);
   if(!week.games.length) return;
   const globalData = await loadGlobalSpreads(n);
+  if(token !== recapToken) return;
   if(!globalData || !globalData.games) return;
   const allGraded = week.games.every(g => {
     const gs = globalData.games.find(x => x.away === g.away && x.home === g.home);
@@ -286,7 +301,7 @@ export async function renderWeekRecap(n, teams){
     if(guessers.length){
       guessers.sort((a, b) => a.diff - b.diff);
       const c = guessers[0];
-      closestLine = `<div class="recap-line">🎯 <b>Closest Tiebreaker:</b> ${escapeHtml(c.teamName)} guessed ${c.guess} (actual was ${globalData.mnfFinalScore})</div>`;
+      closestLine = `<div class="recap-line">🎯 <b>Closest Tiebreaker:</b> ${escapeHtml(c.teamName)} guessed ${escapeHtml(String(c.guess))} (actual was ${globalData.mnfFinalScore})</div>`;
     }
   }
 
@@ -421,7 +436,7 @@ export async function renderStandingsPage(){
   listEl.innerHTML = '';
 
   if(ui.standingsFilter === 'overall'){
-    document.getElementById('weekRecapCard').innerHTML = '';
+    clearWeekRecap();
     teams.forEach(t => { t._seasonPoints = seasonPoints(t); });
     teams.sort((a, b) => b._seasonPoints - a._seasonPoints);
     renderBestWeeks(highlightEl, teams);

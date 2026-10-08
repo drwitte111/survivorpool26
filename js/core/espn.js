@@ -187,8 +187,12 @@ export async function syncWeekScores(n, seasonYear, week){
 
     const before = `${game.liveAway}|${game.liveHome}|${game.gameState}|${game.actualWinner}`;
 
-    game.liveAway = row.awayScore;
-    game.liveHome = row.homeScore;
+    // A published final score is the league's agreed number -- an admin may
+    // have corrected ESPN's -- so it isn't overwritten here.
+    if(!game.scoresPublished){
+      game.liveAway = row.awayScore;
+      game.liveHome = row.homeScore;
+    }
     game.gameState = row.state;
     game.statusDetail = row.detail;
     // Only ever set a winner from a completed game; never clear one, so an

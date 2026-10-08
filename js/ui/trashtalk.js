@@ -75,7 +75,7 @@ export async function renderTrashTalkFeed(){
       div.innerHTML = `
         <div class="tt-post-header">
           <div class="tt-post-meta">
-            <span class="tt-post-team">${p.commissioner ? '\ud83c\udfc8 ' : ''}${escapeHtml(p.teamName)}${p.yourName ? ' \u2014 ' + escapeHtml(p.yourName) : ''}${p.week ? ' \u00b7 Wk ' + p.week : ''}</span>
+            <span class="tt-post-team">${p.commissioner ? '\ud83c\udfc8 ' : ''}${escapeHtml(p.teamName)}${p.yourName ? ' \u2014 ' + escapeHtml(p.yourName) : ''}${p.week ? ' \u00b7 Wk ' + escapeHtml(String(p.week)) : ''}</span>
             <span class="tt-post-time">${timeAgo(p.postedAt)}</span>
           </div>
         </div>

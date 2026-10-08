@@ -186,6 +186,14 @@ export function assignConfidence(games, game, next, canMove = () => true){
 
   const used = new Set(others.filter(g => g.confidence != null).map(g => g.confidence));
 
+  // A free number on a game that had none: just take it. Without this the
+  // nearest-gap search below skipped `next` itself and shifted a neighbour
+  // for no reason.
+  if(prev == null && !used.has(next)){
+    game.confidence = next;
+    return { ok: true, moved: [] };
+  }
+
   // The slot that frees up and absorbs the shift. Normally it's the value this
   // game gives up; if it didn't have one, the nearest unused number stands in.
   // Always a free (and therefore unlocked) number, never one a locked game

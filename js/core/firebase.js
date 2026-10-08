@@ -32,12 +32,16 @@ export function initFirebase(){
     .catch(e => console.error('setPersistence failed', e));
 }
 
+/**
+ * The saved state for `uid`, or null if this account has never saved any.
+ *
+ * Throws when the read itself fails. That must not look like "no saved
+ * state": the caller would start a blank season, and the first save after
+ * that would overwrite the real one.
+ */
 export async function loadUserState(uid){
-  try{
-    const docSnap = await db.collection('users').doc(uid).get();
-    if(docSnap.exists) return docSnap.data();
-  }catch(e){ console.error('loadUserState failed', e); }
-  return null;
+  const docSnap = await db.collection('users').doc(uid).get();
+  return docSnap.exists ? docSnap.data() : null;
 }
 
 /**
